@@ -259,3 +259,41 @@ class StateManager:
 
     def get_lesson_data(self, section_id, topic_id, lesson_id):
         return self.course_data.get_lesson_data(section_id, topic_id, lesson_id)
+
+    def save_control_task_result(
+        self, lesson_id: str, task_title: str, is_correct: bool
+    ):
+        """
+        Сохраняет результат выполнения контрольного задания.
+
+        Args:
+            lesson_id (str): ID урока
+            task_title (str): Название задания
+            is_correct (bool): Правильно ли выполнено задание
+        """
+        try:
+            # Загружаем текущее состояние
+            state = self._load_state()
+
+            # Инициализируем секцию контрольных заданий если её нет
+            if "control_tasks" not in state:
+                state["control_tasks"] = {}
+
+            # Сохраняем результат
+            state["control_tasks"][lesson_id] = {
+                "task_title": task_title,
+                "is_correct": is_correct,
+                "completed_at": datetime.now().isoformat(),
+            }
+
+            # Сохраняем состояние
+            self.save_state()
+
+            self.logger.info(
+                f"Результат контрольного задания сохранен: {lesson_id} - {is_correct}"
+            )
+
+        except Exception as e:
+            self.logger.error(
+                f"Ошибка при сохранении результата контрольного задания: {str(e)}"
+            )

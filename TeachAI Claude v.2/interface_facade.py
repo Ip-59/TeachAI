@@ -1,444 +1,526 @@
 """
-Фасад интерфейса для TeachAI 2.
-Обеспечивает единую точку доступа ко всем интерфейсам системы.
-ИСПРАВЛЕНО ЭТАП 41: Добавлен parent_facade для решения проблемы #179
-ИСПРАВЛЕНО ЭТАП 42: Исправлены ошибки InterfaceState и логика поиска уроков
-ИСПРАВЛЕНО ЭТАП 43: Исправлены параметры ContentGenerator.generate_lesson_content()
+Фасад интерфейса для системы TeachAI.
+Координирует специализированные интерфейсы и управляет состояниями системы.
+
+РЕФАКТОРИНГ ЭТАП 27: Разделен на компоненты для соблюдения лимитов размера модулей.
+ИСПРАВЛЕНО ЭТАП 43: Порядок параметров в конструкторе + вызовы методов ContentGenerator (проблемы #181, #182)
+ИСПРАВЛЕНО ЭТАП 44: ДОБАВЛЕН RETURN в show_lesson() - КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ (проблема #183)
 """
 
 import logging
-from IPython.display import clear_output
-from enum import Enum
-
-# Импорт интерфейсов
+import ipywidgets as widgets
+from interface_utils import InterfaceState
 from lesson_interface import LessonInterface
 from assessment_interface import AssessmentInterface
-
-
-class InterfaceState(Enum):
-    """Состояния интерфейса системы."""
-
-    INITIAL_SETUP = "initial_setup"
-    COURSE_SELECTION = "course_selection"
-    LESSON_VIEW = "lesson_view"
-    ASSESSMENT = "assessment"
-    COMPLETION = "completion"
+from student_profile_interface import StudentProfileInterface
+from main_menu_interface import MainMenuInterface
+from setup_interface import SetupInterface
 
 
 class InterfaceFacade:
     """
-    Фасад для управления всеми интерфейсами системы.
-    Предоставляет единую точку доступа к различным компонентам UI.
+    Фасад интерфейса TeachAI.
+    Координирует специализированные интерфейсы и управляет состояниями.
     """
 
-    def __init__(self, state_manager, assessment, content_generator, system_logger):
+    def __init__(self, state_manager, content_generator, assessment, system_logger):
         """
         Инициализация фасада интерфейса.
 
         Args:
-            state_manager: Менеджер состояния системы
-            assessment: Модуль оценки
+            state_manager: Менеджер состояния
             content_generator: Генератор контента
+            assessment: Модуль оценивания
             system_logger: Системный логгер
         """
-        # ДИАГНОСТИКА ЭТАП 43: Проверяем что получаем в конструкторе
-        logger = logging.getLogger(__name__)
-        logger.info(f"=== ДИАГНОСТИКА СОЗДАНИЯ INTERFACE_FACADE ===")
-        logger.info(f"state_manager: {type(state_manager)}")
-        logger.info(f"assessment: {type(assessment)}")
-        logger.info(f"content_generator: {type(content_generator)}")
-        logger.info(f"system_logger: {type(system_logger)}")
-
         self.state_manager = state_manager
-        self.assessment = assessment
         self.content_generator = content_generator
+        self.assessment = assessment
         self.system_logger = system_logger
         self.logger = logging.getLogger(__name__)
 
+        # Текущее состояние интерфейса
         self.current_state = InterfaceState.INITIAL_SETUP
 
-        # Инициализация интерфейсов
-        self._initialize_core_interfaces()
-
-        self.logger.info("InterfaceFacade инициализирован")
-
-    def _initialize_core_interfaces(self):
-        """Инициализация основных интерфейсов."""
         try:
-            # ДИАГНОСТИКА ЭТАП 43: Проверяем что передаем в LessonInterface
-            self.logger.info(f"=== ДИАГНОСТИКА СОЗДАНИЯ LESSON_INTERFACE ===")
-            self.logger.info(f"state_manager: {type(self.state_manager)}")
-            self.logger.info(f"content_generator: {type(self.content_generator)}")
-            self.logger.info(f"system_logger: {type(self.system_logger)}")
-            self.logger.info(f"assessment: {type(self.assessment)}")
-
-            # ИСПРАВЛЕНО ЭТАП 43: Правильный порядок параметров для LessonInterface
-            # LessonInterface(state_manager, content_generator, system_logger, assessment=None, parent_facade=None)
+            # Инициализируем специализированные интерфейсы
             self.lesson_interface = LessonInterface(
-                state_manager=self.state_manager,
-                content_generator=self.content_generator,
-                system_logger=self.system_logger,
-                assessment=self.assessment,
-                parent_facade=self,
+                state_manager=state_manager,
+                content_generator=content_generator,
+                system_logger=system_logger,
+                assessment=assessment,
+                parent_facade=self,  # ВАЖНО: Передаем ссылку на себя
             )
 
-            # ИСПРАВЛЕНО ЭТАП 41: Добавлен parent_facade=self для решения проблемы #179
             self.assessment_interface = AssessmentInterface(
-                self.state_manager,
-                self.assessment,
-                self.system_logger,
-                parent_facade=self,
+                state_manager=state_manager,
+                assessment=assessment,
+                system_logger=system_logger,
+                parent_facade=self,  # ВАЖНО: Передаем ссылку на себя для доступа к content_generator
             )
 
-            self.logger.info("Основные интерфейсы успешно инициализированы")
+            self.student_profile_interface = StudentProfileInterface(
+                state_manager=state_manager,
+                content_generator=content_generator,
+                system_logger=system_logger,
+                assessment=assessment,
+            )
+
+            self.main_menu_interface = MainMenuInterface(
+                state_manager=state_manager,
+                content_generator=content_generator,
+                system_logger=system_logger,
+                assessment=assessment,
+            )
+
+            self.setup_interface = SetupInterface(
+                state_manager=state_manager,
+                content_generator=content_generator,
+                system_logger=system_logger,
+                assessment=assessment,
+            )
+
+            self.logger.info(
+                "InterfaceFacade успешно инициализирован со всеми специализированными интерфейсами"
+            )
 
         except Exception as e:
-            self.logger.error(f"Ошибка инициализации интерфейсов: {str(e)}")
+            self.logger.error(f"Ошибка при инициализации InterfaceFacade: {str(e)}")
             raise
 
-    def show_lesson(self, lesson_id):
+    # ========================================
+    # МЕТОДЫ ОТОБРАЖЕНИЯ ИНТЕРФЕЙСОВ
+    # ========================================
+
+    def show_initial_setup(self):
         """
-        Отображение урока.
+        Отображает интерфейс первоначальной настройки.
+
+        Returns:
+            widgets.VBox: Интерфейс настройки
+        """
+        try:
+            self.logger.info("Отображение интерфейса первоначальной настройки")
+            result = self.setup_interface.show_initial_setup()
+            self.current_state = InterfaceState.INITIAL_SETUP
+            return result
+
+        except Exception as e:
+            self.logger.error(f"Ошибка отображения настройки: {str(e)}")
+            return self._create_error_interface(
+                "Ошибка загрузки интерфейса настройки", str(e)
+            )
+
+    def show_course_selection(self):
+        """
+        Отображает интерфейс выбора курса.
+
+        Returns:
+            widgets.VBox: Интерфейс выбора курса
+        """
+        try:
+            self.logger.info("Отображение интерфейса выбора курса")
+            result = self.setup_interface.show_course_selection()
+            self.current_state = InterfaceState.COURSE_SELECTION
+            return result
+
+        except Exception as e:
+            self.logger.error(f"Ошибка отображения выбора курса: {str(e)}")
+            return self._create_error_interface("Ошибка загрузки выбора курса", str(e))
+
+    def show_lesson(self, lesson_id=None):
+        """
+        Отображает интерфейс урока.
+
+        Args:
+            lesson_id (str): Идентификатор урока в формате "section_id:topic_id:lesson_id"
+
+        Returns:
+            widgets.VBox: Интерфейс урока
+        """
+        try:
+            self.logger.info(f"Отображение урока: {lesson_id}")
+
+            # Получаем текущий урок, если lesson_id не указан
+            if lesson_id is None:
+                next_lesson = self.state_manager.get_next_lesson()
+                if next_lesson and len(next_lesson) >= 3:
+                    section_id, topic_id, lesson_id_current = next_lesson[:3]
+                else:
+                    self.logger.error("Не удалось определить текущий урок")
+                    return self._create_error_interface(
+                        "Ошибка", "Не удалось определить урок для отображения"
+                    )
+            else:
+                # Парсим lesson_id
+                lesson_parts = lesson_id.split(":")
+                if len(lesson_parts) >= 3:
+                    # Полный формат: section-1:topic-2:lesson-3
+                    section_id, topic_id, lesson_id_current = lesson_parts[:3]
+                elif len(lesson_parts) == 1:
+                    # ИСПРАВЛЕНО ЭТАП 44: Сокращенный формат - получаем полную информацию из state_manager
+                    self.logger.info(
+                        f"Получен сокращенный lesson_id: {lesson_id}, получаем полную информацию"
+                    )
+                    next_lesson = self.state_manager.get_next_lesson()
+                    if next_lesson and len(next_lesson) >= 3:
+                        section_id, topic_id, lesson_id_current = next_lesson[:3]
+                        self.logger.info(
+                            f"Полный урок из state_manager: {section_id}:{topic_id}:{lesson_id_current}"
+                        )
+                    else:
+                        self.logger.error(
+                            "Не удалось получить полную информацию об уроке из state_manager"
+                        )
+                        return self._create_error_interface(
+                            "Ошибка", "Не удалось определить полную информацию об уроке"
+                        )
+                else:
+                    self.logger.error(f"Неверный формат lesson_id: {lesson_id}")
+                    return self._create_error_interface(
+                        "Ошибка", f"Неверный формат идентификатора урока: {lesson_id}"
+                    )
+
+            # ИСПРАВЛЕНО ЭТАП 44: ДОБАВЛЕН RETURN - КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ!
+            # Отображение урока через lesson_interface
+            result = self.lesson_interface.show_lesson(
+                section_id, topic_id, lesson_id_current
+            )
+            self.current_state = InterfaceState.LESSON_VIEW
+            return result  # ← ИСПРАВЛЕНО: Теперь возвращаем результат!
+
+        except Exception as e:
+            self.logger.error(f"Ошибка отображения урока {lesson_id}: {str(e)}")
+            return self._create_error_interface("Ошибка загрузки урока", str(e))
+
+    def show_assessment(self, lesson_id=None):
+        """
+        Отображает интерфейс тестирования.
 
         Args:
             lesson_id (str): Идентификатор урока
+
+        Returns:
+            widgets.VBox: Интерфейс тестирования
         """
         try:
-            self.logger.info(f"=== ДИАГНОСТИКА show_lesson ===")
-            self.logger.info(f"Входной lesson_id: {lesson_id}")
+            self.logger.info(f"Отображение тестирования для урока: {lesson_id}")
 
-            # Поиск урока в плане курса
-            lesson_location = self._find_lesson_in_course_plan(lesson_id)
+            # Получаем данные текущего урока
+            current_lesson_data = self.lesson_interface.get_current_lesson_data()
+            if not current_lesson_data:
+                self.logger.error("Данные урока недоступны для тестирования")
+                return self._create_error_interface("Ошибка", "Данные урока недоступны")
 
-            if lesson_location:
-                section_id, topic_id, lesson_id = lesson_location
-                self.logger.info(
-                    f"Урок найден: {section_id} -> {topic_id} -> {lesson_id}"
-                )
+            # Извлекаем необходимые данные
+            course_info = self.lesson_interface.current_course_info or {}
+            lesson_content = self.lesson_interface.current_lesson_content or {}
 
-                # Отображение урока через lesson_interface
-                self.lesson_interface.show_lesson(section_id, topic_id, lesson_id)
-                self.current_state = InterfaceState.LESSON_VIEW
+            result = self.assessment_interface.show_assessment(
+                current_course=course_info.get("course_title", "Текущий курс"),
+                current_section=course_info.get("section_title", "Текущая секция"),
+                current_topic=course_info.get("topic_title", "Текущая тема"),
+                current_lesson=course_info.get("lesson_title", "Текущий урок"),
+                current_lesson_content=lesson_content,
+            )
 
-            else:
-                # Fallback: используем данные из state_manager
-                self.logger.warning(
-                    f"Урок {lesson_id} не найден в плане курса, используем fallback"
-                )
-                next_lesson_data = self.state_manager.get_next_lesson()
-
-                if next_lesson_data:
-                    if len(next_lesson_data) >= 4:
-                        (
-                            section_id,
-                            topic_id,
-                            fallback_lesson_id,
-                            lesson_data,
-                        ) = next_lesson_data
-                        self.lesson_interface.show_lesson(
-                            section_id, topic_id, fallback_lesson_id
-                        )
-                        self.current_state = InterfaceState.LESSON_VIEW
-                    else:
-                        self.logger.error(
-                            "Неожиданный формат данных от get_next_lesson()"
-                        )
-                        raise Exception("Не удалось получить данные урока")
-                else:
-                    self.logger.error("Не удалось получить данные урока")
-                    raise Exception("Урок недоступен")
+            self.current_state = InterfaceState.ASSESSMENT
+            return result
 
         except Exception as e:
-            self.logger.error(f"Ошибка в show_lesson: {str(e)}")
-            raise
+            self.logger.error(f"Ошибка отображения тестирования: {str(e)}")
+            return self._create_error_interface("Ошибка загрузки тестирования", str(e))
 
-    def show_assessment(self, lesson_id):
+    def show_results(self, assessment_results=None):
         """
-        Отображение интерфейса тестирования.
+        Отображает результаты тестирования.
 
         Args:
-            lesson_id (str): Идентификатор урока для тестирования
+            assessment_results (dict): Результаты тестирования
+
+        Returns:
+            widgets.VBox: Интерфейс результатов
         """
         try:
-            self.logger.info(f"=== ОТЛАДКА FACADE ASSESSMENT ===")
-            self.logger.info(
-                f"Переход к интерфейсу тестирования (lesson_id: {lesson_id})"
-            )
-
-            # ПРИОРИТЕТ 1: Проверяем кэшированные данные из lesson_interface
-            lesson_data = None
-            lesson_content = None
-
-            if (
-                hasattr(self.lesson_interface, "current_course_info")
-                and self.lesson_interface.current_course_info
-            ):
-                self.logger.info("ИСТОЧНИК: lesson_interface")
-
-                cached_lesson_title = self.lesson_interface.current_course_info.get(
-                    "lesson_title", ""
-                )
-                cached_lesson_id = getattr(
-                    self.lesson_interface, "current_lesson_id", None
-                )
-
-                self.logger.info(f"Урок из lesson_interface: {cached_lesson_title}")
-                self.logger.info(f"lesson_id из lesson_interface: {cached_lesson_id}")
-                self.logger.info(f"Запрашиваемый lesson_id: {lesson_id}")
-                self.logger.info(
-                    f"Соответствие lesson_id: {cached_lesson_id == lesson_id}"
-                )
-
-                # ИСПРАВЛЕНО ЭТАП 42: Проверяем соответствие lesson_id
-                if cached_lesson_id == lesson_id:
-                    lesson_data = self.lesson_interface.current_course_info
-                    lesson_content = getattr(
-                        self.lesson_interface, "current_lesson_content", None
-                    )
-                    self.logger.info("✅ КЭШИРОВАННЫЕ ДАННЫЕ СООТВЕТСТВУЮТ")
-                else:
-                    self.logger.warning(
-                        f"❌ КЭШИРОВАННЫЕ ДАННЫЕ НЕ СООТВЕТСТВУЮТ: cached={cached_lesson_id}, requested={lesson_id}"
-                    )
-
-            # ПРИОРИТЕТ 2: Получаем данные через state_manager.get_lesson_data()
-            if not lesson_data:
-                self.logger.info(
-                    f"ИСТОЧНИК: lesson_id через state_manager ({lesson_id})"
-                )
-
-                if hasattr(self.state_manager, "get_lesson_data"):
-                    lesson_data = self.state_manager.get_lesson_data(lesson_id)
-                    self.logger.info(f"Данные урока из state_manager: {lesson_data}")
-                else:
-                    self.logger.warning("state_manager не имеет метода get_lesson_data")
-
-            # ПРИОРИТЕТ 3: Используем state_manager.get_next_lesson()
-            if not lesson_data:
-                self.logger.info("ИСТОЧНИК: state_manager.get_next_lesson()")
-                next_lesson_data = self.state_manager.get_next_lesson()
-
-                if next_lesson_data and len(next_lesson_data) >= 4:
-                    (
-                        section_id,
-                        topic_id,
-                        lesson_id_from_next,
-                        lesson_data,
-                    ) = next_lesson_data
-                    self.logger.info(
-                        f"Получены данные из get_next_lesson: {lesson_data}"
-                    )
-                else:
-                    self.logger.error("Не удалось получить данные урока")
-                    raise Exception("Урок недоступен для тестирования")
-
-            # Проверяем наличие контента урока
-            if not lesson_content:
-                if hasattr(lesson_data, "get") and lesson_data.get("content"):
-                    lesson_content = lesson_data["content"]
-                    self.logger.info(
-                        f"КОНТЕНТ: найден в lesson_data, размер: {len(lesson_content)} символов"
-                    )
-                else:
-                    self.logger.info(
-                        "КОНТЕНТ: генерируем новый через content_generator"
-                    )
-
-                    # ИСПРАВЛЕНО ЭТАП 43: Правильные параметры для generate_lesson_content()
-                    user_data = getattr(
-                        self.state_manager, "user_data", {"name": "Пользователь"}
-                    )
-                    course_context = self._get_course_context()
-
-                    # Метод принимает только 3 параметра: lesson_data, user_data, course_context
-                    content_result = self.content_generator.generate_lesson_content(
-                        lesson_data=lesson_data,
-                        user_data=user_data,
-                        course_context=course_context,
-                    )
-
-                    # Извлекаем контент из результата
-                    if isinstance(content_result, dict):
-                        lesson_content = content_result.get(
-                            "content", str(content_result)
-                        )
-                    else:
-                        lesson_content = str(content_result)
-
-                    self.logger.info(
-                        f"КОНТЕНТ: сгенерирован, размер: {len(lesson_content)} символов"
-                    )
-
-            # Переход к интерфейсу тестирования
-            self.assessment_interface.show_assessment(
-                lesson_data,
-                lesson_content,
-                lesson_id,
-                self.content_generator,
-                self.state_manager,
-            )
-            self.current_state = InterfaceState.ASSESSMENT
+            self.logger.info("Отображение результатов тестирования")
+            result = self.assessment_interface.show_results(assessment_results)
+            self.current_state = InterfaceState.RESULTS_VIEW
+            return result
 
         except Exception as e:
-            self.logger.error(f"Ошибка в show_assessment: {str(e)}")
-            raise
+            self.logger.error(f"Ошибка отображения результатов: {str(e)}")
+            return self._create_error_interface("Ошибка загрузки результатов", str(e))
 
     def show_completion(self):
-        """Отображение экрана завершения курса."""
-        try:
-            clear_output(wait=True)
-            print("🎉 Поздравляем! Курс успешно завершен!")
-            print("Вы изучили все уроки и прошли все тесты.")
+        """
+        Отображает интерфейс завершения курса.
 
+        Returns:
+            widgets.VBox: Интерфейс завершения
+        """
+        try:
+            self.logger.info("Отображение интерфейса завершения курса")
+            result = self.assessment_interface.show_course_completion()
             self.current_state = InterfaceState.COMPLETION
-            self.logger.info("Отображен экран завершения курса")
+            return result
 
         except Exception as e:
-            self.logger.error(f"Ошибка в show_completion: {str(e)}")
-            raise
+            self.logger.error(f"Ошибка отображения завершения: {str(e)}")
+            return self._create_error_interface("Ошибка загрузки завершения", str(e))
 
-    # СЛУЖЕБНЫЕ МЕТОДЫ
-
-    def _find_lesson_in_course_plan(self, lesson_id):
+    def show_main_menu(self):
         """
-        Поиск урока в плане курса.
-
-        Args:
-            lesson_id (str): ID урока для поиска
+        Отображает главное меню.
 
         Returns:
-            tuple: (section_id, topic_id, lesson_id) или None если не найден
+            widgets.VBox: Интерфейс главного меню
         """
         try:
-            self.logger.info(f"=== ДИАГНОСТИКА ПОИСКА УРОКА {lesson_id} ===")
-
-            course_plan = self._get_course_plan()
-
-            if not course_plan:
-                self.logger.warning("План курса недоступен")
-                return None
-
-            self.logger.info(f"План курса получен, тип: {type(course_plan)}")
-
-            # ИСПРАВЛЕНО ЭТАП 42: Правильная структура поиска
-            sections = course_plan.get("sections", [])
-            self.logger.info(f"Количество разделов: {len(sections)}")
-
-            if sections:
-                first_section = sections[0]
-                self.logger.info(
-                    f"Раздел 0: id={first_section.get('id')}, title={first_section.get('title', 'Без названия')}"
-                )
-
-                first_topics = first_section.get("topics", [])
-                if first_topics:
-                    first_topic = first_topics[0]
-                    self.logger.info(f"  Количество тем в разделе: {len(first_topics)}")
-                    self.logger.info(
-                        f"  Тема 0: id={first_topic.get('id')}, title={first_topic.get('title', 'Без названия')}"
-                    )
-
-                    first_lessons = first_topic.get("lessons", [])
-                    if first_lessons:
-                        first_lesson = first_lessons[0]
-                        self.logger.info(
-                            f"    Количество уроков в теме: {len(first_lessons)}"
-                        )
-                        self.logger.info(
-                            f"    Урок 0: id={first_lesson.get('id')}, title={first_lesson.get('title', 'Без названия')}"
-                        )
-
-            # Поиск урока
-            for section in sections:
-                section_id = section.get("id")
-                for topic in section.get("topics", []):
-                    topic_id = topic.get("id")
-                    for lesson in topic.get("lessons", []):
-                        current_lesson_id = lesson.get("id")
-                        if current_lesson_id == lesson_id:
-                            self.logger.info(
-                                f"✅ Урок найден: {section_id} -> {topic_id} -> {current_lesson_id}"
-                            )
-                            return (section_id, topic_id, current_lesson_id)
-
-            self.logger.warning(f"❌ Урок {lesson_id} не найден в плане курса")
-            return None
+            self.logger.info("Отображение главного меню")
+            result = self.main_menu_interface.show_main_menu()
+            self.current_state = InterfaceState.MAIN_MENU
+            return result
 
         except Exception as e:
-            self.logger.error(f"Ошибка поиска урока в плане курса: {str(e)}")
-            return None
+            self.logger.error(f"Ошибка отображения главного меню: {str(e)}")
+            return self._create_error_interface("Ошибка загрузки главного меню", str(e))
 
-    def _get_course_plan(self):
+    def show_student_profile(self):
         """
-        Получение плана курса.
+        Отображает профиль студента.
 
         Returns:
-            dict: План курса или None
+            widgets.VBox: Интерфейс профиля студента
         """
         try:
-            # Способ 1: Из state_manager
-            if hasattr(self.state_manager, "get_course_plan"):
-                return self.state_manager.get_course_plan()
-
-            # Способ 2: Из атрибута state_manager
-            if hasattr(self.state_manager, "course_plan"):
-                return self.state_manager.course_plan
-
-            # Способ 3: Из текущего состояния
-            if hasattr(self.state_manager, "current_state"):
-                current_state = self.state_manager.current_state
-                if isinstance(current_state, dict) and "course_plan" in current_state:
-                    return current_state["course_plan"]
-
-            self.logger.warning("Не удалось получить план курса")
-            return None
+            self.logger.info("Отображение профиля студента")
+            result = self.student_profile_interface.show_student_profile()
+            self.current_state = InterfaceState.STUDENT_PROFILE
+            return result
 
         except Exception as e:
-            self.logger.error(f"Ошибка получения плана курса: {str(e)}")
-            return None
+            self.logger.error(f"Ошибка отображения профиля студента: {str(e)}")
+            return self._create_error_interface("Ошибка загрузки профиля", str(e))
 
-    def _get_course_context(self):
-        """
-        Получение контекста курса для генерации контента.
-
-        Returns:
-            dict: Контекст курса
-        """
-        try:
-            # Базовый контекст
-            context = {
-                "course_name": "Основы Python",
-                "course_description": "Изучение основ программирования на Python",
-            }
-
-            # Пытаемся получить более детальную информацию
-            if hasattr(self.state_manager, "get_course_info"):
-                course_info = self.state_manager.get_course_info()
-                if course_info:
-                    context.update(course_info)
-
-            return context
-
-        except Exception as e:
-            self.logger.error(f"Ошибка получения контекста курса: {str(e)}")
-            return {
-                "course_name": "Основы Python",
-                "course_description": "Изучение основ программирования на Python",
-            }
+    # ========================================
+    # МЕТОДЫ НАВИГАЦИИ И СОСТОЯНИЯ
+    # ========================================
 
     def get_current_state(self):
-        """Получение текущего состояния интерфейса."""
+        """
+        Возвращает текущее состояние интерфейса.
+
+        Returns:
+            InterfaceState: Текущее состояние
+        """
         return self.current_state
 
-    def set_state(self, state):
+    def can_navigate_to(self, target_state):
         """
-        Установка состояния интерфейса.
+        Проверяет возможность перехода к указанному состоянию.
 
         Args:
-            state (InterfaceState): Новое состояние
+            target_state (InterfaceState): Целевое состояние
+
+        Returns:
+            bool: True, если переход возможен
         """
-        if isinstance(state, InterfaceState):
-            self.current_state = state
-            self.logger.info(f"Состояние интерфейса изменено на: {state.value}")
-        else:
-            self.logger.warning(f"Попытка установить недопустимое состояние: {state}")
+        # Базовая логика навигации
+        valid_transitions = {
+            InterfaceState.INITIAL_SETUP: [
+                InterfaceState.COURSE_SELECTION,
+                InterfaceState.MAIN_MENU,
+            ],
+            InterfaceState.COURSE_SELECTION: [
+                InterfaceState.LESSON_VIEW,
+                InterfaceState.MAIN_MENU,
+            ],
+            InterfaceState.LESSON_VIEW: [
+                InterfaceState.ASSESSMENT,
+                InterfaceState.LESSON_VIEW,
+                InterfaceState.MAIN_MENU,
+            ],
+            InterfaceState.ASSESSMENT: [
+                InterfaceState.RESULTS_VIEW,
+                InterfaceState.LESSON_VIEW,
+            ],
+            InterfaceState.RESULTS_VIEW: [
+                InterfaceState.LESSON_VIEW,
+                InterfaceState.COMPLETION,
+                InterfaceState.MAIN_MENU,
+            ],
+            InterfaceState.COMPLETION: [
+                InterfaceState.MAIN_MENU,
+                InterfaceState.COURSE_SELECTION,
+            ],
+            InterfaceState.MAIN_MENU: [
+                InterfaceState.COURSE_SELECTION,
+                InterfaceState.LESSON_VIEW,
+                InterfaceState.STUDENT_PROFILE,
+            ],
+            InterfaceState.STUDENT_PROFILE: [
+                InterfaceState.MAIN_MENU,
+                InterfaceState.LESSON_VIEW,
+            ],
+        }
+
+        return target_state in valid_transitions.get(self.current_state, [])
+
+    def navigate_to(self, target_state, **kwargs):
+        """
+        Выполняет навигацию к указанному состоянию.
+
+        Args:
+            target_state (InterfaceState): Целевое состояние
+            **kwargs: Дополнительные параметры для навигации
+
+        Returns:
+            widgets.VBox: Интерфейс целевого состояния
+        """
+        try:
+            if not self.can_navigate_to(target_state):
+                self.logger.warning(
+                    f"Навигация из {self.current_state} в {target_state} не разрешена"
+                )
+                return self._create_error_interface(
+                    "Ошибка навигации",
+                    f"Переход из {self.current_state.value} в {target_state.value} не разрешен",
+                )
+
+            # Выполняем навигацию в зависимости от целевого состояния
+            if target_state == InterfaceState.INITIAL_SETUP:
+                return self.show_initial_setup()
+            elif target_state == InterfaceState.COURSE_SELECTION:
+                return self.show_course_selection()
+            elif target_state == InterfaceState.LESSON_VIEW:
+                lesson_id = kwargs.get("lesson_id")
+                return self.show_lesson(lesson_id)
+            elif target_state == InterfaceState.ASSESSMENT:
+                lesson_id = kwargs.get("lesson_id")
+                return self.show_assessment(lesson_id)
+            elif target_state == InterfaceState.RESULTS_VIEW:
+                results = kwargs.get("assessment_results")
+                return self.show_results(results)
+            elif target_state == InterfaceState.COMPLETION:
+                return self.show_completion()
+            elif target_state == InterfaceState.MAIN_MENU:
+                return self.show_main_menu()
+            elif target_state == InterfaceState.STUDENT_PROFILE:
+                return self.show_student_profile()
+            else:
+                self.logger.error(
+                    f"Неизвестное состояние для навигации: {target_state}"
+                )
+                return self._create_error_interface(
+                    "Ошибка навигации", f"Неизвестное состояние: {target_state}"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Ошибка навигации к {target_state}: {str(e)}")
+            return self._create_error_interface("Ошибка навигации", str(e))
+
+    # ========================================
+    # ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+    # ========================================
+
+    def _create_error_interface(self, title, message):
+        """
+        Создает интерфейс ошибки.
+
+        Args:
+            title (str): Заголовок ошибки
+            message (str): Сообщение об ошибке
+
+        Returns:
+            widgets.VBox: Интерфейс ошибки
+        """
+        error_html = widgets.HTML(
+            value=f"""
+            <div style='color: red; padding: 20px; text-align: center; border: 1px solid red; border-radius: 8px; margin: 20px;'>
+                <h3>{title}</h3>
+                <p>{message}</p>
+                <p><small>Проверьте логи для подробной информации об ошибке</small></p>
+            </div>
+            """
+        )
+
+        return widgets.VBox([error_html])
+
+    def get_interface_info(self):
+        """
+        Возвращает информацию о доступных интерфейсах.
+
+        Returns:
+            dict: Информация об интерфейсах
+        """
+        return {
+            "facade_initialized": True,
+            "current_state": self.current_state.value if self.current_state else None,
+            "available_interfaces": [
+                "lesson_interface",
+                "assessment_interface",
+                "student_profile_interface",
+                "main_menu_interface",
+                "setup_interface",
+            ],
+            "available_states": [state.value for state in InterfaceState],
+            "version": "2.0",
+        }
+
+    def validate_dependencies(self):
+        """
+        Проверяет наличие всех зависимостей.
+
+        Returns:
+            dict: Результаты проверки зависимостей
+        """
+        dependencies = {
+            "state_manager": self.state_manager is not None,
+            "content_generator": self.content_generator is not None,
+            "assessment": self.assessment is not None,
+            "system_logger": self.system_logger is not None,
+            "lesson_interface": hasattr(self, "lesson_interface")
+            and self.lesson_interface is not None,
+            "assessment_interface": hasattr(self, "assessment_interface")
+            and self.assessment_interface is not None,
+            "student_profile_interface": hasattr(self, "student_profile_interface")
+            and self.student_profile_interface is not None,
+            "main_menu_interface": hasattr(self, "main_menu_interface")
+            and self.main_menu_interface is not None,
+            "setup_interface": hasattr(self, "setup_interface")
+            and self.setup_interface is not None,
+        }
+
+        all_available = all(dependencies.values())
+
+        return {
+            "all_dependencies_available": all_available,
+            "dependencies": dependencies,
+            "missing_dependencies": [k for k, v in dependencies.items() if not v],
+        }
+
+    def get_status(self):
+        """
+        Возвращает полный статус фасада интерфейса.
+
+        Returns:
+            dict: Полный статус фасада
+        """
+        try:
+            return {
+                "facade_initialized": True,
+                "current_state": self.current_state.value
+                if self.current_state
+                else None,
+                "interface_info": self.get_interface_info(),
+                "dependencies": self.validate_dependencies(),
+                "lesson_data_available": hasattr(
+                    self.lesson_interface, "current_lesson_data"
+                )
+                and self.lesson_interface.current_lesson_data is not None,
+                "version": "2.0",
+                "last_critical_fix": "ЭТАП 44: Добавлен return в show_lesson() - ПРОБЛЕМА #183 РЕШЕНА!",
+            }
+        except Exception as e:
+            self.logger.error(f"Ошибка получения статуса фасада: {str(e)}")
+            return {"error": str(e), "facade_initialized": False}

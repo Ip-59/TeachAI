@@ -16,7 +16,7 @@ from assessment_results_handler import AssessmentResultsHandler
 class AssessmentInterface:
     """Интерфейс для проведения тестирования знаний."""
 
-    def __init__(self, state_manager, assessment, system_logger):
+    def __init__(self, state_manager, assessment, system_logger, lesson_interface=None):
         """
         Инициализация интерфейса тестирования.
 
@@ -24,9 +24,11 @@ class AssessmentInterface:
             state_manager: Менеджер состояния
             assessment: Модуль оценивания (может быть None - создадим сами)
             system_logger: Системный логгер
+            lesson_interface: Интерфейс урока (для активации кнопок)
         """
         self.state_manager = state_manager
         self.system_logger = system_logger
+        self.lesson_interface = lesson_interface
         self.logger = logging.getLogger(__name__)
 
         # Создаем assessment если он не передан
@@ -77,7 +79,11 @@ class AssessmentInterface:
 
         # Создаем специализированный обработчик результатов
         self.results_handler = AssessmentResultsHandler(
-            state_manager, self.assessment, system_logger, self.content_generator
+            state_manager,
+            self.assessment,
+            system_logger,
+            self.content_generator,
+            lesson_interface,
         )
 
     def show_assessment(
@@ -256,6 +262,15 @@ class AssessmentInterface:
         questions_widgets = []
 
         for i, question in enumerate(questions):
+            # Проверяем структуру вопроса
+            if not isinstance(question, dict):
+                self.logger.error(f"Вопрос {i+1} не является словарем: {question}")
+                continue
+
+            if "text" not in question:
+                self.logger.error(f"Вопрос {i+1} не содержит поле 'text': {question}")
+                continue
+
             # Компактный заголовок вопроса
             question_title_widget = widgets.HTML(
                 value=f"<div style='font-size: 18px; font-weight: bold; color: #212529; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px solid #dee2e6; line-height: 1.3;'>Вопрос {i+1}: {question['text']}</div>",
@@ -263,7 +278,13 @@ class AssessmentInterface:
             )
 
             # Создаем RadioButtons с минимальными отступами
-            options = question.get("options", ["Нет вариантов ответа"])
+            if "options" not in question or not isinstance(question["options"], list):
+                self.logger.error(
+                    f"Вопрос {i+1} не содержит корректные варианты ответов: {question}"
+                )
+                continue
+
+            options = question["options"]
             radio_buttons = widgets.RadioButtons(
                 options=[(option, j + 1) for j, option in enumerate(options)],
                 description="",

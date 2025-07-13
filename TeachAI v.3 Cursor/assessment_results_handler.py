@@ -13,7 +13,12 @@ class AssessmentResultsHandler:
     """Обработчик результатов тестирования."""
 
     def __init__(
-        self, state_manager, assessment, system_logger, content_generator=None
+        self,
+        state_manager,
+        assessment,
+        system_logger,
+        content_generator=None,
+        lesson_interface=None,
     ):
         """
         Инициализация обработчика результатов.
@@ -23,10 +28,12 @@ class AssessmentResultsHandler:
             assessment: Модуль оценивания
             system_logger: Системный логгер
             content_generator: Генератор контента (для навигации)
+            lesson_interface: Интерфейс урока (для активации кнопок)
         """
         self.state_manager = state_manager
         self.assessment = assessment
         self.system_logger = system_logger
+        self.lesson_interface = lesson_interface
         self.logger = logging.getLogger(__name__)
 
         # Создаем content_generator если не передан (для навигации)
@@ -240,80 +247,37 @@ class AssessmentResultsHandler:
                 )
             )
 
-            # Автоматический переход к следующему уроку
-            (
-                next_section_id,
-                next_topic_id,
-                next_lesson_id,
-                next_lesson_data,
-            ) = self.state_manager.get_next_lesson()
+            # Если тест пройден успешно
+            if is_passed:
+                # Активируем кнопку "Контрольные задания"
+                self._activate_control_tasks_button()
 
-            if next_section_id and next_topic_id and next_lesson_id:
-                # Есть следующий урок
+                # Показываем сообщение об успешном прохождении
                 display(
                     widgets.HTML(
-                        value="<p style='margin: 5px 0; font-size: 16px;'>Готовы к переходу к следующему уроку.</p>"
+                        value=f"<p style='color: green; font-weight: bold;'>🎉 Тест пройден успешно! Доступны контрольные задания. Перейдите к выполнению контрольных заданий для завершения урока.</p>"
                     )
                 )
 
-                # Кнопка перехода к следующему уроку
-                next_lesson_button = widgets.Button(
-                    description="Следующий урок",
+                # Добавляем кнопку для перехода к контрольным заданиям
+                control_tasks_button = widgets.Button(
+                    description="🛠️ Перейти к контрольным заданиям",
                     button_style="success",
-                    tooltip="Перейти к следующему уроку",
-                    icon="arrow-right",
-                    layout=widgets.Layout(margin="5px 5px 5px 0px"),
+                    layout=widgets.Layout(width="300px", margin="10px 0"),
+                    tooltip="Нажмите, чтобы выполнить контрольные задания",
                 )
 
-                def on_next_lesson_clicked(b):
+                def on_control_tasks_clicked(b):
+                    # Скрываем результаты теста
                     clear_output(wait=True)
-                    from lesson_interface import LessonInterface
+                    # Показываем контрольные задания
+                    self._show_control_tasks()
 
-                    lesson_ui = LessonInterface(
-                        self.state_manager,
-                        self.content_generator,
-                        self.system_logger,
-                        self.assessment,
-                    )
-                    display(
-                        lesson_ui.show_lesson(
-                            next_section_id, next_topic_id, next_lesson_id
-                        )
-                    )
+                control_tasks_button.on_click(on_control_tasks_clicked)
+                display(control_tasks_button)
 
-                next_lesson_button.on_click(on_next_lesson_clicked)
-                display(next_lesson_button)
-            else:
-                # Курс завершен
-                display(
-                    widgets.HTML(
-                        value="<p style='margin: 5px 0; font-size: 16px; color: #28a745;'><strong>🏆 Поздравляем! Вы завершили весь курс!</strong></p>"
-                    )
-                )
-
-                # Кнопка завершения курса
-                complete_course_button = widgets.Button(
-                    description="Завершить курс",
-                    button_style="success",
-                    tooltip="Перейти к экрану завершения курса",
-                    icon="trophy",
-                    layout=widgets.Layout(margin="5px 0"),
-                )
-
-                def on_complete_course_clicked(b):
-                    clear_output(wait=True)
-                    from completion_interface import CompletionInterface
-
-                    completion_ui = CompletionInterface(
-                        self.state_manager,
-                        self.system_logger,
-                        self.content_generator,
-                        self.assessment,
-                    )
-                    display(completion_ui.show_course_completion())
-
-                complete_course_button.on_click(on_complete_course_clicked)
-                display(complete_course_button)
+            # УБРАНО: Автоматический переход к следующему уроку
+            # Теперь переход к следующему уроку происходит только после успешного выполнения контрольного задания
 
         else:  # Оценка ≤ 40%
             display(
@@ -370,6 +334,9 @@ class AssessmentResultsHandler:
                     lesson_id, score, True
                 )  # is_passed=True принудительно
 
+                # Активируем кнопку "Контрольные задания"
+                self._activate_control_tasks_button()
+
                 # Переходим к следующему уроку
                 (
                     next_section_id,
@@ -412,5 +379,73 @@ class AssessmentResultsHandler:
                 widgets.HBox(
                     [repeat_lesson_button, continue_anyway_button],
                     layout=widgets.Layout(margin="2px 0"),
+                )
+            )
+
+    def _activate_control_tasks_button(self):
+        """
+        Активирует кнопку "Контрольные задания" в интерфейсе урока.
+        """
+        try:
+            if self.lesson_interface and hasattr(self.lesson_interface, "navigation"):
+                # Получаем ссылку на кнопку через navigation
+                navigation = self.lesson_interface.navigation
+                if (
+                    hasattr(navigation, "control_tasks_button")
+                    and navigation.control_tasks_button
+                ):
+                    navigation.control_tasks_button.disabled = False
+                    navigation.control_tasks_button.tooltip = "Доступно для выполнения"
+                    self.logger.info("Кнопка 'Контрольные задания' активирована")
+                else:
+                    self.logger.warning(
+                        "Кнопка 'Контрольные задания' не найдена в navigation"
+                    )
+                    # Дополнительная диагностика
+                    if hasattr(navigation, "__dict__"):
+                        self.logger.debug(
+                            f"Доступные атрибуты navigation: {list(navigation.__dict__.keys())}"
+                        )
+            else:
+                self.logger.warning("lesson_interface или navigation недоступны")
+                if self.lesson_interface:
+                    self.logger.debug(
+                        f"Доступные атрибуты lesson_interface: {list(self.lesson_interface.__dict__.keys())}"
+                    )
+        except Exception as e:
+            self.logger.error(
+                f"Ошибка при активации кнопки контрольных заданий: {str(e)}"
+            )
+            import traceback
+
+            self.logger.error(f"Полный traceback: {traceback.format_exc()}")
+
+    def _show_control_tasks(self):
+        """
+        Показывает контрольные задания пользователю.
+        """
+        try:
+            if self.lesson_interface and hasattr(
+                self.lesson_interface, "control_tasks_interface"
+            ):
+                # Показываем контрольные задания
+                task_interface = (
+                    self.lesson_interface.control_tasks_interface.show_control_task(
+                        lesson_data=self.lesson_interface.current_lesson_data,
+                        lesson_content=self.lesson_interface.current_lesson_content,
+                    )
+                )
+                display(task_interface)
+            else:
+                display(
+                    widgets.HTML(
+                        value="<p style='color: red;'>Ошибка: интерфейс контрольных заданий недоступен</p>"
+                    )
+                )
+        except Exception as e:
+            self.logger.error(f"Ошибка при показе контрольных заданий: {str(e)}")
+            display(
+                widgets.HTML(
+                    value=f"<p style='color: red;'>Ошибка при загрузке контрольных заданий: {str(e)}</p>"
                 )
             )
