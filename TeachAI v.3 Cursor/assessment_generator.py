@@ -97,83 +97,16 @@ class AssessmentGenerator(BaseContentGenerator):
             if not questions or len(questions) == 0:
                 raise Exception("API вернул пустой список вопросов")
 
-            # НОВОЕ: Рандомизируем порядок вариантов ответов
-            randomized_questions = self._randomize_answer_options(questions)
-
             self.logger.info(
-                f"Успешно сгенерировано {len(randomized_questions)} вопросов на русском языке с рандомизированными ответами"
+                f"Успешно сгенерировано {len(questions)} вопросов на русском языке (рандомизация теперь на стороне OpenAI)"
             )
-            return randomized_questions
+            return questions
 
         except Exception as e:
             self.logger.error(f"Критическая ошибка при генерации вопросов: {str(e)}")
             raise Exception(
                 f"Не удалось сгенерировать вопросы для урока '{lesson}': {str(e)}"
             )
-
-    def _randomize_answer_options(self, questions):
-        """
-        Рандомизирует порядок вариантов ответов в вопросах.
-
-        Args:
-            questions (list): Список вопросов с вариантами ответов
-
-        Returns:
-            list: Список вопросов с перемешанными вариантами ответов
-        """
-        try:
-            randomized_questions = []
-
-            for question in questions:
-                # Получаем исходные данные
-                original_options = question.get("options", [])
-                original_correct = question.get(
-                    "correct_option", question.get("correct_answer", 1)
-                )
-
-                if not original_options or len(original_options) < 2:
-                    # Если вариантов мало, оставляем как есть
-                    randomized_questions.append(question)
-                    continue
-
-                # Создаем список индексов для перемешивания
-                indices = list(range(len(original_options)))
-                random.shuffle(indices)
-
-                # Создаем новый порядок вариантов
-                new_options = []
-                new_correct_option = 1  # По умолчанию
-
-                for new_index, old_index in enumerate(indices):
-                    new_options.append(original_options[old_index])
-                    # Находим где теперь находится правильный ответ
-                    if (
-                        old_index + 1
-                    ) == original_correct:  # +1 потому что индексы начинаются с 1
-                        new_correct_option = new_index + 1
-
-                # Создаем новый вопрос с перемешанными вариантами
-                new_question = question.copy()
-                new_question["options"] = new_options
-                new_question["correct_option"] = new_correct_option
-
-                # Обеспечиваем совместимость со старым форматом
-                if "correct_answer" in new_question:
-                    new_question["correct_answer"] = new_correct_option
-
-                randomized_questions.append(new_question)
-
-                # Отладочная информация
-                self.logger.debug(
-                    f"Вопрос рандомизирован: правильный ответ перемещен с позиции {original_correct} на позицию {new_correct_option}"
-                )
-
-            return randomized_questions
-
-        except Exception as e:
-            self.logger.error(f"Ошибка при рандомизации вариантов ответов: {str(e)}")
-            # В случае ошибки возвращаем исходные вопросы
-            return questions
 
     def _clean_html_for_analysis(self, lesson_content):
         """
@@ -199,18 +132,61 @@ class AssessmentGenerator(BaseContentGenerator):
         Returns:
             list: Список вопросов
         """
+        # Логируем структуру ответа для отладки
+        self.logger.debug(
+            f"Структура ответа API: {type(questions_data)} - {questions_data}"
+        )
+
         # Проверяем, есть ли в ответе ключ "questions"
         if "questions" in questions_data:
-            return questions_data["questions"]
+            questions = questions_data["questions"]
         elif isinstance(questions_data, list):
             # Если API вернул сразу список вопросов
-            return questions_data
+            questions = questions_data
         else:
             # Проверяем, содержит ли ответ другие ключи, которые могут быть списком вопросов
             for key, value in questions_data.items():
                 if isinstance(value, list) and len(value) > 0:
-                    return value
-            raise Exception("API вернул некорректный формат вопросов")
+                    questions = value
+                    self.logger.info(f"Найден список вопросов в ключе '{key}'")
+                    break
+            else:
+                # Если ничего не найдено, попробуем обработать как один вопрос
+                if isinstance(questions_data, dict) and "text" in questions_data:
+                    self.logger.warning("API вернул только один вопрос вместо списка")
+                    questions = [questions_data]
+                else:
+                    raise Exception(
+                        f"API вернул некорректный формат вопросов: {questions_data}"
+                    )
+
+        # Проверяем, что получили список вопросов
+        if not isinstance(questions, list):
+            raise Exception(f"Ожидался список вопросов, получен: {type(questions)}")
+
+        # НОРМАЛИЗАЦИЯ correct_option: если 0 — приводим к 1, если не 1-3 — выбрасываем ошибку
+        for i, q in enumerate(questions):
+            if not isinstance(q, dict):
+                raise Exception(f"Вопрос {i+1} не является словарем: {q}")
+
+            if "text" not in q:
+                raise Exception(f"Вопрос {i+1} не содержит поле 'text': {q}")
+
+            if "options" not in q:
+                raise Exception(f"Вопрос {i+1} не содержит поле 'options': {q}")
+
+            if "correct_option" in q:
+                if q["correct_option"] == 0:
+                    q["correct_option"] = 1
+                if q["correct_option"] not in [1, 2, 3]:
+                    raise Exception(
+                        f"Некорректный индекс правильного ответа в вопросе {i+1}: {q['correct_option']}"
+                    )
+            else:
+                raise Exception(f"Вопрос {i+1} не содержит поле 'correct_option': {q}")
+
+        self.logger.info(f"Успешно извлечено {len(questions)} вопросов")
+        return questions
 
     def _build_assessment_prompt(
         self, course, section, topic, lesson_title, content_for_questions, num_questions
@@ -230,7 +206,7 @@ class AssessmentGenerator(BaseContentGenerator):
             str: Промпт для API
         """
         return f"""
-        На основе СТРОГО следующего урока создай {num_questions} вопросов для проверки знаний НА РУССКОМ ЯЗЫКЕ:
+        На основе СТРОГО следующего урока создай РОВНО {num_questions} вопросов для проверки знаний НА РУССКОМ ЯЗЫКЕ:
 
         Курс: {course}
         Раздел: {section}
@@ -246,19 +222,29 @@ class AssessmentGenerator(BaseContentGenerator):
         3. НЕ добавляй информацию, которой нет в тексте урока
         4. Правильные ответы должны быть явно представлены в содержании урока
         5. Неправильные варианты должны быть логически связаны с темой, но четко отличимы от правильного ответа
+        6. Варианты ответов для каждого вопроса должны быть ПЕРЕМЕШАНЫ в случайном порядке (рандомизация ОБЯЗАТЕЛЬНА, правильный ответ не всегда первый!)
+        7. ДЛЯ КАЖДОГО ВОПРОСА ОБЯЗАТЕЛЬНО указывай номер правильного ответа (1, 2 или 3), где 1 — первый вариант, 2 — второй, 3 — третий. НЕ используй индексацию с нуля!
+        8. Вопросы и варианты должны быть ЧЁТКИМИ, однозначными, без абстрактных формулировок и повторяющихся вариантов.
+        9. НЕ используй варианты типа "все вышеперечисленное", "нет правильного ответа", "другое" и т.п.
+        10. ОБЯЗАТЕЛЬНО создай РОВНО {num_questions} вопросов, не больше и не меньше!
 
-        Для каждого вопроса предоставь:
-        1. Текст вопроса (на русском языке)
-        2. Три варианта ответа (на русском языке)
-        3. Номер правильного ответа (1, 2 или 3)
+        ОБЯЗАТЕЛЬНЫЙ ФОРМАТ ОТВЕТА - JSON-массив с {num_questions} вопросами:
+        {{
+          "questions": [
+            {{
+              "text": "Какой оператор используется для сравнения на равенство в Python?",
+              "options": ["==", "!=", ">"],
+              "correct_option": 1
+            }},
+            {{
+              "text": "Какой цикл используется для перебора элементов списка?",
+              "options": ["while", "for", "if"],
+              "correct_option": 2
+            }}
+            // ... и так далее для всех {num_questions} вопросов
+          ]
+        }}
 
-        Вопросы должны проверять понимание ключевых концепций, представленных именно в этом уроке.
-        Убедись, что студент сможет найти ответы на все вопросы, внимательно изучив предоставленный материал урока.
-
-        Ответ должен быть в формате JSON - массив объектов, где каждый объект имеет поля:
-        - text: текст вопроса (на русском языке)
-        - options: массив из трех вариантов ответа (на русском языке)
-        - correct_option: номер правильного ответа (1, 2 или 3)
-
+        КРИТИЧЕСКИ ВАЖНО: Ответ должен содержать РОВНО {num_questions} вопросов в массиве "questions"!
         Убедись, что ВСЕ тексты в ответе написаны НА РУССКОМ ЯЗЫКЕ!
         """

@@ -24,11 +24,12 @@ class RelevanceChecker(BaseContentGenerator):
 
     def check_question_relevance(self, user_question, lesson_content, lesson_data):
         """
-        Проверяет релевантность вопроса пользователя к содержанию урока.
+        Проверяет релевантность вопроса пользователя к теме урока.
+        ИСПРАВЛЕНО: Использует только тему и описание урока, чтобы не перегружать контекст.
 
         Args:
             user_question (str): Вопрос пользователя
-            lesson_content (str): Содержание урока
+            lesson_content (str): Содержание урока (не используется в prompt'е)
             lesson_data (dict): Метаданные урока
 
         Returns:
@@ -47,20 +48,15 @@ class RelevanceChecker(BaseContentGenerator):
             lesson_description = lesson_data.get("description", "Нет описания")
             lesson_keywords = lesson_data.get("keywords", [])
 
-            # Очищаем HTML теги для анализа
-            clean_content = self._clean_html_for_analysis(lesson_content)
-
-            # Ограничиваем длину для запроса
-            content_for_analysis = (
-                clean_content[:2500] if len(clean_content) > 2500 else clean_content
-            )
+            # ИСПРАВЛЕНО: Не передаем весь контент урока в prompt, чтобы не перегружать контекст
+            # Используем только тему и описание урока для проверки релевантности
 
             prompt = self._build_relevance_prompt(
                 user_question,
                 lesson_title,
                 lesson_description,
                 lesson_keywords,
-                content_for_analysis,
+                "",  # Пустая строка вместо контента урока
             )
 
             messages = [
@@ -307,13 +303,14 @@ class RelevanceChecker(BaseContentGenerator):
     ):
         """
         Создает промпт для проверки релевантности.
+        ИСПРАВЛЕНО: Передаем только тему и описание урока, чтобы не перегружать контекст.
 
         Args:
             user_question (str): Вопрос пользователя
             lesson_title (str): Название урока
             lesson_description (str): Описание урока
             lesson_keywords (list): Ключевые слова урока
-            content (str): Содержание урока
+            content (str): Содержание урока (не используется в prompt'е)
 
         Returns:
             str: Промпт для API
@@ -325,22 +322,19 @@ class RelevanceChecker(BaseContentGenerator):
         )
 
         return f"""
-        Проанализируй, насколько вопрос студента релевантен (соответствует) теме и содержанию текущего урока:
+        Проанализируй, насколько вопрос студента релевантен (соответствует) теме урока:
 
         ИНФОРМАЦИЯ ОБ УРОКЕ:
         Название урока: {lesson_title}
         Описание урока: {lesson_description}
         Ключевые слова: {keywords_str}
 
-        Содержание урока:
-        {content}
-
         ВОПРОС СТУДЕНТА:
         {user_question}
 
         ЗАДАЧА:
         Определи, относится ли вопрос к теме урока. Вопрос считается релевантным, если:
-        1. Он касается понятий, терминов или тем, упомянутых в уроке
+        1. Он касается понятий, терминов или тем, упомянутых в названии или описании урока
         2. Он связан с практическим применением материала урока
         3. Он просит уточнения или дополнительной информации по теме урока
         4. Он касается примеров или случаев использования из области урока

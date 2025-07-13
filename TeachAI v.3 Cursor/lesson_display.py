@@ -284,6 +284,9 @@ class LessonDisplay:
             self.lesson_interface.qa_container = widgets.VBox(
                 layout=widgets.Layout(display="none", width="100%")
             )
+            self.lesson_interface.control_tasks_container = widgets.VBox(
+                layout=widgets.Layout(display="none", width="100%")
+            )
 
             # Настраиваем QA контейнер
             from lesson_interaction import LessonInteraction
@@ -294,9 +297,12 @@ class LessonDisplay:
             # Создаем кнопки навигации
             from lesson_navigation import LessonNavigation
 
-            navigation = LessonNavigation(self.lesson_interface)
-            navigation_buttons = navigation.create_enhanced_navigation_buttons(
-                section_id, topic_id, lesson_id
+            # Обновляем navigation в lesson_interface, чтобы assessment_results_handler мог получить доступ к кнопкам
+            self.lesson_interface.navigation = LessonNavigation(self.lesson_interface)
+            navigation_buttons = (
+                self.lesson_interface.navigation.create_enhanced_navigation_buttons(
+                    section_id, topic_id, lesson_id
+                )
             )
 
             # Создаем основной контейнер
@@ -307,6 +313,7 @@ class LessonDisplay:
                 self.lesson_interface.explain_container,
                 self.lesson_interface.examples_container,
                 self.lesson_interface.qa_container,
+                self.lesson_interface.control_tasks_container,
             ]
 
             # Добавляем ячейки, если они есть

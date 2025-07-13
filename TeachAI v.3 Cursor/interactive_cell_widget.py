@@ -6,6 +6,32 @@
 import ipywidgets as widgets
 import time
 from cell_widget_base import CellWidgetBase
+from interactive_cell_ui import (
+    create_task_widget,
+    create_code_editor,
+    create_run_button,
+    create_clear_button,
+    create_reset_button,
+    create_solution_button,
+    create_status_widget,
+    create_result_widget,
+    create_stats_widget,
+    create_button_row,
+    update_task_widget,
+    update_status_widget,
+    update_result_widget,
+    update_stats_widget,
+)
+from interactive_cell_logic import (
+    execute_student_code,
+    find_result_in_namespace,
+    check_execution_result,
+    log_execution_attempt,
+    get_cell_attempt_count,
+    check_attempt_limit,
+    is_cell_task_completed,
+    get_cell_statistics,
+)
 from result_checker import CheckResult, check_result
 from control_tasks_logger import log_attempt, get_cell_stats, is_cell_completed
 from typing import Optional, Any, Dict, List, Tuple
@@ -23,11 +49,11 @@ class InteractiveCellWidget(CellWidgetBase):
         expected_result: Any,
         check_type: str = "exact",
         initial_code: str = "",
-        cell_id: str = None,
-        title: str = None,
-        description: str = None,
-        check_kwargs: Dict[str, Any] = None,
-        max_attempts: int = None,
+        cell_id: Optional[str] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        check_kwargs: Optional[Dict[str, Any]] = None,
+        max_attempts: Optional[int] = None,
         show_solution: bool = False,
         solution_code: str = "",
         **kwargs,
@@ -60,9 +86,16 @@ class InteractiveCellWidget(CellWidgetBase):
         # Создаем виджеты до вызова родительского конструктора
         self._create_widgets()
 
-        super().__init__(
-            cell_id=cell_id, title=title, description=description, **kwargs
-        )
+        # Подготавливаем параметры для родительского конструктора
+        parent_kwargs = kwargs.copy()
+        if cell_id is not None:
+            parent_kwargs["cell_id"] = cell_id
+        if title is not None:
+            parent_kwargs["title"] = title
+        if description is not None:
+            parent_kwargs["description"] = description
+
+        super().__init__(**parent_kwargs)
 
         # Загружаем статистику и последнюю попытку
         self._load_previous_state()
@@ -70,70 +103,22 @@ class InteractiveCellWidget(CellWidgetBase):
     def _create_widgets(self):
         """Создание специфичных для интерактивной ячейки виджетов."""
 
-        # Описание задания
-        self.task_widget = widgets.HTML(
-            value=f"<div style='background: #f8f9fa; padding: 10px; border-left: 4px solid #007bff; margin: 5px 0;'>"
-            f"<strong>📝 Задание:</strong><br>{self.task_description}</div>",
-            layout=widgets.Layout(margin="0 0 10px 0"),
-        )
-
-        # Редактор кода
-        self.code_editor = widgets.Textarea(
-            value=self.initial_code,
-            description="Ваш код:",
-            placeholder="Введите ваш Python код здесь...",
-            layout=widgets.Layout(
-                width="100%", height="150px", font_family="monospace"
-            ),
-            style={"description_width": "80px"},
-        )
-
-        # Кнопки управления
-        self.run_button = widgets.Button(
-            description="🚀 Выполнить",
-            button_style="primary",
-            tooltip="Выполнить код и проверить результат",
-            layout=widgets.Layout(width="120px"),
-        )
-
-        self.clear_button = widgets.Button(
-            description="🗑 Очистить",
-            button_style="warning",
-            tooltip="Очистить редактор кода",
-            layout=widgets.Layout(width="120px"),
-        )
-
-        self.reset_button = widgets.Button(
-            description="🔄 Сброс",
-            button_style="info",
-            tooltip="Вернуть начальный код",
-            layout=widgets.Layout(width="120px"),
-        )
+        # Создаем виджеты через UI модуль
+        self.task_widget = create_task_widget(self.task_description)
+        self.code_editor = create_code_editor(self.initial_code)
+        self.run_button = create_run_button()
+        self.clear_button = create_clear_button()
+        self.reset_button = create_reset_button()
 
         # Кнопка с решением (если разрешено)
         if self.show_solution:
-            self.solution_button = widgets.Button(
-                description="💡 Решение",
-                button_style="success",
-                tooltip="Показать решение задачи",
-                layout=widgets.Layout(width="120px"),
-            )
+            self.solution_button = create_solution_button()
             self.solution_button.on_click(self._show_solution)
 
         # Статус и результат проверки
-        self.status_widget = widgets.HTML(
-            value="<div style='color: #666; font-style: italic;'>Готов к выполнению</div>",
-            layout=widgets.Layout(margin="5px 0"),
-        )
-
-        self.result_widget = widgets.HTML(
-            value="", layout=widgets.Layout(margin="5px 0")
-        )
-
-        # Статистика по ячейке
-        self.stats_widget = widgets.HTML(
-            value="", layout=widgets.Layout(margin="5px 0")
-        )
+        self.status_widget = create_status_widget()
+        self.result_widget = create_result_widget()
+        self.stats_widget = create_stats_widget()
 
         # Привязка событий
         self.run_button.on_click(self._execute_and_check)
@@ -160,14 +145,19 @@ class InteractiveCellWidget(CellWidgetBase):
         if self.show_solution:
             buttons.append(self.solution_button)
 
-        return widgets.HBox(buttons, layout=widgets.Layout(margin="5px 0"))
+        return create_button_row(
+            self.run_button,
+            self.clear_button,
+            self.reset_button,
+            self.solution_button if self.show_solution else None,
+        )
 
     def _execute_and_check(self, button):
         """Выполняет код студента и проверяет результат."""
         start_time = time.time()
 
         # Проверяем ограничения по попыткам
-        if self.max_attempts and self._get_attempt_count() >= self.max_attempts:
+        if not check_attempt_limit(self.cell_id, self.max_attempts):
             self._update_status("❌ Превышено максимальное количество попыток", "error")
             return
 
@@ -180,8 +170,10 @@ class InteractiveCellWidget(CellWidgetBase):
         self._update_status("⏳ Выполняется...", "running")
 
         try:
-            # Выполняем код студента
-            result, output, success = self.execute_code(student_code)
+            # Выполняем код студента через логику модуль
+            result, output, success = execute_student_code(
+                student_code, self.execution_namespace
+            )
             execution_time_ms = (time.time() - start_time) * 1000
 
             if success:
@@ -191,46 +183,17 @@ class InteractiveCellWidget(CellWidgetBase):
                     and hasattr(self, "execution_namespace")
                     and self.execution_namespace
                 ):
-                    # Проверяем различные возможные имена переменных для результата
-                    result_vars = [
-                        "result",
-                        "answer",
-                        "output",
-                        "res",
-                        "squares",
-                        "numbers",
-                        "data",
-                        "values",
-                    ]
+                    result = find_result_in_namespace(
+                        self.execution_namespace, self.expected_result
+                    )
 
-                    # Ищем переменные по имени
-                    for var_name in result_vars:
-                        if var_name in self.execution_namespace:
-                            result = self.execution_namespace[var_name]
-                            break
-
-                    # Если все еще None, ищем переменные по типу в зависимости от ожидаемого результата
-                    if result is None:
-                        expected_type = type(self.expected_result)
-                        for var_name, var_value in self.execution_namespace.items():
-                            # Игнорируем встроенные переменные и импорты
-                            if (
-                                not var_name.startswith("_")
-                                and not var_name in ["__builtins__"]
-                                and type(var_value) == expected_type
-                                and var_name
-                                not in ["print", "len", "range", "list", "dict", "set"]
-                            ):
-                                result = var_value
-                                break
-
-                # Проверяем результат
-                check_result_obj = check_result(
-                    result, self.expected_result, self.check_type, **self.check_kwargs
+                # Проверяем результат через логику модуль
+                check_result_obj = check_execution_result(
+                    result, self.expected_result, self.check_type, self.check_kwargs
                 )
 
-                # Логируем попытку
-                attempt_id = log_attempt(
+                # Логируем попытку через логику модуль
+                log_execution_attempt(
                     cell_id=self.cell_id,
                     student_code=student_code,
                     execution_result=result,
@@ -240,8 +203,15 @@ class InteractiveCellWidget(CellWidgetBase):
                     execution_time_ms=execution_time_ms,
                 )
 
-                # Обновляем интерфейс
-                self._update_result_display(check_result_obj, execution_time_ms)
+                # Обновляем интерфейс через UI модуль
+                update_result_widget(
+                    self.result_widget, check_result_obj, execution_time_ms
+                )
+                update_status_widget(
+                    self.status_widget,
+                    f"{'✅ ЗАЧЁТ' if check_result_obj.passed else '❌ НЕ ЗАЧЁТ'}: {check_result_obj.message}",
+                    "success" if check_result_obj.passed else "error",
+                )
                 self._update_stats_display()
 
             else:
@@ -251,7 +221,7 @@ class InteractiveCellWidget(CellWidgetBase):
                 )
 
                 # Логируем неуспешную попытку
-                log_attempt(
+                log_execution_attempt(
                     cell_id=self.cell_id,
                     student_code=student_code,
                     execution_result=None,
@@ -261,11 +231,15 @@ class InteractiveCellWidget(CellWidgetBase):
                     execution_time_ms=execution_time_ms,
                 )
 
-                self._update_status("❌ Ошибка выполнения (см. вывод ниже)", "error")
+                update_status_widget(
+                    self.status_widget, "❌ Ошибка выполнения (см. вывод ниже)", "error"
+                )
                 self._update_stats_display()
 
         except Exception as e:
-            self._update_status(f"❌ Неожиданная ошибка: {e}", "error")
+            update_status_widget(
+                self.status_widget, f"❌ Неожиданная ошибка: {e}", "error"
+            )
 
     def _update_result_display(
         self, check_result_obj: CheckResult, execution_time_ms: float

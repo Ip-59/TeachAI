@@ -72,6 +72,18 @@ class LessonNavigation:
                 layout=widgets.Layout(width="auto", margin="5px"),
             )
 
+            # Кнопка "Контрольные задания"
+            control_tasks_button = widgets.Button(
+                description="🛠️ Контрольные задания",
+                button_style="danger",
+                layout=widgets.Layout(width="auto", margin="5px"),
+                disabled=True,  # По умолчанию неактивна
+                tooltip="Доступно после теста",
+            )
+
+            # Сохраняем ссылку на кнопку для доступа извне
+            self.control_tasks_button = control_tasks_button
+
             # Привязываем обработчики событий
             self._setup_button_handlers(
                 back_button,
@@ -79,6 +91,7 @@ class LessonNavigation:
                 ask_button,
                 explain_button,
                 examples_button,
+                control_tasks_button,
                 section_id,
                 topic_id,
                 lesson_id,
@@ -86,7 +99,14 @@ class LessonNavigation:
 
             # Создаем контейнер с кнопками
             navigation_container = widgets.HBox(
-                [back_button, test_button, ask_button, explain_button, examples_button],
+                [
+                    examples_button,
+                    explain_button,
+                    ask_button,
+                    test_button,
+                    control_tasks_button,
+                    back_button,
+                ],
                 layout=widgets.Layout(
                     width="100%",
                     justify_content="space-between",
@@ -115,6 +135,7 @@ class LessonNavigation:
         ask_button,
         explain_button,
         examples_button,
+        control_tasks_button,
         section_id,
         topic_id,
         lesson_id,
@@ -128,6 +149,7 @@ class LessonNavigation:
             ask_button: Кнопка "Вопрос"
             explain_button: Кнопка "Объяснить"
             examples_button: Кнопка "Примеры"
+            control_tasks_button: Кнопка "Контрольные задания"
             section_id (str): ID раздела
             topic_id (str): ID темы
             lesson_id (str): ID урока
@@ -326,12 +348,79 @@ class LessonNavigation:
                         close_button,
                     ]
 
+        def on_control_tasks_button_clicked(b):
+            # Скрываем другие контейнеры
+            self.lesson_interface._hide_other_containers()
+            # Показываем панель контрольных заданий
+            if self.lesson_interface.control_tasks_container:
+                self.lesson_interface.control_tasks_container.layout.display = "block"
+
+                # Показываем загрузку
+                loading_html = widgets.HTML(
+                    value="<p><strong>Генерация контрольного задания...</strong></p>"
+                )
+                self.lesson_interface.control_tasks_container.children = [loading_html]
+
+                try:
+                    # Генерируем и показываем контрольное задание
+                    task_interface = (
+                        self.lesson_interface.control_tasks_interface.show_control_task(
+                            lesson_data=self.lesson_interface.current_lesson_data,
+                            lesson_content=self.lesson_interface.current_lesson_content,
+                        )
+                    )
+
+                    # Добавляем кнопку закрытия
+                    close_button = widgets.Button(
+                        description="✕ Закрыть",
+                        button_style="danger",
+                        layout=widgets.Layout(width="auto", margin="10px 0"),
+                    )
+
+                    def on_close_button_clicked(b):
+                        self.lesson_interface.control_tasks_container.layout.display = (
+                            "none"
+                        )
+
+                    close_button.on_click(on_close_button_clicked)
+
+                    # Обновляем контейнер
+                    self.lesson_interface.control_tasks_container.children = [
+                        task_interface,
+                        close_button,
+                    ]
+
+                except Exception as e:
+                    self.logger.error(
+                        f"Ошибка при генерации контрольного задания: {str(e)}"
+                    )
+                    error_html = widgets.HTML(
+                        value=f"<p style='color: red;'>Ошибка при генерации задания: {str(e)}</p>"
+                    )
+                    close_button = widgets.Button(
+                        description="✕ Закрыть",
+                        button_style="danger",
+                        layout=widgets.Layout(width="auto", margin="10px 0"),
+                    )
+
+                    def on_close_button_clicked(b):
+                        self.lesson_interface.control_tasks_container.layout.display = (
+                            "none"
+                        )
+
+                    close_button.on_click(on_close_button_clicked)
+                    self.lesson_interface.control_tasks_container.children = [
+                        error_html,
+                        close_button,
+                    ]
+
         # Привязываем обработчики
         back_button.on_click(on_back_button_clicked)
         test_button.on_click(on_test_button_clicked)
         ask_button.on_click(on_ask_button_clicked)
         explain_button.on_click(on_explain_button_clicked)
         examples_button.on_click(on_examples_button_clicked)
+        control_tasks_button.on_click(on_control_tasks_button_clicked)
 
     def _handle_back_button_clicked(self, b):
         """Обработчик для кнопки "Назад" (fallback)."""

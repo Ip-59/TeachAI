@@ -16,6 +16,7 @@ from lesson_navigation import LessonNavigation
 from lesson_interaction import LessonInteraction
 from lesson_utils import LessonUtils
 from assessment_interface import AssessmentInterface
+from control_tasks_interface import ControlTasksInterface
 
 
 class LessonInterface:
@@ -57,19 +58,19 @@ class LessonInterface:
         self.explain_container = None
         self.examples_container = None
         self.qa_container = None
+        self.control_tasks_container = None
 
         # Инициализируем модули
         self.display = LessonDisplay(self)
         self.navigation = LessonNavigation(self)
         self.interaction = LessonInteraction(self)
         self.lesson_utils = LessonUtils()
+        self.control_tasks_interface = ControlTasksInterface(content_generator, self)
 
         # Инициализируем интерфейс тестирования
         try:
             self.assessment_interface = AssessmentInterface(
-                state_manager=self.state_manager,
-                assessment=self.assessment,
-                system_logger=self.system_logger,
+                state_manager, assessment, system_logger, self
             )
             self.logger.info("AssessmentInterface успешно инициализирован")
         except Exception as e:
@@ -180,6 +181,16 @@ class LessonInterface:
 
     def _hide_other_containers(self):
         """
-        Скрывает другие контейнеры при показе интерактивных функций.
+        Скрывает все контейнеры интерактивных функций.
         """
-        self.interaction.hide_other_containers()
+        try:
+            if self.explain_container:
+                self.explain_container.layout.display = "none"
+            if self.examples_container:
+                self.examples_container.layout.display = "none"
+            if self.qa_container:
+                self.qa_container.layout.display = "none"
+            if self.control_tasks_container:
+                self.control_tasks_container.layout.display = "none"
+        except Exception as e:
+            self.logger.error(f"Ошибка при скрытии контейнеров: {str(e)}")

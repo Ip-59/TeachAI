@@ -70,7 +70,7 @@ class UserInterface:
                 state_manager, content_generator, system_logger, assessment
             )
             self.assessment_interface = AssessmentInterface(
-                state_manager, assessment, system_logger
+                state_manager, assessment, system_logger, None
             )
             self.completion_interface = CompletionInterface(
                 state_manager, system_logger, content_generator, assessment
