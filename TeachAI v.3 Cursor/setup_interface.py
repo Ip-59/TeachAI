@@ -144,7 +144,11 @@ class SetupInterface:
                     # Переходим к выбору курса
                     time.sleep(1)
                     clear_output(wait=True)
-                    display(self.show_course_selection())
+                    
+                    # ИСПРАВЛЕНО: Создаем виджет выбора курса и показываем его
+                    course_selection_widget = self.show_course_selection()
+                    display(course_selection_widget)
+                    
                 else:
                     display(
                         self.utils.create_styled_message(
@@ -339,6 +343,28 @@ class SetupInterface:
                                         "Переход к первому уроку...", "info"
                                     )
                                 )
+                            elif section_id is None and topic_id is None and lesson_id is None:
+                                # ИСПРАВЛЕНО: Курс завершен - показываем экран завершения
+                                display(
+                                    self.utils.create_styled_message(
+                                        "Курс завершен! Показываем экран завершения...", "info"
+                                    )
+                                )
+                                
+                                # Импортируем completion_interface и показываем экран завершения
+                                from completion_interface import CompletionInterface
+                                
+                                completion_interface = CompletionInterface(
+                                    self.state_manager,
+                                    self.system_logger,
+                                    self.content_generator,
+                                    self.assessment
+                                )
+                                
+                                clear_output(wait=True)
+                                completion_widget = completion_interface.show_course_completion()
+                                display(completion_widget)
+                                return
 
                                 # Добавляем задержку для лучшего UX
                                 time.sleep(0.5)

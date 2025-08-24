@@ -131,10 +131,12 @@ class CourseDataManager:
                     f"{current_section}:{current_topic}:{current_lesson}"
                 )
 
+                # Проверяем завершенность текущего урока
+                is_completed = self.state_manager.learning_progress.is_lesson_completed(current_lesson_id)
+                self.logger.info(f"Проверка завершенности урока в get_next_lesson: {current_lesson_id} = {is_completed}")
+
                 # Если текущий урок НЕ завершен - возвращаем его для повторного прохождения
-                if not self.state_manager.learning_progress.is_lesson_completed(
-                    current_lesson_id
-                ):
+                if not is_completed:
                     self.logger.info(
                         f"Текущий урок {current_lesson_id} не завершен - возвращаем его для повторного изучения"
                     )

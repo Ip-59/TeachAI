@@ -256,8 +256,11 @@ class UserInterface:
             )
 
             def go_back_to_courses(b):
+                # ИСПРАВЛЕНО: Используем правильную логику возврата к выбору курса
+                from IPython.display import clear_output, display
                 clear_output(wait=True)
-                display(self.show_course_selection())
+                course_selection_widget = self.show_course_selection()
+                display(course_selection_widget)
 
             back_button.on_click(go_back_to_courses)
 
@@ -305,8 +308,11 @@ class UserInterface:
 
     def _handle_back_button(self):
         """Обработчик кнопки 'Назад'."""
+        # ИСПРАВЛЕНО: Используем правильную логику возврата к выбору курса
+        from IPython.display import clear_output, display
         clear_output(wait=True)
-        display(self.show_course_selection())
+        course_selection_widget = self.show_course_selection()
+        display(course_selection_widget)
 
     def _handle_test_button(self):
         """Обработчик кнопки 'Пройти тест'."""

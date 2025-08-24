@@ -10,6 +10,7 @@
 import logging
 from datetime import datetime
 import re
+from IPython.display import display
 
 # Импортируем все специализированные генераторы
 from course_plan_generator import CoursePlanGenerator
@@ -32,15 +33,17 @@ class ContentGenerator:
     ЗАВЕРШЕНО: Добавлены новые методы для логической модернизации.
     """
 
-    def __init__(self, api_key):
+    def __init__(self, api_key, loading_manager=None):
         """
         Инициализация генератора контента.
 
         Args:
             api_key (str): API ключ OpenAI
+            loading_manager: Менеджер индикаторов загрузки
         """
         self.logger = logging.getLogger(__name__)
         self.api_key = api_key
+        self.loading_manager = loading_manager
 
         try:
             # Инициализируем все специализированные генераторы (включая новые)
@@ -79,32 +82,51 @@ class ContentGenerator:
     # ПУБЛИЧНЫЕ МЕТОДЫ - ОБРАТНАЯ СОВМЕСТИМОСТЬ
     # ========================================
 
-    def generate_course_plan(
-        self, course_data, total_study_hours, lesson_duration_minutes
-    ):
+    def generate_course_plan(self, course_data, total_study_hours, lesson_duration_minutes):
         """
-        Генерирует учебный план курса на основе данных о курсе и времени обучения.
+        Генерирует план курса с индикатором загрузки.
 
         Args:
-            course_data (dict): Данные о курсе (id, title, description)
-            total_study_hours (int): Общее время обучения в часах
-            lesson_duration_minutes (int): Длительность одного занятия в минутах
+            course_data (dict): Данные курса
+            total_study_hours (int): Общее количество часов обучения
+            lesson_duration_minutes (int): Продолжительность урока
 
         Returns:
-            dict: Структурированный учебный план
+            dict: План курса
 
         Raises:
-            Exception: Если не удалось сгенерировать план курса
+            Exception: Если не удалось сгенерировать план
         """
-        return self.course_plan_gen.generate_course_plan(
+        try:
+            # Показываем индикатор загрузки
+            if self.loading_manager:
+                loading_widget = self.loading_manager.show_loading(
+                    "openai", operation="generate_course_plan"
+                )
+                display(loading_widget)
+            
+            # Генерируем план курса
+            result = self.course_plan_gen.generate_course_plan(
             course_data, total_study_hours, lesson_duration_minutes
         )
+            
+            # Скрываем индикатор загрузки
+            if self.loading_manager:
+                self.loading_manager.hide_loading()
+            
+            return result
+            
+        except Exception as e:
+            # Скрываем индикатор загрузки в случае ошибки
+            if self.loading_manager:
+                self.loading_manager.hide_loading()
+            raise
 
     def generate_lesson(
         self, course, section, topic, lesson, user_name, communication_style="friendly"
     ):
         """
-        Генерирует содержание урока.
+        Генерирует содержание урока с индикатором загрузки.
 
         Args:
             course (str): Название курса
@@ -120,9 +142,30 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать урок
         """
-        return self.lesson_gen.generate_lesson(
+        try:
+            # Показываем индикатор загрузки, если доступен
+            if self.loading_manager:
+                loading_widget = self.loading_manager.show_loading(
+                    "lesson", lesson_title=f"{course} - {lesson}"
+                )
+                display(loading_widget)
+            
+            # Генерируем урок
+            result = self.lesson_gen.generate_lesson(
             course, section, topic, lesson, user_name, communication_style
         )
+            
+            # Скрываем индикатор загрузки
+            if self.loading_manager:
+                self.loading_manager.hide_loading()
+            
+            return result
+            
+        except Exception as e:
+            # Скрываем индикатор загрузки в случае ошибки
+            if self.loading_manager:
+                self.loading_manager.hide_loading()
+            raise
 
     def generate_examples(
         self, lesson_data, lesson_content, communication_style="friendly"
@@ -149,7 +192,7 @@ class ContentGenerator:
         self, course, section, topic, lesson, lesson_content, num_questions=5
     ):
         """
-        Генерирует вопросы для проверки знаний по уроку.
+        Генерирует тест для урока с индикатором загрузки.
 
         Args:
             course (str): Название курса
@@ -160,14 +203,35 @@ class ContentGenerator:
             num_questions (int): Количество вопросов
 
         Returns:
-            list: Список вопросов с вариантами ответов
+            list: Список вопросов
 
         Raises:
-            Exception: Если не удалось сгенерировать вопросы
+            Exception: Если не удалось сгенерировать тест
         """
-        return self.assessment_gen.generate_assessment(
+        try:
+            # Показываем индикатор загрузки
+            if self.loading_manager:
+                loading_widget = self.loading_manager.show_loading(
+                    "openai", operation="generate_test"
+                )
+                display(loading_widget)
+            
+            # Генерируем тест
+            result = self.assessment_gen.generate_assessment(
             course, section, topic, lesson, lesson_content, num_questions
         )
+            
+            # Скрываем индикатор загрузки
+            if self.loading_manager:
+                self.loading_manager.hide_loading()
+            
+            return result
+            
+        except Exception as e:
+            # Скрываем индикатор загрузки в случае ошибки
+            if self.loading_manager:
+                self.loading_manager.hide_loading()
+            raise
 
     def answer_question(
         self,

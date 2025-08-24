@@ -23,7 +23,7 @@ class LessonInterface:
     """Интерфейс для отображения уроков и интерактивных функций."""
 
     def __init__(
-        self, state_manager, content_generator, system_logger, assessment=None
+        self, state_manager, content_generator, system_logger, assessment=None, engine=None
     ):
         """
         Инициализация интерфейса уроков.
@@ -33,11 +33,13 @@ class LessonInterface:
             content_generator: Генератор контента
             system_logger: Системный логгер
             assessment: Модуль оценивания (опционально)
+            engine: TeachAIEngine (опционально, для доступа к дашборду)
         """
         self.state_manager = state_manager
         self.content_generator = content_generator
         self.system_logger = system_logger
         self.assessment = assessment
+        self.engine = engine
         self.logger = logging.getLogger(__name__)
 
         # Утилиты интерфейса
@@ -184,13 +186,32 @@ class LessonInterface:
         Скрывает все контейнеры интерактивных функций.
         """
         try:
+            self.logger.info("Скрываем все контейнеры интерактивных функций")
+            
             if self.explain_container:
+                self.logger.info("Скрываем explain_container")
                 self.explain_container.layout.display = "none"
+            else:
+                self.logger.warning("explain_container не найден")
+                
             if self.examples_container:
+                self.logger.info("Скрываем examples_container")
                 self.examples_container.layout.display = "none"
+            else:
+                self.logger.warning("examples_container не найден")
+                
             if self.qa_container:
+                self.logger.info("Скрываем qa_container")
                 self.qa_container.layout.display = "none"
+            else:
+                self.logger.warning("qa_container не найден")
+                
             if self.control_tasks_container:
+                self.logger.info("Скрываем control_tasks_container")
                 self.control_tasks_container.layout.display = "none"
+            else:
+                self.logger.warning("control_tasks_container не найден")
+                
+            self.logger.info("Все контейнеры скрыты")
         except Exception as e:
             self.logger.error(f"Ошибка при скрытии контейнеров: {str(e)}")

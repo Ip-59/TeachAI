@@ -292,6 +292,9 @@ class LessonInteraction:
             qa_container: Контейнер для вопросов и ответов
         """
         try:
+            self.logger.info("Настраиваем улучшенный QA контейнер")
+            self.logger.info(f"qa_container: {qa_container}")
+            
             # Создаем заголовок
             title_html = widgets.HTML(value="<h3>❓ Задайте вопрос по уроку:</h3>")
 
@@ -323,14 +326,20 @@ class LessonInteraction:
                 layout=widgets.Layout(width="auto", margin="10px 0"),
             )
 
+            self.logger.info("Виджеты QA контейнера созданы")
+
             def on_send_question_button_clicked(b):
+                self.logger.info("Кнопка 'Отправить вопрос' нажата")
                 try:
                     question = question_input.value.strip()
                     if not question:
+                        self.logger.warning("Вопрос пустой")
                         answer_area.value = (
                             "<p style='color: orange;'>Пожалуйста, введите вопрос.</p>"
                         )
                         return
+
+                    self.logger.info(f"Обрабатываем вопрос: {question[:50]}...")
 
                     # Показываем загрузку
                     answer_area.value = (
@@ -344,6 +353,8 @@ class LessonInteraction:
                         )
                     )
 
+                    self.logger.info(f"Счетчик вопросов обновлен: {questions_count}")
+
                     # Проверяем релевантность вопроса
                     relevance_result = self.lesson_interface.content_generator.check_question_relevance(
                         question,
@@ -351,71 +362,49 @@ class LessonInteraction:
                         self.lesson_interface.current_lesson_data,
                     )
 
+                    self.logger.info(f"Релевантность вопроса: {relevance_result}")
+
                     # Если вопрос нерелевантен
-                    if not relevance_result["is_relevant"]:
-                        non_relevant_response = self.lesson_interface.content_generator.generate_non_relevant_response(
-                            question, relevance_result["suggestions"]
-                        )
-                        # Добавляем напоминание, если нужно
-                        if questions_count >= 3:
-                            warning = self.lesson_interface.content_generator.generate_multiple_questions_warning(
-                                questions_count
-                            )
-                            non_relevant_response += warning
-                        answer_area.value = non_relevant_response
-                    else:
-                        # Вопрос релевантен - генерируем ответ
-                        answer_area.value = (
-                            "<p><strong>Генерация ответа...</strong></p>"
-                        )
+                    if not relevance_result.get("is_relevant", True):
+                        self.logger.warning("Вопрос нерелевантен уроку")
+                        answer_area.value = f"""
+                        <div style='background-color: #fff3cd; color: #856404; padding: 15px; 
+                                    border-radius: 8px; border: 1px solid #ffeaa7;'>
+                            <h4>⚠️ Вопрос не связан с уроком</h4>
+                            <p><strong>Ваш вопрос:</strong> {question}</p>
+                            <p><strong>Причина:</strong> {relevance_result.get('explanation', 'Вопрос не относится к теме урока')}</p>
+                            <p><strong>Рекомендация:</strong> Задайте вопрос, связанный с содержанием урока.</p>
+                        </div>
+                        """
+                        return
 
-                        answer = self.lesson_interface.content_generator.answer_question(
-                            course=self.lesson_interface.current_course_info[
-                                "course_title"
-                            ],
-                            section=self.lesson_interface.current_course_info[
-                                "section_title"
-                            ],
-                            topic=self.lesson_interface.current_course_info[
-                                "topic_title"
-                            ],
-                            lesson=self.lesson_interface.current_course_info[
-                                "lesson_title"
-                            ],
-                            user_question=question,
-                            lesson_content=self.lesson_interface.current_lesson_content,
-                            user_name=self.lesson_interface.current_course_info[
-                                "user_profile"
-                            ]["name"],
-                            communication_style=self.lesson_interface.current_course_info[
-                                "user_profile"
-                            ][
-                                "communication_style"
-                            ],
-                        )
+                    # Генерируем ответ
+                    self.logger.info("Генерируем ответ на вопрос")
+                    answer = self.lesson_interface.content_generator.answer_question(
+                        question,
+                        self.lesson_interface.current_lesson_content,
+                        self.lesson_interface.current_lesson_data,
+                        self.lesson_interface.current_course_info["user_profile"][
+                            "communication_style"
+                        ],
+                    )
 
-                        # Логируем вопрос и ответ
-                        self.lesson_interface.system_logger.log_question(
-                            question, answer
-                        )
+                    self.logger.info(f"Ответ сгенерирован, длина: {len(answer)} символов")
 
-                        # Добавляем напоминание, если нужно
-                        if questions_count >= 3:
-                            warning = self.lesson_interface.content_generator.generate_multiple_questions_warning(
-                                questions_count
-                            )
-                            answer += warning
-
-                        answer_area.value = answer
+                    # Отображаем ответ
+                    answer_area.value = answer
 
                     # Очищаем поле ввода
                     question_input.value = ""
+
+                    self.logger.info("Вопрос успешно обработан")
 
                 except Exception as e:
                     self.logger.error(f"Ошибка при генерации ответа: {str(e)}")
                     answer_area.value = f"<p style='color: red;'>Ошибка при генерации ответа: {str(e)}</p>"
 
             def on_close_button_clicked(b):
+                self.logger.info("Кнопка 'Закрыть' нажата")
                 qa_container.layout.display = "none"
 
             # Привязываем обработчики
@@ -430,6 +419,10 @@ class LessonInteraction:
                 answer_area,
                 close_button,
             ]
+
+            self.logger.info("QA контейнер успешно настроен")
+            self.logger.info(f"Количество виджетов в контейнере: {len(qa_container.children)}")
+            self.logger.info(f"Виджеты: {[type(widget).__name__ for widget in qa_container.children]}")
 
         except Exception as e:
             self.logger.error(f"Ошибка при настройке QA контейнера: {str(e)}")

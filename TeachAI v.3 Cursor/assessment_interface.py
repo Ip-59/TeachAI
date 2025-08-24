@@ -127,12 +127,13 @@ class AssessmentInterface:
                 course_plan, current_section, current_topic, current_lesson
             )
 
-            # Показываем сообщение о загрузке
+            # ИСПРАВЛЕНО: Убираем прямой display() для избежания дублирования
+            # Создаем индикатор загрузки, но не отображаем его напрямую
             loading_display = widgets.HTML(
                 value=f"<h1 style='margin: 2px 0; font-size: 24px;'>Тест по теме: {lesson_title}</h1><p style='margin: 3px 0;'><strong>Подготовка тестовых вопросов...</strong></p>",
                 layout=widgets.Layout(margin="0px"),
             )
-            display(loading_display)
+            # Индикатор загрузки будет показан через возврат виджета, а не прямой display()
 
             # Генерируем вопросы для теста
             try:
@@ -202,21 +203,50 @@ class AssessmentInterface:
             results_output = widgets.Output(layout=widgets.Layout(margin="0px"))
 
             # Обработчик кнопки завершения теста
+            test_submitted = False  # Флаг для предотвращения повторной отправки
+            
             def on_submit_button_clicked(b):
-                self.results_handler.handle_test_submission(
-                    results_output,
-                    self.current_questions,
-                    self.current_answers,
-                    course_plan,
-                    course_title,
-                    section_title,
-                    topic_title,
-                    lesson_title,
-                    current_course,
-                    current_section,
-                    current_topic,
-                    current_lesson,
-                )
+                nonlocal test_submitted
+                
+                # Проверяем, не был ли тест уже отправлен
+                if test_submitted:
+                    return
+                
+                # Устанавливаем флаг и блокируем кнопку
+                test_submitted = True
+                submit_button.disabled = True
+                submit_button.description = "Обработка..."
+                
+                try:
+                    self.results_handler.handle_test_submission(
+                        results_output,
+                        self.current_questions,
+                        self.current_answers,
+                        course_plan,
+                        course_title,
+                        section_title,
+                        topic_title,
+                        lesson_title,
+                        current_course,
+                        current_section,
+                        current_topic,
+                        current_lesson,
+                    )
+                except Exception as e:
+                    # В случае ошибки разблокируем кнопку
+                    test_submitted = False
+                    submit_button.disabled = False
+                    submit_button.description = "Завершить тест"
+                    self.logger.error(f"Ошибка при обработке теста: {str(e)}")
+                    with results_output:
+                        # ИСПРАВЛЕНО: Убираем прямой display() для избежания дублирования
+                        # Создаем виджет ошибки для отображения в контейнере
+                        error_html = widgets.HTML(
+                                value=f"<p style='color: red;'>Ошибка при обработке теста: {str(e)}</p>"
+                        )
+                        # Очищаем и добавляем виджет в контейнер
+                        clear_output(wait=True)
+                        display(error_html)
 
             submit_button.on_click(on_submit_button_clicked)
 
@@ -390,9 +420,12 @@ class AssessmentInterface:
                 self.system_logger,
                 self.assessment,
             )
-            display(
-                lesson_ui.show_lesson(current_section, current_topic, current_lesson)
-            )
+            # ИСПРАВЛЕНО: Убираем прямой display() для избежания дублирования
+            # Создаем виджет урока для отображения
+            lesson_widget = lesson_ui.show_lesson(current_section, current_topic, current_lesson)
+            # Очищаем и отображаем виджет
+            clear_output(wait=True)
+            display(lesson_widget)
 
         back_button.on_click(go_back_to_lesson)
 

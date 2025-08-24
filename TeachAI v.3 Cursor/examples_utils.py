@@ -56,7 +56,7 @@ class ExamplesUtils:
                     "print(",
                     "list",
                     "dict",
-                    "for i in",
+                    "for ",
                 ]
             ):
                 return "программирование на Python"

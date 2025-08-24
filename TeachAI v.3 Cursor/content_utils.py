@@ -312,7 +312,7 @@ class BaseContentGenerator:
 
     def clean_markdown_code_blocks(self, text):
         """
-        Удаляет markdown метки для блоков кода из текста.
+        Удаляет markdown метки для блоков кода из текста и очищает лишние отступы.
 
         Args:
             text (str): Исходный текст
@@ -324,9 +324,52 @@ class BaseContentGenerator:
             # Убираем метки ```html, ```python, ``` и подобные
             text = re.sub(r"```\w*\n?", "", text)
             text = re.sub(r"```", "", text)
+            
+            # НОВОЕ: Очищаем лишние отступы в блоках кода <pre><code>
+            code_pattern = r'<pre><code>(.*?)</code></pre>'
+            
+            def clean_code_block(match):
+                code_content = match.group(1)
+                
+                # Разбиваем на строки
+                lines = code_content.split('\n')
+                
+                # Находим минимальный отступ среди строк С ОТСТУПАМИ (исключая строки без отступов)
+                min_indent = float('inf')
+                lines_with_indent = []
+                
+                for line in lines:
+                    if line.strip():  # Пропускаем пустые строки
+                        indent = len(line) - len(line.lstrip())
+                        
+                        if indent > 0:  # Только строки с отступами
+                            lines_with_indent.append(indent)
+                            if indent < min_indent:
+                                min_indent = indent
+                
+                # Если есть строки с отступами, убираем минимальный отступ
+                if min_indent > 0 and min_indent != float('inf'):
+                    cleaned_lines = []
+                    for line in lines:
+                        if line.strip():  # Для непустых строк
+                            if len(line) - len(line.lstrip()) > 0:  # Если есть отступ
+                                cleaned_line = line[min_indent:]
+                                cleaned_lines.append(cleaned_line)
+                            else:  # Если отступа нет, оставляем как есть
+                                cleaned_lines.append(line)
+                        else:  # Пустые строки оставляем как есть
+                            cleaned_lines.append('')
+                    code_content = '\n'.join(cleaned_lines)
+                
+                return f'<pre><code>{code_content}</code></pre>'
+            
+            # Применяем очистку ко всем блокам кода
+            text = re.sub(code_pattern, clean_code_block, text, flags=re.DOTALL)
+            
             return text
+            
         except Exception as e:
-            self.logger.warning(f"Ошибка при очистке markdown меток: {str(e)}")
+            self.logger.warning(f"Ошибка при очистке markdown меток и отступов: {str(e)}")
             return text
 
     def make_api_request(

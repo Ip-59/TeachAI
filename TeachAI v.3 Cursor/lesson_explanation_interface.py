@@ -314,6 +314,8 @@ class LessonExplanationInterface:
         """
         Возвращается к отображению урока через полную перерисовку.
         """
+        # ИСПРАВЛЕНО: Используем правильную логику возврата к уроку
+        from IPython.display import clear_output, display
         clear_output(wait=True)
 
         # Импортируем lesson_interface для перерисовки урока
@@ -331,4 +333,7 @@ class LessonExplanationInterface:
             self.current_course_info["topic_id"],
             self.current_course_info["lesson_id"],
         )
+        
+        # ИСПРАВЛЕНО: Убран прямой вызов display()
+        # Теперь используем правильную логику отображения
         display(lesson_widget)

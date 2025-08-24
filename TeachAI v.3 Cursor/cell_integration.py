@@ -48,6 +48,15 @@ class CellIntegrationAdapter:
         if not self.cells_available:
             return []
 
+        # ИСПРАВЛЕНО: Декодируем HTML-кодировку в содержании урока
+        decoded_content = (
+            lesson_content.replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+            .replace("&quot;", '"')
+            .replace("&#x27;", "'")
+        )
+
         code_blocks = []
 
         # Паттерны для поиска кода
@@ -61,7 +70,7 @@ class CellIntegrationAdapter:
             r"^\s*(print\(.*\)|import\s+.*|from\s+.*|def\s+.*|class\s+.*|.*=.*)$",
         ]
 
-        lines = lesson_content.split("\n")
+        lines = decoded_content.split("\n")
         current_block = []
         in_code_block = False
 
@@ -113,7 +122,16 @@ class CellIntegrationAdapter:
         Простая эвристика для фильтрации только Python-кода.
         Возвращает True, если код похож на Python, иначе False.
         """
-        code = code.strip()
+        # ИСПРАВЛЕНО: Декодируем HTML-кодировку в коде
+        decoded_code = (
+            code.replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+            .replace("&quot;", '"')
+            .replace("&#x27;", "'")
+        )
+        
+        code = decoded_code.strip()
         if not code:
             return False
         # Явно HTML
@@ -174,8 +192,17 @@ class CellIntegrationAdapter:
             if not self.is_python_code(block["code"]):
                 continue
             try:
+                # ИСПРАВЛЕНО: Декодируем HTML-кодировку в коде блока
+                decoded_block_code = (
+                    block["code"].replace("&lt;", "<")
+                    .replace("&gt;", ">")
+                    .replace("&amp;", "&")
+                    .replace("&quot;", '"')
+                    .replace("&#x27;", "'")
+                )
+                
                 cell = create_demo_cell(
-                    code=block["code"],
+                    code=decoded_block_code,
                     title=f"Пример кода {i+1}",
                     description="Запустите код, чтобы увидеть результат",
                     show_code=True,

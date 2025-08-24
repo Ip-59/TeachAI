@@ -17,9 +17,9 @@ class DemoCellWidget(CellWidgetBase):
     def __init__(
         self,
         code: str,
-        cell_id: str = None,
-        title: str = None,
-        description: str = None,
+        cell_id: str | None = None,
+        title: str | None = None,
+        description: str | None = None,
         show_code: bool = True,
         auto_run: bool = False,
         **kwargs,
@@ -111,9 +111,18 @@ class DemoCellWidget(CellWidgetBase):
 
     def _format_code_html(self) -> str:
         """Форматирует код для отображения в HTML с подсветкой синтаксиса."""
-        # Экранируем HTML символы
+        # Сначала декодируем HTML-кодировку если она есть
+        decoded_code = (
+            self.code.replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+            .replace("&quot;", '"')
+            .replace("&#x27;", "'")
+        )
+        
+        # Затем экранируем HTML символы для отображения
         escaped_code = (
-            self.code.replace("&", "&amp;")
+            decoded_code.replace("&", "&amp;")
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace('"', "&quot;")
@@ -228,7 +237,16 @@ class DemoCellWidget(CellWidgetBase):
         Args:
             code: Новый Python код
         """
-        self.code = code
+        # Декодируем HTML-кодировку если она есть
+        decoded_code = (
+            code.replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+            .replace("&quot;", '"')
+            .replace("&#x27;", "'")
+        )
+        
+        self.code = decoded_code
         if hasattr(self, "code_display"):
             self.code_display.value = self._format_code_html()
         self.status_label.value = "<i>Готов к запуску (код обновлен)</i>"
@@ -264,8 +282,8 @@ class DemoCellWidget(CellWidgetBase):
 
 def create_demo_cell(
     code: str,
-    title: str = None,
-    description: str = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
     show_code: bool = True,
     auto_run: bool = False,
 ) -> DemoCellWidget:

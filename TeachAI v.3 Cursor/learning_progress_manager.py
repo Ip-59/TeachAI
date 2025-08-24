@@ -110,12 +110,10 @@ class LearningProgressManager:
                         lesson_id
                     ] = score
 
-                # ИСПРАВЛЕНО: Урок считается завершенным только при is_passed=True
-                self.state_manager.state["learning"]["lesson_completion_status"][
-                    lesson_id
-                ] = True
+                # Тест пройден, но урок НЕ завершается автоматически
+                # Урок завершается только при выполнении контрольного задания ИЛИ принудительно
                 self.logger.info(
-                    f"Урок {lesson_id} отмечен как завершенный с оценкой {score}%"
+                    f"Тест по уроку {lesson_id} пройден с оценкой {score}% (урок ещё не завершен)"
                 )
 
             # Пересчитываем общую статистику
@@ -129,6 +127,9 @@ class LearningProgressManager:
     def is_lesson_completed(self, lesson_id):
         """
         Проверяет, завершен ли урок.
+        ИСПРАВЛЕНО: Урок считается завершенным если:
+        1. Пройден И тест И контрольное задание ИЛИ
+        2. Урок отмечен как завершенный принудительно (для пропуска контрольных заданий)
 
         Args:
             lesson_id (str): ID урока
@@ -137,22 +138,102 @@ class LearningProgressManager:
             bool: True если урок завершен, иначе False
         """
         try:
-            # Инициализируем структуру, если её нет
-            if "lesson_completion_status" not in self.state_manager.state["learning"]:
-                self.state_manager.state["learning"]["lesson_completion_status"] = {}
-
-            completion_status = self.state_manager.state["learning"][
-                "lesson_completion_status"
-            ].get(lesson_id, False)
+            # Проверяем принудительное завершение урока (приоритет)
+            lesson_completion_status = self.state_manager.state["learning"].get("lesson_completion_status", {})
+            if lesson_completion_status.get(lesson_id, False):
+                self.logger.debug(f"Урок {lesson_id} отмечен как завершенный принудительно")
+                return True
+            
+            # Проверяем, есть ли результат теста
+            lesson_scores = self.state_manager.state["learning"].get("lesson_scores", {})
+            test_score = lesson_scores.get(lesson_id, 0)
+            is_test_passed = test_score > 40  # Тест считается пройденным при >40%
+            
+            # Проверяем, выполнено ли контрольное задание
+            control_tasks = self.state_manager.state.get("control_tasks", {})
+            control_task_result = control_tasks.get(lesson_id, {})
+            is_control_task_completed = control_task_result.get("is_correct", False)
+            
+            # Урок завершен только если И тест пройден И контрольное задание выполнено
+            is_completed = is_test_passed and is_control_task_completed
+            
             self.logger.debug(
-                f"Проверка завершенности урока {lesson_id}: {completion_status}"
+                f"Проверка завершенности урока {lesson_id}: "
+                f"тест={is_test_passed} ({test_score}%), "
+                f"контрольное задание={is_control_task_completed}, "
+                f"завершен={is_completed}"
             )
-            return completion_status
+            
+            return is_completed
 
         except Exception as e:
             self.logger.error(
                 f"Ошибка при проверке завершенности урока {lesson_id}: {str(e)}"
             )
+            return False
+
+    def mark_lesson_complete_manually(self, lesson_id):
+        """
+        Отмечает урок как завершенный принудительно (для кнопки "Продолжить с текущим результатом").
+        
+        Args:
+            lesson_id (str): ID урока
+            
+        Returns:
+            bool: True если операция прошла успешно, иначе False
+        """
+        try:
+            # Инициализируем структуру, если её нет
+            if "lesson_completion_status" not in self.state_manager.state["learning"]:
+                self.state_manager.state["learning"]["lesson_completion_status"] = {}
+
+            # Отмечаем урок как завершенный принудительно
+            self.state_manager.state["learning"]["lesson_completion_status"][lesson_id] = True
+
+            self.logger.info(f"Урок {lesson_id} отмечен как завершенный принудительно")
+
+            # Пересчитываем статистику
+            self._recalculate_course_statistics()
+
+            return self.state_manager.save_state()
+        except Exception as e:
+            self.logger.error(f"Ошибка при принудительном завершении урока: {str(e)}")
+            return False
+
+    def is_test_passed(self, lesson_id):
+        """
+        Проверяет, пройден ли тест для урока.
+        
+        Args:
+            lesson_id (str): ID урока
+            
+        Returns:
+            bool: True если тест пройден, иначе False
+        """
+        try:
+            lesson_scores = self.state_manager.state["learning"].get("lesson_scores", {})
+            test_score = lesson_scores.get(lesson_id, 0)
+            return test_score > 40  # Тест считается пройденным при >40%
+        except Exception as e:
+            self.logger.error(f"Ошибка при проверке теста для урока {lesson_id}: {str(e)}")
+            return False
+
+    def is_control_task_completed(self, lesson_id):
+        """
+        Проверяет, выполнено ли контрольное задание для урока.
+        
+        Args:
+            lesson_id (str): ID урока
+            
+        Returns:
+            bool: True если контрольное задание выполнено, иначе False
+        """
+        try:
+            control_tasks = self.state_manager.state.get("control_tasks", {})
+            control_task_result = control_tasks.get(lesson_id, {})
+            return control_task_result.get("is_correct", False)
+        except Exception as e:
+            self.logger.error(f"Ошибка при проверке контрольного задания для урока {lesson_id}: {str(e)}")
             return False
 
     def mark_lesson_incomplete(self, lesson_id):
@@ -382,6 +463,7 @@ class LearningProgressManager:
     def calculate_course_progress(self):
         """
         Рассчитывает прогресс на основе завершенных уроков.
+        ИСПРАВЛЕНО: Урок считается завершенным только если пройден И тест И контрольное задание
 
         Returns:
             dict: Данные о прогрессе (процент, пройдено/всего)
@@ -389,31 +471,49 @@ class LearningProgressManager:
         try:
             course_plan = self.state_manager.state["course_plan"]
 
-            # Считаем общее количество уроков в курсе
+            # Считаем общее количество уроков в курсе и собираем ID всех уроков
             total_lessons = 0
+            all_lesson_ids = []
+            
             for section in course_plan.get("sections", []):
+                section_id = section.get("id", "")
                 for topic in section.get("topics", []):
-                    total_lessons += len(topic.get("lessons", []))
+                    topic_id = topic.get("id", "")
+                    for lesson in topic.get("lessons", []):
+                        lesson_id = lesson.get("id", "")
+                        if section_id and topic_id and lesson_id:
+                            full_lesson_id = f"{section_id}:{topic_id}:{lesson_id}"
+                            all_lesson_ids.append(full_lesson_id)
+                            total_lessons += 1
 
             # Если уроков нет, возвращаем нулевой прогресс
             if total_lessons == 0:
                 return {"percent": 0, "completed": 0, "total": 0}
 
-            # ИСПРАВЛЕНО: Считаем завершенные уроки на основе completion_status
+            # ИСПРАВЛЕНО: Считаем завершенные уроки на основе новой логики
             completed_count = 0
-            completion_status = self.state_manager.state["learning"].get(
-                "lesson_completion_status", {}
-            )
+            
+            # Проверяем каждый урок: пройден ли тест И выполнено ли контрольное задание
+            for lesson_id in all_lesson_ids:
+                # Сначала проверяем принудительное завершение
+                completion_status = self.state_manager.state["learning"].get(
+                    "lesson_completion_status", {}
+                )
+                if completion_status.get(lesson_id, False):
+                    # Урок завершен принудительно
+                    completed_count += 1
+                    continue
 
-            for lesson_id, is_completed in completion_status.items():
-                if is_completed:
+                # Иначе проверяем обычную логику: тест + контрольное задание
+                if self.is_lesson_completed(lesson_id):
                     completed_count += 1
 
             # Рассчитываем процент прогресса
             progress_percent = (completed_count / total_lessons) * 100
 
             self.logger.debug(
-                f"Прогресс курса: {completed_count}/{total_lessons} ({progress_percent:.1f}%)"
+                f"Прогресс курса: {completed_count}/{total_lessons} ({progress_percent:.1f}%) "
+                f"(проверено {len(all_lesson_ids)} уроков)"
             )
 
             return {

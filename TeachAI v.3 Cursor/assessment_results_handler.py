@@ -68,19 +68,12 @@ class AssessmentResultsHandler:
         current_lesson,
     ):
         """
-        Обрабатывает отправку теста с правильной логикой завершенности уроков.
-
-        Args:
-            results_output: Контейнер для отображения результатов
-            current_questions: Список вопросов теста
-            current_answers: Список ответов пользователя
-            course_plan: План курса
-            course_title, section_title, topic_title, lesson_title: Названия элементов
-            current_course, current_section, current_topic, current_lesson: ID элементов
+        Обрабатывает отправку результатов теста.
         """
         with results_output:
+            # ЕДИНСТВЕННАЯ ОЧИСТКА ВЫВОДА В НАЧАЛЕ
             clear_output(wait=True)
-
+            
             # Проверяем, что на все вопросы даны ответы
             unanswered_questions = [
                 i + 1 for i, answer in enumerate(current_answers) if answer is None
@@ -99,12 +92,13 @@ class AssessmentResultsHandler:
                     current_questions, current_answers
                 )
 
-                # Правильная логика сохранения результата
+                # ИСПРАВЛЕНО: Урок НЕ завершается только на основе теста
+                # Тест только сохраняется как пройденный/не пройденный
                 lesson_id = f"{current_section}:{current_topic}:{current_lesson}"
-                is_passed = score > 40  # Считаем пройденным при >40%
+                is_test_passed = score > 40  # Тест считается пройденным при >40%
 
-                # Сохраняем результат теста (с правильным флагом завершенности)
-                self.state_manager.save_lesson_assessment(lesson_id, score, is_passed)
+                # ИСПРАВЛЕНО: Сохраняем результат теста с правильным статусом прохождения
+                self.state_manager.save_lesson_assessment(lesson_id, score, is_test_passed)
 
                 # Получаем ID курса
                 course_id = course_plan.get("id", current_course)
@@ -121,7 +115,7 @@ class AssessmentResultsHandler:
                     score=score,
                 )
 
-                # Отображаем результаты с правильной логикой завершенности
+                # ИСПРАВЛЕНО: Отображаем результаты БЕЗ дополнительных очисток
                 self.display_enhanced_test_results(
                     score,
                     correct_answers,
@@ -130,11 +124,12 @@ class AssessmentResultsHandler:
                     current_section,
                     current_topic,
                     current_lesson,
-                    is_passed,
+                    is_test_passed,
                     lesson_id,
                 )
 
             except Exception as e:
+                # В случае ошибки показываем сообщение об ошибке
                 display(
                     widgets.HTML(
                         value=f"<p style='color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin: 3px 0;'>Ошибка при обработке результатов теста: {str(e)}</p>"
@@ -165,12 +160,13 @@ class AssessmentResultsHandler:
             is_passed (bool): Завершен ли урок
             lesson_id (str): Полный ID урока
         """
+        # Создаем список всех виджетов результатов
+        result_widgets = []
+        
         # Заголовок результатов
-        display(
-            widgets.HTML(
-                value="<h2 style='margin: 5px 0; font-size: 20px;'>Результаты теста</h2>"
-            )
-        )
+        result_widgets.append(widgets.HTML(
+            value="<h2 style='margin: 5px 0; font-size: 20px;'>Результаты теста</h2>"
+        ))
 
         # Показываем оценку за тест
         if score >= 80:
@@ -186,18 +182,15 @@ class AssessmentResultsHandler:
                 "background-color: #f8d7da; color: #721c24; border: 2px solid #f5c6cb;"
             )
 
-        display(
-            widgets.HTML(
-                value=f"<div style='text-align: center; padding: 12px; margin: 5px 0; border-radius: 8px; font-size: 24px; font-weight: bold; {score_style}'>Ваш результат: {score:.1f}%</div>"
-            )
-        )
+        result_widgets.append(widgets.HTML(
+            value=f"<div style='text-align: center; padding: 12px; margin: 5px 0; border-radius: 8px; font-size: 24px; font-weight: bold; {score_style}'>Ваш результат: {score:.1f}%</div>"
+        ))
 
         # Получаем и показываем общий прогресс по курсу
         course_stats = self.state_manager.get_detailed_course_statistics()
 
-        display(
-            widgets.HTML(
-                value=f"""
+        result_widgets.append(widgets.HTML(
+            value=f"""
             <div style='background-color: #e9ecef; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #adb5bd;'>
                 <h3 style='margin: 0 0 10px 0; color: #495057; font-size: 18px;'>📊 Общий прогресс по курсу</h3>
                 <p style='margin: 5px 0; font-size: 16px;'><strong>Средний балл по курсу:</strong> {course_stats['average_score']:.1f}%</p>
@@ -205,47 +198,50 @@ class AssessmentResultsHandler:
                 <p style='margin: 5px 0; font-size: 16px;'><strong>Прогресс курса:</strong> {course_stats['course_progress_percent']:.1f}% ({course_stats['completed_lessons']} из {course_stats['total_lessons']} уроков)</p>
             </div>
             """
-            )
-        )
+        ))
 
         # Детальные результаты по вопросам (сокращенно)
-        display(
-            widgets.HTML(
-                value="<h3 style='margin: 10px 0 5px 0; font-size: 18px;'>Детальные результаты:</h3>"
-            )
-        )
+        result_widgets.append(widgets.HTML(
+            value="<h3 style='margin: 10px 0 5px 0; font-size: 18px;'>Детальные результаты:</h3>"
+        ))
 
+        # Создаем виджеты для каждого вопроса
         for i, (question, user_answer, correct_answer) in enumerate(
             zip(current_questions, current_answers, correct_answers)
         ):
             options = question.get("options", ["Нет вариантов"])
 
+            # ИСПРАВЛЕНО: Правильно обрабатываем правильный ответ как номер варианта
+            correct_answer_num = correct_answer if isinstance(correct_answer, int) else int(correct_answer)
+
             result_html = f"""
             <div style="margin: 5px 0; padding: 8px; border: 1px solid #dee2e6; border-radius: 6px; background-color: #ffffff;">
                 <div style="font-weight: bold; margin-bottom: 4px; font-size: 16px; color: #212529; line-height: 1.3;">Вопрос {i+1}: {question['text']}</div>
+                <div style="margin-top: 8px; padding: 8px; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid #007bff;">
+                    <strong style="color: #495057;">Правильный ответ:</strong>
+                    <div style="margin-top: 4px; color: #212529; line-height: 1.4;">{options[correct_answer_num - 1]}</div>
+                </div>
             """
 
             for j, option in enumerate(options):
                 option_num = j + 1
-                if option_num == user_answer and option_num == correct_answer:
+                if option_num == user_answer and option_num == correct_answer_num:
                     result_html += f'<div style="margin: 2px 0; padding: 4px 6px; border-radius: 4px; font-size: 15px; line-height: 1.3; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;">{option} ✓ (Ваш ответ, правильно)</div>'
                 elif option_num == user_answer:
                     result_html += f'<div style="margin: 2px 0; padding: 4px 6px; border-radius: 4px; font-size: 15px; line-height: 1.3; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">{option} ✗ (Ваш ответ, неправильно)</div>'
-                elif option_num == correct_answer:
+                elif option_num == correct_answer_num:
                     result_html += f'<div style="margin: 2px 0; padding: 4px 6px; border-radius: 4px; font-size: 15px; line-height: 1.3; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;">{option} ✓ (Правильный ответ)</div>'
                 else:
                     result_html += f'<div style="margin: 2px 0; padding: 4px 6px; border-radius: 4px; font-size: 15px; line-height: 1.3; background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6;">{option}</div>'
 
             result_html += "</div>"
-            display(widgets.HTML(value=result_html))
+            result_widgets.append(widgets.HTML(value=result_html))
 
         # Кнопки в зависимости от результата с правильной логикой завершенности
         if is_passed:  # Оценка > 40%
-            display(
-                widgets.HTML(
-                    value="<h3 style='margin: 15px 0 10px 0; font-size: 18px; color: #28a745;'>🎉 Поздравляем! Урок успешно пройден!</h3>"
-                )
-            )
+            result_widgets.append(widgets.HTML(
+                value="<h3 style='margin: 15px 0 10px 0; font-size: 18px; color: #28a745;'>🎉 Поздравляем! Урок успешно пройден!</h3>"
+            ))
 
             # Если тест пройден успешно
             if is_passed:
@@ -253,11 +249,9 @@ class AssessmentResultsHandler:
                 self._activate_control_tasks_button()
 
                 # Показываем сообщение об успешном прохождении
-                display(
-                    widgets.HTML(
-                        value=f"<p style='color: green; font-weight: bold;'>🎉 Тест пройден успешно! Доступны контрольные задания. Перейдите к выполнению контрольных заданий для завершения урока.</p>"
-                    )
-                )
+                result_widgets.append(widgets.HTML(
+                    value=f"<p style='color: green; font-weight: bold;'>🎉 Тест пройден успешно! Доступны контрольные задания. Перейдите к выполнению контрольных заданий для завершения урока.</p>"
+                ))
 
                 # Добавляем кнопку для перехода к контрольным заданиям
                 control_tasks_button = widgets.Button(
@@ -270,32 +264,26 @@ class AssessmentResultsHandler:
                 def on_control_tasks_clicked(b):
                     # Скрываем результаты теста
                     clear_output(wait=True)
-                    # Показываем контрольные задания
                     self._show_control_tasks()
 
                 control_tasks_button.on_click(on_control_tasks_clicked)
-                display(control_tasks_button)
+                result_widgets.append(control_tasks_button)
 
-            # УБРАНО: Автоматический переход к следующему уроку
-            # Теперь переход к следующему уроку происходит только после успешного выполнения контрольного задания
+        else:
+            # Тест не пройден - предлагаем повторить
+            result_widgets.append(widgets.HTML(
+                value="<h3 style='margin: 15px 0 10px 0; font-size: 18px; color: #dc3545;'>😔 Тест не пройден</h3>"
+            ))
 
-        else:  # Оценка ≤ 40%
-            display(
-                widgets.HTML(
-                    value="<h3 style='margin: 15px 0 10px 0; font-size: 18px; color: #dc3545;'>📚 Рекомендуем повторить материал</h3>"
-                )
-            )
-            display(
-                widgets.HTML(
-                    value=f"<p style='margin: 5px 0; font-size: 16px;'>Ваш результат ({score:.1f}%) ниже порогового значения (40%). Выберите дальнейшие действия:</p>"
-                )
-            )
+            result_widgets.append(widgets.HTML(
+                value="<p style='color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin: 10px 0;'>Для прохождения урока необходимо набрать более 40%. Попробуйте еще раз или продолжите с текущей оценкой.</p>"
+            ))
 
             # Кнопка повторения урока
             repeat_lesson_button = widgets.Button(
-                description="Изучить урок снова",
+                description="Повторить урок",
                 button_style="warning",
-                tooltip="Вернуться к изучению урока",
+                tooltip="Вернуться к изучению материала урока",
                 icon="refresh",
                 layout=widgets.Layout(margin="5px 5px 5px 0px"),
             )
@@ -313,6 +301,7 @@ class AssessmentResultsHandler:
                 # Правильно отмечаем урок как незавершенный
                 self.state_manager.mark_lesson_incomplete(lesson_id)
 
+                # ИСПРАВЛЕНО: Убираем прямой вызов display() для избежания дублирования
                 clear_output(wait=True)
                 from lesson_interface import LessonInterface
 
@@ -322,17 +311,18 @@ class AssessmentResultsHandler:
                     self.system_logger,
                     self.assessment,
                 )
-                display(
-                    lesson_ui.show_lesson(
+                
+                # Создаем виджет урока
+                lesson_widget = lesson_ui.show_lesson(
                         current_section, current_topic, current_lesson
-                    )
                 )
+                
+                # Отображаем только один раз
+                display(lesson_widget)
 
             def on_continue_anyway_clicked(b):
-                # Принудительно отмечаем урок как завершенный
-                self.state_manager.save_lesson_assessment(
-                    lesson_id, score, True
-                )  # is_passed=True принудительно
+                # ИСПРАВЛЕНО: Принудительно отмечаем урок как завершенный
+                self.state_manager.mark_lesson_complete_manually(lesson_id)
 
                 # Активируем кнопку "Контрольные задания"
                 self._activate_control_tasks_button()
@@ -347,6 +337,7 @@ class AssessmentResultsHandler:
 
                 clear_output(wait=True)
                 if next_section_id and next_topic_id and next_lesson_id:
+                    # ИСПРАВЛЕНО: Убираем прямой вызов display() для избежания дублирования
                     from lesson_interface import LessonInterface
 
                     lesson_ui = LessonInterface(
@@ -355,11 +346,14 @@ class AssessmentResultsHandler:
                         self.system_logger,
                         self.assessment,
                     )
-                    display(
-                        lesson_ui.show_lesson(
+                    
+                    # Создаем виджет урока
+                    lesson_widget = lesson_ui.show_lesson(
                             next_section_id, next_topic_id, next_lesson_id
-                        )
                     )
+                    
+                    # Отображаем только один раз
+                    display(lesson_widget)
                 else:
                     # Курс завершен
                     from completion_interface import CompletionInterface
@@ -375,12 +369,14 @@ class AssessmentResultsHandler:
             repeat_lesson_button.on_click(on_repeat_lesson_clicked)
             continue_anyway_button.on_click(on_continue_anyway_clicked)
 
-            display(
-                widgets.HBox(
-                    [repeat_lesson_button, continue_anyway_button],
-                    layout=widgets.Layout(margin="2px 0"),
-                )
-            )
+            # Добавляем кнопки
+            buttons_container = widgets.HBox([repeat_lesson_button, continue_anyway_button])
+            result_widgets.append(buttons_container)
+
+        # ИСПРАВЛЕНО: Отображаем все результаты ОДНИМ вызовом display()
+        # Создаем единый контейнер со всеми результатами
+        results_container = widgets.VBox(result_widgets)
+        display(results_container)
 
     def _activate_control_tasks_button(self):
         """

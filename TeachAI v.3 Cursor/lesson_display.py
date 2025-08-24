@@ -6,6 +6,7 @@
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import logging
+import re
 from lesson_utils import LessonUtils
 
 # Импорт адаптера для интеграции ячеек (безопасно)
@@ -36,7 +37,8 @@ class LessonDisplay:
 
     def show_lesson(self, section_id, topic_id, lesson_id):
         """
-        Отображает урок пользователю с кэшированием содержания.
+        Отображает урок пользователю с постоянным кэшированием содержания.
+        ИСПРАВЛЕНО: Добавлено постоянное кэширование в state.json для сохранения между сессиями
 
         Args:
             section_id (str): ID раздела
@@ -49,6 +51,10 @@ class LessonDisplay:
         try:
             # Создаем ключ кэша для текущего урока
             cache_key = f"{section_id}:{topic_id}:{lesson_id}"
+            
+            # ИСПРАВЛЕНО: Принудительно очищаем кэш для перегенерации с исправленным промптом
+            self.lesson_interface.state_manager.clear_specific_lesson_cache(cache_key)
+            self.logger.info(f"Кэш урока {cache_key} очищен для перегенерации")
 
             # Получаем данные о курсе и уроке из учебного плана
             course_plan = self.lesson_interface.state_manager.get_course_plan()
@@ -56,6 +62,11 @@ class LessonDisplay:
                 section_id, topic_id, lesson_id
             )
 
+            # ИСПРАВЛЕНО: Проверяем завершение курса
+            if lesson_id is None:
+                self.logger.info("Курс завершен - показываем экран завершения")
+                return self._show_course_completion()
+            
             if not lesson_data:
                 raise ValueError(f"Урок с ID {lesson_id} не найден в учебном плане")
 
@@ -72,31 +83,34 @@ class LessonDisplay:
             # Получаем профиль пользователя для генерации урока
             user_profile = self.lesson_interface.state_manager.get_user_profile()
 
-            # Проверяем кэш содержания урока
-            if (
+            # ИСПРАВЛЕНО: Сначала проверяем постоянный кэш в state.json
+            cached_content = self.lesson_interface.state_manager.get_cached_lesson_content(cache_key)
+            
+            if cached_content:
+                # Используем содержание из постоянного кэша
+                self.logger.info(f"Используется постоянно кэшированное содержание урока '{lesson_title}'")
+                lesson_content_data = cached_content
+                
+                # Обновляем кэш в памяти для текущей сессии
+                self.lesson_interface.cached_lesson_content = lesson_content_data["content"]
+                self.lesson_interface.cached_lesson_title = lesson_content_data["title"]
+                self.lesson_interface.current_lesson_cache_key = cache_key
+                
+            elif (
                 self.lesson_interface.current_lesson_cache_key == cache_key
                 and self.lesson_interface.cached_lesson_content is not None
                 and self.lesson_interface.cached_lesson_title is not None
             ):
-                self.logger.info(
-                    f"Используется кэшированное содержание урока '{lesson_title}'"
-                )
+                # Используем кэш в памяти (для текущей сессии)
+                self.logger.info(f"Используется кэшированное содержание урока '{lesson_title}' из памяти")
                 lesson_content_data = {
                     "title": self.lesson_interface.cached_lesson_title,
                     "content": self.lesson_interface.cached_lesson_content,
                 }
             else:
-                # Показываем сообщение о загрузке только при первой генерации
-                loading_display = widgets.HTML(
-                    value=f"<h1>{lesson_title}</h1><p><strong>Загрузка содержания урока...</strong></p>"
-                )
-                display(loading_display)
-
-                # Генерируем содержание урока
+                # Генерируем новое содержание урока
                 try:
-                    self.logger.info(
-                        f"Генерация нового содержания урока '{lesson_title}'"
-                    )
+                    self.logger.info(f"Генерация нового содержания урока '{lesson_title}'")
 
                     lesson_content_data = (
                         self.lesson_interface.content_generator.generate_lesson(
@@ -109,37 +123,36 @@ class LessonDisplay:
                         )
                     )
 
-                    # Кэшируем сгенерированное содержание
-                    self.lesson_interface.cached_lesson_content = lesson_content_data[
-                        "content"
-                    ]
-                    self.lesson_interface.cached_lesson_title = lesson_content_data[
-                        "title"
-                    ]
+                    # Кэшируем в памяти для текущей сессии
+                    self.lesson_interface.cached_lesson_content = lesson_content_data["content"]
+                    self.lesson_interface.cached_lesson_title = lesson_content_data["title"]
                     self.lesson_interface.current_lesson_cache_key = cache_key
 
-                    self.logger.info("Урок успешно сгенерирован и закэширован")
+                    # ИСПРАВЛЕНО: Сохраняем в постоянный кэш для повторного использования
+                    self.lesson_interface.state_manager.save_lesson_content(
+                        cache_key, 
+                        lesson_content_data["title"], 
+                        lesson_content_data["content"]
+                    )
+
+                    self.logger.info("Урок успешно сгенерирован и сохранен в постоянный кэш")
 
                 except Exception as e:
                     self.logger.error(f"Ошибка при генерации урока: {str(e)}")
-                    clear_output(wait=True)
                     return self.utils.create_lesson_error_interface(
                         "Ошибка при генерации урока",
                         f"Не удалось сгенерировать содержание урока '{lesson_title}': {str(e)}",
                         self.lesson_interface,
                     )
 
-                # Очищаем сообщение о загрузке
-                clear_output(wait=True)
-
             # Сохраняем данные для интерактивных функций
             self.lesson_interface.current_lesson_data = lesson_data
-            self.lesson_interface.current_lesson_content = lesson_content_data[
-                "content"
-            ]
-            self.lesson_interface.current_lesson_id = (
-                f"{section_id}:{topic_id}:{lesson_id}"  # Полный ID урока
-            )
+            self.lesson_interface.current_lesson_content = lesson_content_data["content"]
+            self.lesson_interface.current_lesson_id = cache_key  # Полный ID урока
+
+            # Проверяем, пройден ли тест для этого урока
+            test_passed = self.lesson_interface.state_manager.is_test_passed(cache_key)
+            
             self.lesson_interface.current_course_info = {
                 "course_title": course_title,
                 "section_title": section_title,
@@ -150,6 +163,7 @@ class LessonDisplay:
                 "lesson_id": lesson_id,
                 "user_profile": user_profile,
                 "course_plan": course_plan,
+                "test_passed": test_passed,  # Добавляем информацию о тесте
             }
 
             # Получаем ID курса безопасно
@@ -249,15 +263,154 @@ class LessonDisplay:
                 """
             )
 
-            # Создаем контейнер для содержания урока
+            # ИСПРАВЛЕНО: Безопасно форматируем код в тексте урока
+            try:
+                from code_formatter import code_formatter
+                formatted_content = code_formatter.format_code_in_text(lesson_content_data["content"])
+                self.logger.info("Код в тексте урока успешно отформатирован")
+            except Exception as e:
+                self.logger.warning(f"Ошибка форматирования кода (не критично): {e}")
+                formatted_content = lesson_content_data["content"]
+            
+            # ИСПРАВЛЕНО: Очищаем markdown метки кода (```html, ```python и т.д.)
+            try:
+                import re
+                # Убираем метки ```html, ```python, ``` и подобные
+                formatted_content = re.sub(r"```\w*\n?", "", formatted_content)
+                formatted_content = re.sub(r"```", "", formatted_content)
+                self.logger.info("Markdown метки кода успешно очищены")
+            except Exception as e:
+                self.logger.warning(f"Ошибка очистки markdown меток (не критично): {e}")
+            
+            # ИСПРАВЛЕНО: Очищаем HTML стили из текста урока
+            try:
+                import re
+                # Убираем все <style> блоки
+                formatted_content = re.sub(r'<style>.*?</style>', '', formatted_content, flags=re.DOTALL)
+                # Убираем все <div class="content-container"> и </div>
+                formatted_content = re.sub(r'<div class="content-container">', '', formatted_content)
+                formatted_content = re.sub(r'</div>', '', formatted_content)
+                # ИСПРАВЛЕНО: Убираем лишние ***
+                formatted_content = re.sub(r'\*\*\*', '', formatted_content)
+                self.logger.info("HTML стили и лишние *** успешно удалены из текста урока")
+            except Exception as e:
+                self.logger.warning(f"Ошибка очистки HTML стилей (не критично): {e}")
+            
+            # ИСПРАВЛЕНО: Проверяем, является ли контент уже HTML
+            if formatted_content.strip().startswith('<div class="lesson-content">'):
+                # Контент уже отформатирован как HTML (от ContentFormatterFinal)
+                self.logger.info("Контент уже отформатирован как HTML, используем как есть")
+                html_content = formatted_content
+            else:
+                # Контент в markdown формате, конвертируем в HTML
+                try:
+                    import markdown
+                    
+                    # ИСПРАВЛЕНО: Более умная обработка списков
+                    content = formatted_content
+                    
+                    # Обрабатываем только настоящие нумерованные списки (начинающиеся с новой строки)
+                    content = re.sub(r'(\n\s*\d+\.\s+)([^\n]+)', r'\n<li>\2</li>', content)
+                    content = re.sub(r'(<li>.*?</li>)+', lambda m: '<ol>' + m.group(0) + '</ol>', content, flags=re.DOTALL)
+                    
+                    # Обрабатываем маркированные списки (- )
+                    content = re.sub(r'(\n\s*-\s+)([^\n]+)', r'\n<li>\2</li>', content)
+                    content = re.sub(r'(<li>.*?</li>)+', lambda m: '<ul>' + m.group(0) + '</ul>', content, flags=re.DOTALL)
+                    
+                    # Конвертируем Markdown в HTML
+                    html_content = markdown.markdown(content, extensions=['fenced_code', 'codehilite'])
+                    
+                    # УБИРАЕМ ДУБЛИРУЮЩИЕ CSS СТИЛИ - используем стили из ContentFormatterFinal
+                    # Оборачиваем контент в div с классом lesson-content для применения стилей
+                    html_content = '<div class="lesson-content">' + html_content + '</div>'
+                    
+                    self.logger.info("Markdown успешно конвертирован в HTML с правильной обработкой списков")
+                except Exception as e:
+                    self.logger.warning(f"Ошибка конвертации Markdown (не критично): {e}")
+                    # Если markdown не работает, используем простую обработку
+                    html_content = formatted_content.replace('\n', '<br>')
+            
+            # Создаем контейнер для содержания урока с МАКСИМАЛЬНО АГРЕССИВНЫМИ СТИЛЯМИ
+            # Добавляем дополнительные CSS стили для максимального контраста
+            additional_css = """
+            <style>
+            /* Улучшенные стили для контраста */
+            .lesson-content {
+                color: #1a365d !important;
+                font-weight: 400 !important;
+            }
+            
+            .lesson-content pre {
+                background-color: #f8f8f8 !important;
+                border: 1px solid #ddd !important;
+                color: #1a365d !important;
+                padding: 15px !important;
+                border-radius: 5px !important;
+                overflow-x: auto !important;
+            }
+            
+            .lesson-content code {
+                color: #1a365d !important;
+                font-weight: 700 !important;
+                background-color: #f0f0f0 !important;
+                padding: 2px 4px !important;
+                border-radius: 3px !important;
+                border: 1px solid #ccc !important;
+            }
+            
+            .lesson-content h1, .lesson-content h2, .lesson-content h3, .lesson-content h4 {
+                color: #1a365d !important;
+                font-weight: 600 !important;
+                border-bottom: 1px solid #ddd !important;
+            }
+            
+            .lesson-content p, .lesson-content li {
+                color: #1a365d !important;
+                font-weight: 400 !important;
+            }
+            
+            .lesson-content strong, .lesson-content b {
+                color: #1a365d !important;
+                font-weight: 600 !important;
+            }
+            
+            .lesson-content em, .lesson-content i {
+                color: #1a365d !important;
+                font-style: italic !important;
+                font-weight: 400 !important;
+            }
+            
+            .lesson-content blockquote {
+                border-left: 3px solid #ddd !important;
+                background-color: #f9f9f9 !important;
+                color: #1a365d !important;
+                font-style: italic !important;
+                padding: 10px 15px !important;
+                margin: 15px 0 !important;
+            }
+            
+            .lesson-content .comment {
+                color: #6b7280 !important;
+                font-style: italic !important;
+                background-color: #f3f4f6 !important;
+                padding: 1px 3px !important;
+                border-radius: 2px !important;
+            }
+            </style>
+            """
+            
+            # Добавляем CSS стили к HTML контенту
+            html_with_styles = additional_css + html_content
+            
             content_html = widgets.HTML(
-                value=lesson_content_data["content"],
+                value=html_with_styles,
                 layout=widgets.Layout(
                     width="100%",
                     padding="20px",
                     border="1px solid #ddd",
-                    border_radius="10px",
+                    border_radius="8px",
                     margin="10px 0",
+                    background_color="#ffffff",
                 ),
             )
 
@@ -288,11 +441,19 @@ class LessonDisplay:
                 layout=widgets.Layout(display="none", width="100%")
             )
 
+            # Логируем создание контейнеров
+            self.logger.info("Контейнеры созданы:")
+            self.logger.info(f"  - explain_container: {self.lesson_interface.explain_container}")
+            self.logger.info(f"  - examples_container: {self.lesson_interface.examples_container}")
+            self.logger.info(f"  - qa_container: {self.lesson_interface.qa_container}")
+            self.logger.info(f"  - control_tasks_container: {self.lesson_interface.control_tasks_container}")
+
             # Настраиваем QA контейнер
             from lesson_interaction import LessonInteraction
 
             interaction = LessonInteraction(self.lesson_interface)
             interaction.setup_enhanced_qa_container(self.lesson_interface.qa_container)
+            self.logger.info("QA контейнер настроен")
 
             # Создаем кнопки навигации
             from lesson_navigation import LessonNavigation
@@ -305,7 +466,46 @@ class LessonDisplay:
                 )
             )
 
-            # Создаем основной контейнер
+            # ИСПРАВЛЕНО: Добавляем индикатор статуса урока после перезапуска
+            lesson_full_id = f"{section_id}:{topic_id}:{lesson_id}"
+            test_passed = self.lesson_interface.state_manager.is_test_passed(lesson_full_id)
+            
+            if test_passed:
+                # Если тест пройден, показываем статус и напоминание о контрольных заданиях
+                control_task_completed = self.lesson_interface.state_manager.is_control_task_completed(lesson_full_id)
+                
+                if control_task_completed:
+                    # Урок полностью завершен
+                    status_html = widgets.HTML(
+                        value=f"""
+                        <div style='background-color: #d4edda; color: #155724; padding: 12px; 
+                                    border-radius: 8px; margin: 10px 0; border: 1px solid #c3e6cb;'>
+                            <h4 style='margin: 0 0 8px 0; font-size: 16px;'>✅ Урок завершен</h4>
+                            <p style='margin: 0; font-size: 14px;'>
+                                Тест пройден, контрольное задание выполнено. Урок полностью завершен!
+                            </p>
+                        </div>
+                        """
+                    )
+                else:
+                    # Тест пройден, но контрольное задание не выполнено
+                    status_html = widgets.HTML(
+                        value=f"""
+                        <div style='background-color: #fff3cd; color: #856404; padding: 12px; 
+                                    border-radius: 8px; margin: 10px 0; border: 1px solid #ffeaa7;'>
+                            <h4 style='margin: 0 0 8px 0; font-size: 16px;'>📝 Тест пройден</h4>
+                            <p style='margin: 0; font-size: 14px;'>
+                                Тест успешно пройден! Теперь доступны контрольные задания. 
+                                Нажмите кнопку <strong>"🛠️ Контрольные задания"</strong> ниже для завершения урока.
+                            </p>
+                        </div>
+                        """
+                    )
+            else:
+                # Если тест не пройден, статус не показываем
+                status_html = None
+
+            # Создаем основной контейнер урока
             lesson_children = [
                 header_html,
                 content_html,
@@ -316,9 +516,9 @@ class LessonDisplay:
                 self.lesson_interface.control_tasks_container,
             ]
 
-            # Добавляем ячейки, если они есть
-            # if cells_container:
-            #     lesson_children.insert(2, cells_container)  # Вставляем после контента, но перед кнопками
+            # Добавляем индикатор статуса если он есть
+            if status_html:
+                lesson_children.insert(2, status_html)  # Вставляем после content_html, но перед navigation_buttons
 
             lesson_container = widgets.VBox(
                 lesson_children, layout=widgets.Layout(width="100%", padding="20px")
@@ -333,3 +533,37 @@ class LessonDisplay:
                 f"Не удалось создать интерфейс урока: {str(e)}",
                 self.lesson_interface,
             )
+    
+    def _show_course_completion(self):
+        """
+        Показывает экран завершения курса.
+        
+        Returns:
+            widgets.VBox: Виджет с экраном завершения курса
+        """
+        try:
+            from completion_interface import CompletionInterface
+            
+            # Создаем интерфейс завершения курса
+            completion_interface = CompletionInterface(
+                self.lesson_interface.state_manager,
+                self.lesson_interface.system_logger,
+                self.lesson_interface.content_generator,
+                self.lesson_interface.assessment
+            )
+            
+            # Показываем экран завершения
+            completion_widget = completion_interface.show_course_completion()
+            
+            self.logger.info("Экран завершения курса успешно отображен")
+            return completion_widget
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка при отображении экрана завершения курса: {str(e)}")
+            return self.utils.create_lesson_error_interface(
+                "Ошибка при отображении экрана завершения курса",
+                f"Не удалось отобразить экран завершения курса: {str(e)}",
+                self.lesson_interface,
+            )
+
+

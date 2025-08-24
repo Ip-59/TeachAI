@@ -1,0 +1,23 @@
+# Cursor AI Rules for TeachAI Project
+
+## Notebook Editing
+- Always use supported models for .ipynb editing: Sonnet 3.5, 3.7, 4, or Opus 4
+- When editing notebooks, preserve cell structure and metadata
+- Use proper JSON format for notebook files
+
+## File Comparison Settings
+- Increase diff timeout to 15 seconds (15000ms)
+- Disable preview mode for better file handling
+- Enable side-by-side diff view
+
+## Project-Specific Rules
+- Always backup files before major changes
+- Test changes in Jupyter notebook environment
+- Follow PEP 8 for Python code
+- Use Google-style docstrings
+- Add type hints to all functions
+
+## Error Handling
+- If diff algorithm times out, retry with smaller chunks
+- Always verify file integrity after operations
+- Log all major changes to PROJECT_STATUS.md 

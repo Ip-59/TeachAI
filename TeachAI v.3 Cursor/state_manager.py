@@ -214,6 +214,15 @@ class StateManager:
     def is_lesson_completed(self, lesson_id):
         return self.learning_progress.is_lesson_completed(lesson_id)
 
+    def mark_lesson_complete_manually(self, lesson_id):
+        return self.learning_progress.mark_lesson_complete_manually(lesson_id)
+
+    def is_test_passed(self, lesson_id):
+        return self.learning_progress.is_test_passed(lesson_id)
+
+    def is_control_task_completed(self, lesson_id):
+        return self.learning_progress.is_control_task_completed(lesson_id)
+
     def mark_lesson_incomplete(self, lesson_id):
         return self.learning_progress.mark_lesson_incomplete(lesson_id)
 
@@ -272,15 +281,12 @@ class StateManager:
             is_correct (bool): Правильно ли выполнено задание
         """
         try:
-            # Загружаем текущее состояние
-            state = self._load_state()
-
             # Инициализируем секцию контрольных заданий если её нет
-            if "control_tasks" not in state:
-                state["control_tasks"] = {}
+            if "control_tasks" not in self.state:
+                self.state["control_tasks"] = {}
 
             # Сохраняем результат
-            state["control_tasks"][lesson_id] = {
+            self.state["control_tasks"][lesson_id] = {
                 "task_title": task_title,
                 "is_correct": is_correct,
                 "completed_at": datetime.now().isoformat(),
@@ -297,3 +303,110 @@ class StateManager:
             self.logger.error(
                 f"Ошибка при сохранении результата контрольного задания: {str(e)}"
             )
+
+    def save_lesson_content(self, lesson_id, lesson_title, lesson_content):
+        """
+        Сохраняет содержание урока в постоянное хранилище.
+        
+        Args:
+            lesson_id (str): ID урока
+            lesson_title (str): Заголовок урока
+            lesson_content (str): Содержание урока
+            
+        Returns:
+            bool: True если сохранение прошло успешно, иначе False
+        """
+        try:
+            # Инициализируем секцию кэша уроков, если её нет
+            if "lesson_content_cache" not in self.state:
+                self.state["lesson_content_cache"] = {}
+            
+            # Сохраняем содержание урока
+            self.state["lesson_content_cache"][lesson_id] = {
+                "title": lesson_title,
+                "content": lesson_content,
+                "cached_at": datetime.now().isoformat()
+            }
+            
+            # Сохраняем состояние
+            success = self.save_state()
+            
+            if success:
+                self.logger.info(f"Содержание урока {lesson_id} сохранено в кэш")
+            
+            return success
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка при сохранении содержания урока: {str(e)}")
+            return False
+
+    def get_cached_lesson_content(self, lesson_id):
+        """
+        Получает кэшированное содержание урока.
+        
+        Args:
+            lesson_id (str): ID урока
+            
+        Returns:
+            dict: Словарь с title и content или None если не найден
+        """
+        try:
+            lesson_cache = self.state.get("lesson_content_cache", {})
+            cached_lesson = lesson_cache.get(lesson_id)
+            
+            if cached_lesson:
+                self.logger.info(f"Найдено кэшированное содержание урока {lesson_id}")
+                return {
+                    "title": cached_lesson["title"],
+                    "content": cached_lesson["content"]
+                }
+            else:
+                self.logger.debug(f"Кэшированное содержание урока {lesson_id} не найдено")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Ошибка при получении кэшированного содержания урока: {str(e)}")
+            return None
+
+    def clear_lesson_content_cache(self):
+        """
+        Очищает кэш содержания уроков.
+        
+        Returns:
+            bool: True если очистка прошла успешно, иначе False
+        """
+        try:
+            if "lesson_content_cache" in self.state:
+                del self.state["lesson_content_cache"]
+                
+            success = self.save_state()
+            
+            if success:
+                self.logger.info("Кэш содержания уроков очищен")
+                
+            return success
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка при очистке кэша уроков: {str(e)}")
+            return False
+
+    def clear_specific_lesson_cache(self, lesson_id):
+        """
+        Очищает кэш конкретного урока.
+        
+        Args:
+            lesson_id (str): ID урока для очистки
+            
+        Returns:
+            bool: True если очистка прошла успешно, иначе False
+        """
+        try:
+            lesson_cache = self.state.get("lesson_content_cache", {})
+            if lesson_id in lesson_cache:
+                del lesson_cache[lesson_id]
+                self.save_state()
+                self.logger.info(f"Кэш урока {lesson_id} очищен")
+            return True
+        except Exception as e:
+            self.logger.error(f"Ошибка при очистке кэша урока {lesson_id}: {str(e)}")
+            return False

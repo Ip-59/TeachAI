@@ -19,7 +19,7 @@ class CellWidgetBase(widgets.VBox):
     """
 
     def __init__(
-        self, cell_id: str = None, title: str = None, description: str = None, **kwargs
+        self, cell_id: Optional[str] = None, title: Optional[str] = None, description: Optional[str] = None, **kwargs
     ):
         """
         Инициализация базового виджета ячейки.
@@ -211,19 +211,23 @@ class CellWidgetBase(widgets.VBox):
 
             if not success:
                 # Ошибка выполнения
-                print("❌ Ошибка выполнения:")
-                print(output)
+                print(f"❌ Ошибка выполнения:\n{output}")
             else:
                 # Успешное выполнение
+                result_lines = []
+                
                 if output.strip():
-                    print("📤 Вывод:")
-                    print(output)
+                    result_lines.append(f"📤 Вывод:\n{output}")
 
                 if result is not None:
-                    print(f"📊 Результат: {result}")
+                    result_lines.append(f"📊 Результат: {result}")
 
                 if not output.strip() and result is None:
-                    print("✅ Код выполнен успешно (без вывода)")
+                    result_lines.append("✅ Код выполнен успешно (без вывода)")
+                
+                # Выводим все одной командой
+                if result_lines:
+                    print("\n".join(result_lines))
 
     def clear_output(self):
         """Очищает область вывода результатов."""
