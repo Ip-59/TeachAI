@@ -124,7 +124,12 @@ class LessonInterface:
             # ШАГ 5: Генерация содержания урока
             self.logger.info("🎯 ШАГ 5: Генерация содержания урока...")
             lesson_content_data = self.content_manager.get_lesson_content(
-                section_id, topic_id, lesson_id, self.content_generator
+                course_title,
+                section_title,
+                topic_title,
+                lesson_title,
+                lesson_data,
+                user_profile,
             )
 
             if not lesson_content_data:

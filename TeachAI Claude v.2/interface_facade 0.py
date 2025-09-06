@@ -2,11 +2,10 @@
 Фасад интерфейса TeachAI.
 Обеспечивает единую точку доступа к различным интерфейсам системы.
 
-ИСПРАВЛЕНО ЭТАП 52: Детальная диагностика ошибок инициализации интерфейсов
+ИСПРАВЛЕНО ЭТАП 49: КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ - правильная передача данных урока в тестирование
 """
 
 import logging
-import traceback
 from interface_utils import InterfaceState
 import ipywidgets as widgets
 
@@ -41,108 +40,40 @@ class InterfaceFacade:
         self.logger.info("InterfaceFacade инициализирован")
 
     def _initialize_interfaces(self):
-        """
-        Инициализирует все специализированные интерфейсы.
-
-        ИСПРАВЛЕНО ЭТАП 52: Детальная диагностика ошибок каждого этапа инициализации
-        """
-        # Инициализируем заглушки
-        self.lesson_interface = None
-        self.assessment_interface = None
-
+        """Инициализирует все специализированные интерфейсы."""
         try:
-            self.logger.info("🔄 Начало инициализации интерфейсов...")
+            # Импортируем интерфейсы здесь чтобы избежать циклических импортов
+            from lesson_interface import LessonInterface
+            from assessment_interface import AssessmentInterface
 
-            # Этап 1: Импорт LessonInterface
-            self.logger.info("📥 Этап 1: Импорт LessonInterface...")
-            try:
-                from lesson_interface import LessonInterface
-
-                self.logger.info("✅ LessonInterface импортирован успешно")
-            except Exception as e:
-                self.logger.error(f"❌ Ошибка импорта LessonInterface: {str(e)}")
-                self.logger.error(f"📋 Traceback: {traceback.format_exc()}")
-                return  # Прерываем инициализацию
-
-            # Этап 2: Импорт AssessmentInterface
-            self.logger.info("📥 Этап 2: Импорт AssessmentInterface...")
-            try:
-                from assessment_interface import AssessmentInterface
-
-                self.logger.info("✅ AssessmentInterface импортирован успешно")
-            except Exception as e:
-                self.logger.error(f"❌ Ошибка импорта AssessmentInterface: {str(e)}")
-                self.logger.error(f"📋 Traceback: {traceback.format_exc()}")
-                # Продолжаем с только LessonInterface
-                AssessmentInterface = None
-
-            # Этап 3: Инициализация LessonInterface
-            self.logger.info("🔧 Этап 3: Инициализация LessonInterface...")
-            try:
-                self.lesson_interface = LessonInterface(
-                    self.state_manager,
-                    self.content_generator,
-                    self.system_logger,
-                    self.assessment,
-                    parent_facade=self,  # Передаем ссылку на фасад
-                )
-                self.logger.info("✅ LessonInterface инициализирован успешно")
-            except Exception as e:
-                self.logger.error(f"❌ Ошибка инициализации LessonInterface: {str(e)}")
-                self.logger.error(f"📋 Traceback: {traceback.format_exc()}")
-                self.lesson_interface = None
-
-            # Этап 4: Инициализация AssessmentInterface (если импорт успешен)
-            if AssessmentInterface:
-                self.logger.info("🔧 Этап 4: Инициализация AssessmentInterface...")
-                try:
-                    self.assessment_interface = AssessmentInterface(
-                        self.state_manager,
-                        self.content_generator,
-                        self.assessment,
-                        self.system_logger,
-                    )
-                    self.logger.info("✅ AssessmentInterface инициализирован успешно")
-                except Exception as e:
-                    self.logger.error(
-                        f"❌ Ошибка инициализации AssessmentInterface: {str(e)}"
-                    )
-                    self.logger.error(f"📋 Traceback: {traceback.format_exc()}")
-                    self.assessment_interface = None
-            else:
-                self.logger.warning(
-                    "⚠️ AssessmentInterface не был импортирован, пропускаем инициализацию"
-                )
-
-            # Итоговый статус
-            lesson_status = "✅ Работает" if self.lesson_interface else "❌ Недоступен"
-            assessment_status = (
-                "✅ Работает" if self.assessment_interface else "❌ Недоступен"
+            # Инициализируем lesson_interface с ссылкой на фасад
+            self.lesson_interface = LessonInterface(
+                self.state_manager,
+                self.content_generator,
+                self.system_logger,
+                self.assessment,
+                parent_facade=self,  # Передаем ссылку на фасад
             )
 
-            self.logger.info("📊 ИТОГОВЫЙ СТАТУС ИНИЦИАЛИЗАЦИИ:")
-            self.logger.info(f"📚 LessonInterface: {lesson_status}")
-            self.logger.info(f"🎯 AssessmentInterface: {assessment_status}")
+            # Инициализируем assessment_interface
+            self.assessment_interface = AssessmentInterface(
+                self.state_manager,
+                self.content_generator,
+                self.assessment,
+                self.system_logger,
+            )
 
-            if self.lesson_interface:
-                self.logger.info("✅ Минимально необходимые интерфейсы инициализированы")
-            else:
-                self.logger.error("❌ Критическая ошибка: LessonInterface недоступен")
+            self.logger.info("Все специализированные интерфейсы инициализированы")
 
         except Exception as e:
-            self.logger.error(
-                f"💥 Критическая ошибка инициализации интерфейсов: {str(e)}"
-            )
-            self.logger.error(f"📋 Traceback: {traceback.format_exc()}")
-            # Создаем заглушки если произошла критическая ошибка
+            self.logger.error(f"Ошибка инициализации интерфейсов: {str(e)}")
+            # Создаем заглушки если интерфейсы не найдены
             self.lesson_interface = None
             self.assessment_interface = None
 
     def show_lesson(self, lesson_id=None):
         """
         Отображает интерфейс урока.
-
-        ИСПРАВЛЕНО ЭТАП 52: Детальная диагностика проблем с lesson_interface
 
         Args:
             lesson_id (str): Идентификатор урока в формате "section_id:topic_id:lesson_id"
@@ -151,19 +82,12 @@ class InterfaceFacade:
             widgets.VBox: Интерфейс урока
         """
         try:
-            self.logger.info(f"📚 Запрос отображения урока: {lesson_id}")
+            self.logger.info(f"Отображение урока: {lesson_id}")
 
-            # Детальная проверка lesson_interface
             if not self.lesson_interface:
-                error_details = self._diagnose_lesson_interface_issue()
-                self.logger.error(f"❌ LessonInterface недоступен: {error_details}")
                 return self._create_error_interface(
-                    "Интерфейс уроков недоступен", error_details
+                    "Ошибка", "Интерфейс уроков недоступен"
                 )
-
-            self.logger.info(
-                f"✅ LessonInterface доступен: {type(self.lesson_interface)}"
-            )
 
             # Получаем текущий урок, если lesson_id не указан
             if lesson_id is None:
@@ -206,55 +130,15 @@ class InterfaceFacade:
                     )
 
             # Отображение урока через lesson_interface
-            self.logger.info(
-                f"🎯 Вызов lesson_interface.show_lesson({section_id}, {topic_id}, {lesson_id_current})"
-            )
             result = self.lesson_interface.show_lesson(
                 section_id, topic_id, lesson_id_current
             )
             self.current_state = InterfaceState.LESSON_VIEW
-
-            if result:
-                self.logger.info("✅ Урок успешно отображен")
-            else:
-                self.logger.warning("⚠️ lesson_interface.show_lesson() вернул None")
-
             return result
 
         except Exception as e:
-            self.logger.error(f"💥 Ошибка отображения урока {lesson_id}: {str(e)}")
-            self.logger.error(f"📋 Traceback: {traceback.format_exc()}")
+            self.logger.error(f"Ошибка отображения урока {lesson_id}: {str(e)}")
             return self._create_error_interface("Ошибка загрузки урока", str(e))
-
-    def _diagnose_lesson_interface_issue(self):
-        """Диагностирует проблемы с lesson_interface."""
-        diagnosis = []
-        diagnosis.append("ПРОБЛЕМЫ С LESSON_INTERFACE:")
-
-        if self.lesson_interface is None:
-            diagnosis.append("• lesson_interface = None (не инициализирован)")
-        else:
-            diagnosis.append(
-                f"• lesson_interface = {type(self.lesson_interface)} (инициализирован)"
-            )
-
-        diagnosis.append("")
-        diagnosis.append("ВОЗМОЖНЫЕ ПРИЧИНЫ:")
-        diagnosis.append(
-            "• Ошибка импорта LessonInterface (синтаксическая ошибка в lesson_interface.py)"
-        )
-        diagnosis.append(
-            "• Ошибка импорта подмодулей LessonInterface (lesson_utils, lesson_content_manager и т.д.)"
-        )
-        diagnosis.append(
-            "• Ошибка инициализации LessonInterface (проблемы с параметрами)"
-        )
-        diagnosis.append(
-            "• Ошибка импорта или инициализации AssessmentInterface влияет на весь процесс"
-        )
-        diagnosis.append("• Проверьте логи выше для деталей ошибки инициализации")
-
-        return "\\n".join(diagnosis)
 
     def show_assessment(self, lesson_id=None):
         """
@@ -321,8 +205,6 @@ class InterfaceFacade:
                 "current_topic": course_info.get("topic_title", "Текущая тема"),
                 "current_lesson": course_info.get("lesson_title", "Текущий урок"),
                 "current_lesson_content": current_lesson_content,
-                "current_course_info": current_course_info,
-                "current_lesson_id": current_lesson_id,
             }
 
             self.logger.info(
@@ -351,7 +233,7 @@ class InterfaceFacade:
         except Exception as e:
             error_msg = f"Критическая ошибка при запуске тестирования: {str(e)}"
             self.logger.error(error_msg)
-            self.logger.error(f"📋 Traceback: {traceback.format_exc()}")
+            self.logger.error(f"📋 Traceback: {__import__('traceback').format_exc()}")
             return self._create_error_interface(
                 "Критическая ошибка тестирования", error_msg
             )
@@ -361,11 +243,6 @@ class InterfaceFacade:
     ):
         """
         Диагностирует проблемы с данными для тестирования.
-
-        Args:
-            current_lesson_content: Содержание урока
-            current_course_info: Информация о курсе
-            current_lesson_id: ID урока
 
         Returns:
             str: Детальная диагностика проблем
@@ -527,23 +404,49 @@ class InterfaceFacade:
             message (str): Сообщение об ошибке
 
         Returns:
-            widgets.VBox: Интерфейс ошибки
+            widgets.VBox: Интерфейс с ошибкой
         """
         return widgets.VBox(
             [
                 widgets.HTML(
-                    value=f"""
-                <div style="color: #dc3545; background: #f8d7da; border: 1px solid #f5c6cb;
-                           padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-                    <h3 style="margin: 0 0 15px 0;">⚠️ {title}</h3>
-                    <p style="margin: 0; font-size: 16px; white-space: pre-line;">
-                        {message}
-                    </p>
+                    f"""
+                <div style="padding: 20px; background: #fee; border: 1px solid #fcc; border-radius: 8px;">
+                    <h3 style="color: #c33; margin: 0 0 10px 0;">{title}</h3>
+                    <p style="margin: 0; color: #666; white-space: pre-line;">{message}</p>
                 </div>
             """
                 )
-            ],
-            layout=widgets.Layout(margin="0 auto", max_width="600px"),
+            ]
         )
 
-    # Остальные методы остаются без изменений...
+    def get_current_state(self):
+        """Возвращает текущее состояние интерфейса."""
+        return self.current_state
+
+    def get_status(self):
+        """
+        Возвращает полный статус фасада.
+
+        Returns:
+            dict: Полный статус фасада
+        """
+        try:
+            return {
+                "facade_initialized": True,
+                "current_state": self.current_state.value
+                if self.current_state
+                else None,
+                "lesson_interface_available": self.lesson_interface is not None,
+                "assessment_interface_available": self.assessment_interface is not None,
+                "lesson_data_available": hasattr(
+                    self.lesson_interface, "current_lesson_data"
+                )
+                and self.lesson_interface.current_lesson_data is not None
+                if self.lesson_interface
+                else False,
+                "version": "2.0",
+                "last_critical_fix": "ЭТАП 49: Исправлена передача данных урока в тестирование",
+            }
+        except Exception as e:
+            self.logger.error(f"Ошибка получения статуса фасада: {str(e)}")
+            return {"error": str(e), "facade_initialized": False}

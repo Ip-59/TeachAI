@@ -294,7 +294,7 @@ class LessonInteraction:
         try:
             self.logger.info("Настраиваем улучшенный QA контейнер")
             self.logger.info(f"qa_container: {qa_container}")
-            
+
             # Создаем заголовок
             title_html = widgets.HTML(value="<h3>❓ Задайте вопрос по уроку:</h3>")
 
@@ -346,10 +346,15 @@ class LessonInteraction:
                         "<p><strong>Анализ вопроса и подготовка ответа...</strong></p>"
                     )
 
+                    # Получаем информацию о курсе для правильного вызова методов
+                    course_info = self.lesson_interface.current_course_info
+
                     # Увеличиваем счетчик вопросов
+                    # Создаем уникальный ID урока для счетчика
+                    lesson_full_id = f"{course_info.get('section_id', 'unknown')}:{course_info.get('topic_id', 'unknown')}:{course_info.get('lesson_id', 'unknown')}"
                     questions_count = (
                         self.lesson_interface.state_manager.increment_questions_count(
-                            self.lesson_interface.current_lesson_id
+                            lesson_full_id
                         )
                     )
 
@@ -368,7 +373,7 @@ class LessonInteraction:
                     if not relevance_result.get("is_relevant", True):
                         self.logger.warning("Вопрос нерелевантен уроку")
                         answer_area.value = f"""
-                        <div style='background-color: #fff3cd; color: #856404; padding: 15px; 
+                        <div style='background-color: #fff3cd; color: #856404; padding: 15px;
                                     border-radius: 8px; border: 1px solid #ffeaa7;'>
                             <h4>⚠️ Вопрос не связан с уроком</h4>
                             <p><strong>Ваш вопрос:</strong> {question}</p>
@@ -380,16 +385,33 @@ class LessonInteraction:
 
                     # Генерируем ответ
                     self.logger.info("Генерируем ответ на вопрос")
+
+                    # Получаем информацию о курсе для правильного вызова answer_question
+                    course_info = self.lesson_interface.current_course_info
+                    course_title = course_info.get("course_title", "Курс")
+                    section_title = course_info.get("section_title", "Раздел")
+                    topic_title = course_info.get("topic_title", "Тема")
+                    lesson_title = course_info.get("lesson_title", "Урок")
+                    user_name = course_info.get("user_profile", {}).get(
+                        "name", "Пользователь"
+                    )
+
                     answer = self.lesson_interface.content_generator.answer_question(
-                        question,
-                        self.lesson_interface.current_lesson_content,
-                        self.lesson_interface.current_lesson_data,
-                        self.lesson_interface.current_course_info["user_profile"][
+                        course=course_title,
+                        section=section_title,
+                        topic=topic_title,
+                        lesson=lesson_title,
+                        user_question=question,
+                        lesson_content=self.lesson_interface.current_lesson_content,
+                        user_name=user_name,
+                        communication_style=course_info["user_profile"][
                             "communication_style"
                         ],
                     )
 
-                    self.logger.info(f"Ответ сгенерирован, длина: {len(answer)} символов")
+                    self.logger.info(
+                        f"Ответ сгенерирован, длина: {len(answer)} символов"
+                    )
 
                     # Отображаем ответ
                     answer_area.value = answer
@@ -421,8 +443,12 @@ class LessonInteraction:
             ]
 
             self.logger.info("QA контейнер успешно настроен")
-            self.logger.info(f"Количество виджетов в контейнере: {len(qa_container.children)}")
-            self.logger.info(f"Виджеты: {[type(widget).__name__ for widget in qa_container.children]}")
+            self.logger.info(
+                f"Количество виджетов в контейнере: {len(qa_container.children)}"
+            )
+            self.logger.info(
+                f"Виджеты: {[type(widget).__name__ for widget in qa_container.children]}"
+            )
 
         except Exception as e:
             self.logger.error(f"Ошибка при настройке QA контейнера: {str(e)}")

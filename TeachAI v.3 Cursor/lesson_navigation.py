@@ -75,21 +75,27 @@ class LessonNavigation:
             # Кнопка "Контрольные задания"
             # ИСПРАВЛЕНО: Проверяем, пройден ли тест для активации кнопки
             lesson_full_id = f"{section_id}:{topic_id}:{lesson_id}"
-            test_passed = self.lesson_interface.state_manager.is_test_passed(lesson_full_id)
-            
+            test_passed = self.lesson_interface.state_manager.is_test_passed(
+                lesson_full_id
+            )
+
             control_tasks_button = widgets.Button(
                 description="🛠️ Контрольные задания",
                 button_style="danger",
                 layout=widgets.Layout(width="auto", margin="5px"),
                 disabled=not test_passed,  # Активна если тест пройден
-                tooltip="Доступно после прохождения теста" if not test_passed else "Выполнить контрольные задания",
+                tooltip="Доступно после прохождения теста"
+                if not test_passed
+                else "Выполнить контрольные задания",
             )
 
             # Сохраняем ссылку на кнопку для доступа извне
             self.control_tasks_button = control_tasks_button
-            
+
             # Логируем статус кнопки
-            self.logger.info(f"Кнопка 'Контрольные задания' создана. Тест пройден: {test_passed}, кнопка активна: {not control_tasks_button.disabled}")
+            self.logger.info(
+                f"Кнопка 'Контрольные задания' создана. Тест пройден: {test_passed}, кнопка активна: {not control_tasks_button.disabled}"
+            )
 
             # Привязываем обработчики событий
             self._setup_button_handlers(
@@ -224,38 +230,26 @@ class LessonNavigation:
 
         def on_ask_button_clicked(b):
             # Скрываем другие контейнеры
-            self.logger.info("Кнопка 'Задать вопрос' нажата - скрываем другие контейнеры")
+            self.logger.info(
+                "Кнопка 'Задать вопрос' нажата - скрываем другие контейнеры"
+            )
             self.lesson_interface._hide_other_containers()
 
             # Показываем интерфейс вопросов
             if self.lesson_interface.qa_container:
-                self.logger.info("qa_container найден - очищаем и показываем")
-                # ИСПРАВЛЕНО: Очищаем контейнер перед показом
-                self.lesson_interface.qa_container.children = []
+                self.logger.info("qa_container найден - показываем")
                 self.lesson_interface.qa_container.layout.display = "block"
                 self.logger.info("qa_container отображен")
-                
-                # Принудительно обновляем интерфейс
-                try:
-                    from IPython.display import display, clear_output
-                    # Очищаем вывод и показываем QA контейнер
-                    clear_output(wait=True)
-                    display(self.lesson_interface.qa_container)
-                    self.logger.info("QA контейнер принудительно отображен")
-                except Exception as e:
-                    self.logger.warning(f"Не удалось принудительно отобразить QA контейнер: {e}")
-                
-                # Дополнительная диагностика
-                self.logger.info(f"Состояние контейнеров после нажатия:")
-                self.logger.info(f"  - explain_container.display: {getattr(self.lesson_interface.explain_container.layout, 'display', 'N/A') if self.lesson_interface.explain_container else 'None'}")
-                self.logger.info(f"  - examples_container.display: {getattr(self.lesson_interface.examples_container.layout, 'display', 'N/A') if self.lesson_interface.examples_container else 'None'}")
-                self.logger.info(f"  - qa_container.display: {getattr(self.lesson_interface.qa_container.layout, 'display', 'N/A') if self.lesson_interface.qa_container else 'None'}")
-                self.logger.info(f"  - control_tasks_container.display: {getattr(self.lesson_interface.control_tasks_container.layout, 'display', 'N/A') if self.lesson_interface.control_tasks_container else 'None'}")
             else:
                 self.logger.error("qa_container НЕ НАЙДЕН в lesson_interface")
                 # Показываем сообщение об ошибке
                 from IPython.display import display, HTML
-                display(HTML("<p style='color: red;'>Ошибка: контейнер для вопросов не найден</p>"))
+
+                display(
+                    HTML(
+                        "<p style='color: red;'>Ошибка: контейнер для вопросов не найден</p>"
+                    )
+                )
 
         def on_explain_button_clicked(b):
             # НОВАЯ ЛОГИКА: Показываем выбор типа объяснения
@@ -285,33 +279,35 @@ class LessonNavigation:
             # Ищем <h3> и <p> в порядке следования
             pattern = re.compile(r"(<h3>.*?</h3>|<p>.*?</p>)", re.DOTALL)
             matches = list(pattern.finditer(html))
-            
+
             i = 0
             while i < len(matches):
                 current_block = matches[i].group(0)
-                
+
                 if current_block.startswith("<h3>"):
                     title = re.sub("<.*?>", "", current_block).strip()
                     text = None
-                    
+
                     # Ищем следующий <p> после заголовка
-                    if i + 1 < len(matches) and matches[i + 1].group(0).startswith("<p>"):
+                    if i + 1 < len(matches) and matches[i + 1].group(0).startswith(
+                        "<p>"
+                    ):
                         text = re.sub("<.*?>", "", matches[i + 1].group(0)).strip()
                         i += 2  # Пропускаем и заголовок, и текст
                     else:
                         i += 1  # Только заголовок
-                    
+
                     blocks.append((title, text))
-                    
+
                 elif current_block.startswith("<p>"):
                     # Если встретили <p> без заголовка, добавляем как отдельный блок
                     text = re.sub("<.*?>", "", current_block).strip()
                     blocks.append((None, text))
                     i += 1
-                    
+
                 else:
                     i += 1
-            
+
             return blocks
 
         def on_examples_button_clicked(b):
@@ -340,30 +336,32 @@ class LessonNavigation:
                     )
                     # --- Новый парсер: только один заголовок, все коды — отдельные ячейки ---
                     widgets_to_display = []
-                    
+
                     # Добавляем только один заголовок "Примеры:" (если есть в ответе)
                     if "Примеры" in examples:
-                        widgets_to_display.append(widgets.HTML(value="<h3>Примеры</h3>"))
-                    
+                        widgets_to_display.append(
+                            widgets.HTML(value="<h3>Примеры</h3>")
+                        )
+
                     # Извлекаем все блоки кода
                     code_blocks = extract_code_blocks_from_html(examples)
-                    
+
                     # Извлекаем заголовки и пояснения (если есть)
                     titles_and_texts = extract_titles_and_texts(examples)
-                    
+
                     # ИСПРАВЛЕНО: Убираем дублирование и улучшаем структуру
                     processed_blocks = set()  # Для отслеживания уже обработанных блоков
-                    
+
                     # Для каждого кода — отдельная ячейка, перед ней (если есть) — заголовок/пояснение
                     for i, code in enumerate(code_blocks):
                         # Создаем уникальный идентификатор для блока
                         block_id = f"code_{i}_{hash(code)}"
-                        
+
                         if block_id in processed_blocks:
                             continue  # Пропускаем дублирующиеся блоки
-                        
+
                         processed_blocks.add(block_id)
-                        
+
                         # Добавляем заголовок и пояснение, если они есть
                         if i < len(titles_and_texts):
                             title, text = titles_and_texts[i]
@@ -375,10 +373,12 @@ class LessonNavigation:
                                 widgets_to_display.append(
                                     widgets.HTML(value=f"<p>{text}</p>")
                                 )
-                        
+
                         # Создаем демо-ячейки для кода
                         try:
-                            demo_cells = cell_adapter.create_demo_cells([{"code": code}])
+                            demo_cells = cell_adapter.create_demo_cells(
+                                [{"code": code}]
+                            )
                             widgets_to_display.extend(demo_cells)
                         except Exception as e:
                             # Fallback: если не удалось создать демо-ячейки
@@ -391,15 +391,15 @@ class LessonNavigation:
                                     padding="10px",
                                     border="1px solid #ddd",
                                     border_radius="5px",
-                                    background_color="#f8f8f8"
-                                )
+                                    background_color="#f8f8f8",
+                                ),
                             )
                             widgets_to_display.append(code_widget)
-                    
+
                     # Если не найдено ни одного кода — fallback: просто текст
                     if not code_blocks:
                         widgets_to_display.append(widgets.HTML(value=examples))
-                    
+
                     # Кнопка закрытия
                     close_button = widgets.Button(
                         description="✕ Закрыть",
@@ -412,16 +412,18 @@ class LessonNavigation:
 
                     close_button.on_click(on_close_button_clicked)
                     widgets_to_display.append(close_button)
-                    
+
                     # ИСПРАВЛЕНО: Очищаем контейнер перед добавлением новых виджетов
                     self.lesson_interface.examples_container.children = []
-                    self.lesson_interface.examples_container.children = widgets_to_display
+                    self.lesson_interface.examples_container.children = (
+                        widgets_to_display
+                    )
                 except Exception as e:
                     self.logger.error(f"Ошибка при генерации примеров: {str(e)}")
-                    
+
                     # ИСПРАВЛЕНО: Очищаем контейнер перед добавлением сообщения об ошибке
                     self.lesson_interface.examples_container.children = []
-                    
+
                     error_html = widgets.HTML(
                         value=f"<p style='color: red;'>Ошибка при генерации примеров: {str(e)}</p>"
                     )
@@ -449,7 +451,7 @@ class LessonNavigation:
 
                 # ИСПРАВЛЕНО: Очищаем контейнер перед добавлением загрузки
                 self.lesson_interface.control_tasks_container.children = []
-                
+
                 # Показываем загрузку
                 loading_html = widgets.HTML(
                     value="<p><strong>Генерация контрольного задания...</strong></p>"
@@ -467,11 +469,13 @@ class LessonNavigation:
 
                     # ИСПРАВЛЕНО: Очищаем контейнер перед добавлением задания
                     self.lesson_interface.control_tasks_container.children = []
-                    
+
                     # Добавляем задание
                     if task_interface:
-                        self.lesson_interface.control_tasks_container.children = [task_interface]
-                    
+                        self.lesson_interface.control_tasks_container.children = [
+                            task_interface
+                        ]
+
                     # Добавляем кнопку закрытия
                     close_button = widgets.Button(
                         description="✕ Закрыть",
@@ -480,24 +484,34 @@ class LessonNavigation:
                     )
 
                     def on_close_button_clicked(b):
-                        self.lesson_interface.control_tasks_container.layout.display = "none"
+                        self.lesson_interface.control_tasks_container.layout.display = (
+                            "none"
+                        )
 
                     close_button.on_click(on_close_button_clicked)
-                    
+
                     # Добавляем кнопку закрытия к существующим детям
                     if self.lesson_interface.control_tasks_container.children:
-                        current_children = list(self.lesson_interface.control_tasks_container.children)
+                        current_children = list(
+                            self.lesson_interface.control_tasks_container.children
+                        )
                         current_children.append(close_button)
-                        self.lesson_interface.control_tasks_container.children = current_children
+                        self.lesson_interface.control_tasks_container.children = (
+                            current_children
+                        )
                     else:
-                        self.lesson_interface.control_tasks_container.children = [close_button]
-                        
+                        self.lesson_interface.control_tasks_container.children = [
+                            close_button
+                        ]
+
                 except Exception as e:
-                    self.logger.error(f"Ошибка при генерации контрольного задания: {str(e)}")
-                    
+                    self.logger.error(
+                        f"Ошибка при генерации контрольного задания: {str(e)}"
+                    )
+
                     # ИСПРАВЛЕНО: Очищаем контейнер перед добавлением сообщения об ошибке
                     self.lesson_interface.control_tasks_container.children = []
-                    
+
                     error_html = widgets.HTML(
                         value=f"<p style='color: red;'>Ошибка при генерации контрольного задания: {str(e)}</p>"
                     )
@@ -508,7 +522,9 @@ class LessonNavigation:
                     )
 
                     def on_close_button_clicked(b):
-                        self.lesson_interface.control_tasks_container.layout.display = "none"
+                        self.lesson_interface.control_tasks_container.layout.display = (
+                            "none"
+                        )
 
                     close_button.on_click(on_close_button_clicked)
                     self.lesson_interface.control_tasks_container.children = [

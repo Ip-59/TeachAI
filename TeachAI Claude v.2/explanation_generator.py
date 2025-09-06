@@ -1,7 +1,8 @@
 """
 Модуль для генерации подробных объяснений материалов уроков.
 Отвечает за создание расширенных теоретических разборов и детальных пояснений концепций.
-ИСПРАВЛЕНО: компактные интервалы и контрастный код
+
+ИСПРАВЛЕНО ЭТАП 50: ДОБАВЛЕН недостающий метод generate_explanation для исправления AttributeError
 """
 
 from content_utils import BaseContentGenerator, ContentUtils
@@ -19,6 +20,73 @@ class ExplanationGenerator(BaseContentGenerator):
         """
         super().__init__(api_key)
         self.logger.info("ExplanationGenerator инициализирован")
+
+    def generate_explanation(
+        self, lesson_data, lesson_content, communication_style="friendly"
+    ):
+        """
+        ДОБАВЛЕНО ЭТАП 50: Генерация подробного объяснения урока
+
+        Исправляет ошибку: 'ExplanationGenerator' object has no attribute 'generate_explanation'
+        Делегирует вызов к существующему методу get_detailed_explanation()
+
+        Args:
+            lesson_data (dict): Данные урока с ключами для извлечения информации
+            lesson_content (str): Содержание урока
+            communication_style (str): Стиль общения
+
+        Returns:
+            str: Подробное объяснение урока
+
+        Raises:
+            Exception: Если не удалось сгенерировать объяснение
+        """
+        try:
+            # Извлекаем данные из lesson_data с поддержкой различных ключей
+            course = lesson_data.get(
+                "course_title", lesson_data.get("course_name", "Курс")
+            )
+            section = lesson_data.get(
+                "section_title",
+                lesson_data.get(
+                    "section_name", lesson_data.get("section_id", "Раздел")
+                ),
+            )
+            topic = lesson_data.get(
+                "topic_title",
+                lesson_data.get("topic_name", lesson_data.get("topic_id", "Тема")),
+            )
+            lesson = lesson_data.get(
+                "title", lesson_data.get("lesson_title", lesson_data.get("id", "Урок"))
+            )
+
+            # Детальное логирование для отладки
+            self.logger.info(
+                f"🔧 Генерация объяснения для: {course} → {section} → {topic} → {lesson}"
+            )
+            self.logger.debug(f"Стиль общения: {communication_style}")
+            self.logger.debug(
+                f"Доступные ключи в lesson_data: {list(lesson_data.keys())}"
+            )
+
+            # Делегируем к существующему методу get_detailed_explanation
+            result = self.get_detailed_explanation(
+                course=course,
+                section=section,
+                topic=topic,
+                lesson=lesson,
+                lesson_content=lesson_content,
+                communication_style=communication_style,
+            )
+
+            self.logger.info("✅ Объяснение успешно сгенерировано")
+            return result
+
+        except Exception as e:
+            error_msg = f"Ошибка генерации объяснения: {str(e)}"
+            self.logger.error(f"❌ {error_msg}")
+            self.logger.error(f"lesson_data: {lesson_data}")
+            return f"⚠️ {error_msg}\n\nПожалуйста, попробуйте позже или обратитесь к администратору."
 
     def get_detailed_explanation(
         self,
@@ -61,13 +129,15 @@ class ExplanationGenerator(BaseContentGenerator):
             messages = [
                 {
                     "role": "system",
-                    "content": "Ты - опытный преподаватель и эксперт в данной области.",
+                    "content": "Ты - опытный преподаватель и эксперт в данной области. "
+                    "Твоя задача - дать подробное, понятное объяснение материала урока. "
+                    "Используй ясный язык, приводи примеры и аналогии там, где это уместно.",
                 },
                 {"role": "user", "content": prompt},
             ]
 
             explanation = self.make_api_request(
-                messages=messages, temperature=0.7, max_tokens=3500
+                messages=messages, temperature=0.7, max_tokens=3000
             )
 
             # Сохраняем отладочную информацию
@@ -84,133 +154,22 @@ class ExplanationGenerator(BaseContentGenerator):
                 },
             )
 
-            # ИСПРАВЛЕНО: Применяем улучшенные CSS стили с компактными интервалами
-            styled_explanation = self._apply_compact_styles(
-                explanation, communication_style
+            # Применяем стилизацию к объяснению
+            styled_explanation = self._style_explanation(
+                explanation, lesson_title, communication_style
             )
 
-            self.logger.info("Подробное объяснение успешно сгенерировано")
+            self.logger.info(
+                f"Успешно сгенерировано объяснение для урока '{lesson_title}'"
+            )
             return styled_explanation
 
         except Exception as e:
-            self.logger.error(
-                f"Критическая ошибка при генерации подробного объяснения: {str(e)}"
-            )
-            raise Exception(f"Не удалось сгенерировать подробное объяснение: {str(e)}")
-
-    def _apply_compact_styles(self, explanation, communication_style):
-        """
-        ИСПРАВЛЕНО: Применяет компактные CSS стили к объяснению.
-
-        Args:
-            explanation (str): Исходное объяснение
-            communication_style (str): Стиль общения
-
-        Returns:
-            str: Стилизованное объяснение
-        """
-        # Получаем префикс в зависимости от стиля общения
-        utils = ContentUtils()
-        prefix = utils.get_style_prefix(communication_style, "explanation")
-
-        # ИСПРАВЛЕНО: Компактные CSS стили с контрастным кодом
-        compact_css = """
-        <style>
-        .explanation-compact {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 16px;
-            line-height: 1.4;
-            padding: 20px;
-            background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%);
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #007bff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .explanation-compact h1, .explanation-compact h2, .explanation-compact h3, .explanation-compact h4 {
-            color: #495057;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            line-height: 1.2;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 4px;
-        }
-        .explanation-compact h1 { font-size: 20px; }
-        .explanation-compact h2 { font-size: 18px; }
-        .explanation-compact h3 { font-size: 17px; }
-        .explanation-compact h4 { font-size: 16px; }
-        .explanation-compact p {
-            margin-bottom: 8px;
-            line-height: 1.3;
-            text-align: justify;
-        }
-        .explanation-compact ul, .explanation-compact ol {
-            margin-bottom: 10px;
-            padding-left: 25px;
-            line-height: 1.3;
-        }
-        .explanation-compact li {
-            margin-bottom: 4px;
-        }
-        .explanation-compact code {
-            background-color: #1a1a1a;
-            color: #00ff41;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid #333;
-        }
-        .explanation-compact pre {
-            background-color: #1a1a1a;
-            color: #00ff41;
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.05;
-            border: 2px solid #333;
-        }
-        .explanation-compact pre code {
-            background: none;
-            color: inherit;
-            padding: 0;
-            font-size: inherit;
-        }
-        .explanation-compact .concept-block {
-            background-color: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 10px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .explanation-compact .highlight {
-            background-color: #fff3cd;
-            padding: 8px;
-            border-radius: 6px;
-            border-left: 3px solid #ffc107;
-            margin: 8px 0;
-        }
-        .explanation-compact strong {
-            color: #495057;
-            font-weight: 600;
-        }
-        .explanation-compact em {
-            color: #6c757d;
-            font-style: italic;
-        }
-        </style>
-        <div class="explanation-compact">
-        """
-
-        return f"{compact_css}{prefix}{explanation}</div>"
+            self.logger.error(f"Критическая ошибка при генерации объяснения: {str(e)}")
+            raise Exception(f"Не удалось сгенерировать объяснение: {str(e)}")
 
     def _build_explanation_prompt(
-        self, course, section, topic, lesson_title, lesson_content, communication_style
+        self, course, section, topic, lesson, lesson_content, communication_style
     ):
         """
         Создает промпт для генерации подробного объяснения.
@@ -219,43 +178,249 @@ class ExplanationGenerator(BaseContentGenerator):
             course (str): Название курса
             section (str): Название раздела
             topic (str): Название темы
-            lesson_title (str): Название урока
+            lesson (str): Название урока
             lesson_content (str): Содержание урока
             communication_style (str): Стиль общения
 
         Returns:
             str: Промпт для API
         """
-        style_description = ContentUtils.COMMUNICATION_STYLES.get(
-            communication_style, ContentUtils.COMMUNICATION_STYLES["friendly"]
-        )
+        style_instructions = self._get_style_instructions(communication_style)
 
         return f"""
-        Предоставь подробное объяснение материала по следующему уроку:
+        Создай подробное объяснение урока, которое поможет студенту глубже понять материал.
 
-        Курс: {course}
-        Раздел: {section}
-        Тема: {topic}
-        Урок: {lesson_title}
+        Контекст:
+        - Курс: {course}
+        - Раздел: {section}
+        - Тема: {topic}
+        - Урок: {lesson}
 
-        Базовое содержание урока:
-        {lesson_content[:2000]}  # Ограничиваем длину для запроса
+        Содержание урока:
+        {lesson_content}
 
-        Используй следующий стиль общения: {style_description}
+        {style_instructions}
 
-        Предоставь расширенное объяснение, включающее:
-        1. Глубокий разбор основных концепций
-        2. Больше примеров и иллюстраций
-        3. Практические сценарии применения
-        4. Дополнительную информацию по теме
-        5. Ссылки на связанные концепции
+        ТРЕБОВАНИЯ К ОБЪЯСНЕНИЮ:
+        1. Начни с краткого резюме основных идей урока
+        2. Разбери каждый важный концепт детально
+        3. Объясни связи между различными понятиями
+        4. Приведи дополнительные примеры и аналогии
+        5. Укажи на практическое применение материала
+        6. Выдели ключевые моменты, которые важно запомнить
+        7. Предложи способы лучше понять и запомнить материал
 
-        Используй HTML-форматирование для структурирования ответа с компактной структурой.
+        СТРУКТУРА ОТВЕТА:
+        **Краткое резюме:**
+        (2-3 предложения с основными идеями урока)
 
-        Структурируй ответ следующим образом:
-        - Используй <h3> для основных разделов объяснения
-        - Код помещай в <pre><code> блоки
-        - Важные концепции оборачивай в <div class="concept-block">
-        - Ключевые моменты выделяй в <div class="highlight">
-        - Используй <strong> для акцентов и <em> для пояснений
+        **Детальный разбор концептов:**
+        1. **Первый концепт:** Объяснение с примерами
+        2. **Второй концепт:** Объяснение с примерами
+        (и так далее для каждого важного концепта)
+
+        **Практические примеры:**
+        - Конкретные примеры применения
+        - Демонстрация концептов в действии
+
+        **Ключевые выводы:**
+        - Главные идеи, которые важно запомнить
+        - Связи между концептами
+
+        **Советы по изучению:**
+        - Рекомендации по лучшему усвоению материала
+        - Способы практического применения знаний
+
+        ФОРМАТИРОВАНИЕ:
+        - Используй **жирный текст** для важных терминов и заголовков разделов
+        - Для примеров кода используй формат: ```python код здесь ```
+        - Создавай нумерованные списки для пошаговых объяснений
+        - Используй маркированные списки для перечислений
+
+        Объяснение должно быть информативным, хорошо структурированным и доступным для понимания.
         """
+
+    def _get_style_instructions(self, communication_style):
+        """
+        Возвращает инструкции по стилю общения.
+
+        Args:
+            communication_style (str): Стиль общения
+
+        Returns:
+            str: Инструкции для промпта
+        """
+        styles = {
+            "formal": "Используй формальный, академический стиль. Применяй точную терминологию и структурированное изложение.",
+            "friendly": "Используй дружелюбный, понятный стиль. Объясняй сложные концепты простыми словами.",
+            "casual": "Используй непринужденный стиль общения. Можешь использовать разговорные выражения и легкий юмор.",
+            "brief": "Будь кратким и четким. Фокусируйся только на самых важных моментах.",
+        }
+        return styles.get(communication_style, styles["friendly"])
+
+    def _style_explanation(self, explanation, lesson_title, communication_style):
+        """
+        Применяет HTML-стилизацию к объяснению для правильного отображения в Jupyter.
+
+        Args:
+            explanation (str): Сгенерированное объяснение
+            lesson_title (str): Название урока
+            communication_style (str): Стиль общения
+
+        Returns:
+            str: HTML-стилизованное объяснение
+        """
+        # Конвертируем Markdown-подобное форматирование в HTML
+        html_explanation = self._convert_markdown_to_html(explanation)
+
+        # Добавляем заголовок
+        title_html = (
+            """
+        <h3 style="color: #1f2937; margin-bottom: 15px; border-bottom: 2px solid #22c55e; padding-bottom: 8px;">
+            📚 Подробное объяснение урока: """
+            + lesson_title
+            + """
+        </h3>
+        """
+        )
+
+        # Форматируем основной текст
+        content_html = (
+            '<div style="font-size: 14px; line-height: 1.4;">'
+            + html_explanation
+            + "</div>"
+        )
+
+        # Собираем полный HTML
+        styled_explanation = title_html + content_html
+
+        # Добавляем завершающую фразу в зависимости от стиля
+        if communication_style == "friendly":
+            styled_explanation += """
+            <div style="margin-top: 15px; padding: 12px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #22c55e;">
+                <p style="margin: 0; color: #15803d; font-weight: 500;">
+                    💡 <strong>Надеюсь, это объяснение помогло вам лучше понять материал!</strong>
+                </p>
+            </div>
+            """
+        elif communication_style == "formal":
+            styled_explanation += """
+            <div style="margin-top: 15px; padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #64748b;">
+                <p style="margin: 0; color: #475569; font-weight: 500;">
+                    <strong>Данное объяснение представляет детальный анализ ключевых концепций урока.</strong>
+                </p>
+            </div>
+            """
+        elif communication_style == "casual":
+            styled_explanation += """
+            <div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0; color: #92400e; font-weight: 500;">
+                    😊 <strong>Вот и все! Теперь материал должен быть понятнее.</strong>
+                </p>
+            </div>
+            """
+
+        return styled_explanation
+
+    def _convert_markdown_to_html(self, text):
+        """
+        Конвертирует основные Markdown элементы в HTML.
+
+        Args:
+            text (str): Текст с Markdown разметкой
+
+        Returns:
+            str: HTML-форматированный текст
+        """
+        import re
+
+        # Создаем CSS стили заранее чтобы избежать проблем с кавычками
+        h4_style = "color: #374151; margin: 15px 0 8px 0; font-weight: 600;"
+        strong_style = "color: #1f2937;"
+        python_code_style = "background: #1f2937; color: #f1f5f9; padding: 15px; border-radius: 6px; margin: 8px 0; font-family: monospace; white-space: pre-wrap; overflow-x: auto; line-height: 1.3;"
+        general_code_style = "background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin: 8px 0; font-family: monospace; white-space: pre-wrap; overflow-x: auto; line-height: 1.3;"
+        inline_code_style = "background: #f1f5f9; padding: 2px 4px; border-radius: 3px; font-family: monospace; color: #1e40af;"
+        ol_style = "margin: 10px 0; padding-left: 25px;"
+        ul_style = "margin: 10px 0; padding-left: 25px;"
+        li_style = "margin: 5px 0; line-height: 1.4;"
+        p_style = "margin: 8px 0; line-height: 1.4;"
+
+        # Конвертируем заголовки (жирный текст в начале строки)
+        text = re.sub(
+            r"^\*\*([^*]+)\*\*$",
+            '<h4 style="' + h4_style + '">\\1</h4>',
+            text,
+            flags=re.MULTILINE,
+        )
+
+        # Конвертируем жирный текст
+        text = re.sub(
+            r"\*\*([^*]+)\*\*",
+            '<strong style="' + strong_style + '">\\1</strong>',
+            text,
+        )
+
+        # Конвертируем блоки кода Python
+        text = re.sub(
+            r"```python\n(.*?)\n```",
+            '<div style="' + python_code_style + '">\\1</div>',
+            text,
+            flags=re.DOTALL,
+        )
+
+        # Конвертируем общие блоки кода
+        text = re.sub(
+            r"```(.*?)```",
+            '<div style="' + general_code_style + '">\\1</div>',
+            text,
+            flags=re.DOTALL,
+        )
+
+        # Конвертируем инлайн код
+        text = re.sub(
+            r"`([^`]+)`", '<code style="' + inline_code_style + '">\\1</code>', text
+        )
+
+        # Обрабатываем списки построчно
+        lines = text.split("\n")
+        in_numbered_list = False
+        result_lines = []
+
+        for line in lines:
+            # Обрабатываем нумерованные списки
+            if re.match(r"^\d+\.\s+", line):
+                if not in_numbered_list:
+                    result_lines.append('<ol style="' + ol_style + '">')
+                    in_numbered_list = True
+                content = re.sub(r"^\d+\.\s+", "", line)
+                result_lines.append('<li style="' + li_style + '">' + content + "</li>")
+            else:
+                if in_numbered_list:
+                    result_lines.append("</ol>")
+                    in_numbered_list = False
+                if line.strip():
+                    result_lines.append('<p style="' + p_style + '">' + line + "</p>")
+                elif result_lines and not result_lines[-1].startswith("<"):
+                    result_lines.append("<br>")
+
+        if in_numbered_list:
+            result_lines.append("</ol>")
+
+        # Конвертируем маркированные списки
+        text = "\n".join(result_lines)
+        text = re.sub(
+            r"^-\s+(.+)$",
+            '<li style="' + li_style + '">\\1</li>',
+            text,
+            flags=re.MULTILINE,
+        )
+
+        # Оборачиваем последовательные элементы списка в ul
+        text = re.sub(
+            r"(<li[^>]*>.*?</li>(?:\s*<li[^>]*>.*?</li>)*)",
+            '<ul style="' + ul_style + '">\\1</ul>',
+            text,
+            flags=re.DOTALL,
+        )
+
+        return text
