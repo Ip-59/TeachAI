@@ -9,6 +9,7 @@ import json
 import re
 import logging
 from datetime import datetime
+import httpx
 from openai import OpenAI
 
 
@@ -264,10 +265,22 @@ class BaseContentGenerator:
         self.api_key = api_key
         self.debug_dir = debug_dir
 
-        # Инициализация клиента OpenAI
+        # Инициализация клиента OpenAI (с прокси из OPENAI_PROXY/HTTPS_PROXY/HTTP_PROXY)
+        self.http_client = None
         try:
-            self.client = OpenAI(api_key=self.api_key)
-            self.logger.info(f"{self.__class__.__name__} успешно инициализирован")
+            proxy_url = (
+                os.getenv("OPENAI_PROXY")
+                or os.getenv("HTTPS_PROXY")
+                or os.getenv("HTTP_PROXY")
+                or ""
+            ).strip()
+            if proxy_url and not proxy_url.startswith("${"):
+                self.http_client = httpx.Client(proxy=proxy_url)
+                self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
+                self.logger.info(f"{self.__class__.__name__} инициализирован с прокси")
+            else:
+                self.client = OpenAI(api_key=self.api_key)
+                self.logger.info(f"{self.__class__.__name__} успешно инициализирован")
         except Exception as e:
             self.logger.error(f"Ошибка при инициализации клиента OpenAI: {str(e)}")
             raise
@@ -324,31 +337,31 @@ class BaseContentGenerator:
             # Убираем метки ```html, ```python, ``` и подобные
             text = re.sub(r"```\w*\n?", "", text)
             text = re.sub(r"```", "", text)
-            
+
             # НОВОЕ: Очищаем лишние отступы в блоках кода <pre><code>
-            code_pattern = r'<pre><code>(.*?)</code></pre>'
-            
+            code_pattern = r"<pre><code>(.*?)</code></pre>"
+
             def clean_code_block(match):
                 code_content = match.group(1)
-                
+
                 # Разбиваем на строки
-                lines = code_content.split('\n')
-                
+                lines = code_content.split("\n")
+
                 # Находим минимальный отступ среди строк С ОТСТУПАМИ (исключая строки без отступов)
-                min_indent = float('inf')
+                min_indent = float("inf")
                 lines_with_indent = []
-                
+
                 for line in lines:
                     if line.strip():  # Пропускаем пустые строки
                         indent = len(line) - len(line.lstrip())
-                        
+
                         if indent > 0:  # Только строки с отступами
                             lines_with_indent.append(indent)
                             if indent < min_indent:
                                 min_indent = indent
-                
+
                 # Если есть строки с отступами, убираем минимальный отступ
-                if min_indent > 0 and min_indent != float('inf'):
+                if min_indent > 0 and min_indent != float("inf"):
                     cleaned_lines = []
                     for line in lines:
                         if line.strip():  # Для непустых строк
@@ -358,18 +371,20 @@ class BaseContentGenerator:
                             else:  # Если отступа нет, оставляем как есть
                                 cleaned_lines.append(line)
                         else:  # Пустые строки оставляем как есть
-                            cleaned_lines.append('')
-                    code_content = '\n'.join(cleaned_lines)
-                
-                return f'<pre><code>{code_content}</code></pre>'
-            
+                            cleaned_lines.append("")
+                    code_content = "\n".join(cleaned_lines)
+
+                return f"<pre><code>{code_content}</code></pre>"
+
             # Применяем очистку ко всем блокам кода
             text = re.sub(code_pattern, clean_code_block, text, flags=re.DOTALL)
-            
+
             return text
-            
+
         except Exception as e:
-            self.logger.warning(f"Ошибка при очистке markdown меток и отступов: {str(e)}")
+            self.logger.warning(
+                f"Ошибка при очистке markdown меток и отступов: {str(e)}"
+            )
             return text
 
     def make_api_request(
