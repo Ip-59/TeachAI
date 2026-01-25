@@ -1,0 +1,69 @@
+config
+github-ssh-key.txt
+github-key.ssh
+github-key.ssh.pub
+.git/
+archive/
+
+.tmp.drivedownload/
+.tmp.driveupload/
+TeachAI v.5 ChatGPT/
+TeachAI GH v.3/
+
+# IDE и текстовые редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+.cursorrules
+.ipynb_checkpoints/
+
+# Папки разработки и тестирования
+debug_responses/
+doc/
+data/
+logs/
+test/
+
+# Byte-код Python
+__pycache__/
+*.py[cod]
+*$py.class
+**/__pycache__/
+**/.vs/
+
+# Среды разработки
+.env/
+.venv/
+env/
+venv/
+venv_home/
+venv_H_L/
+
+# Логи
+*.log
+*.out
+*.err
+debug.log
+
+# Файлы тестирования
+.coverage
+.tox/
+.cache/
+
+# Библиотеки
+*.egg
+*.egg-info/
+dist/
+build/
+*.wheel
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Секреты
+*.env
+.env.*
+
+replace.txt

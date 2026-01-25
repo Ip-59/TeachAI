@@ -1,0 +1,10 @@
+# Установка универсального перевода строк
+* text=auto
+
+# Обработка бинарных файлов
+*.png binary
+*.jpg binary
+*.gif binary
+
+# Jupyter Notebook (LF)
+*.ipynb text eol=lf
