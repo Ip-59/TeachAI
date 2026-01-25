@@ -308,9 +308,9 @@ class BaseContentGenerator:
             debug_data = {
                 "timestamp": timestamp,
                 "response_type": response_type,
-                "prompt": prompt[:500] + "..."
-                if len(prompt) > 500
-                else prompt,  # Сокращаем длинные промпты
+                "prompt": (
+                    prompt[:500] + "..." if len(prompt) > 500 else prompt
+                ),  # Сокращаем длинные промпты
                 "response_content": response_content,
                 "additional_data": additional_data or {},
             }
