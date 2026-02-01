@@ -1,10 +1,16 @@
+# Конфигурационные и секретные файлы
 config
 github-ssh-key.txt
 github-key.ssh
 github-key.ssh.pub
-.git/
-archive/
+*.env
+.env.*
 
+# Git
+.git/
+
+# Архивы и временные папки
+archive/
 .tmp.drivedownload/
 .tmp.driveupload/
 TeachAI v.5 ChatGPT/
@@ -17,14 +23,21 @@ TeachAI GH v.3/
 *.swo
 .cursor/
 .cursorrules
-.ipynb_checkpoints/
 
-# Папки разработки и тестирования
+# Папки разработки и отладки
 debug_responses/
 doc/
-data/
+docs/chat_logs/
+docs/project_docs/
+docs/technical_docs/
 logs/
 test/
+tests/
+
+# Данные и состояние (исключаем все кроме примеров)
+data/
+*.json
+!courses.json
 
 # Byte-код Python
 __pycache__/
@@ -33,7 +46,7 @@ __pycache__/
 **/__pycache__/
 **/.vs/
 
-# Среды разработки
+# Виртуальные среды
 .env/
 .venv/
 env/
@@ -52,7 +65,7 @@ debug.log
 .tox/
 .cache/
 
-# Библиотеки
+# Библиотеки и сборки
 *.egg
 *.egg-info/
 dist/
@@ -62,8 +75,20 @@ build/
 # Jupyter Notebook
 .ipynb_checkpoints/
 
-# Секреты
-*.env
-.env.*
-
+# Временные файлы
 replace.txt
+*.tmp
+*.bak
+*.backup
+*_backup.py
+
+# Скриншоты и изображения из документации
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Архивы
+*.zip
+*.tar.gz
+*.rar

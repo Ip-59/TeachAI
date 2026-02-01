@@ -65,7 +65,7 @@ if interface_element:
     display(interface_element)
 ```
 
-Или используйте предготовленный ноутбук [TeachAI_clean.ipynb](TeachAI_clean.ipynb)
+Или используйте предготовленный ноутбук [TeachAI.ipynb](TeachAI.ipynb)
 
 ## 📋 Архитектура проекта
 
@@ -123,38 +123,44 @@ OPENAI_API_KEY=sk-...    # API ключ OpenAI (обязательный)
 
 ```
 TeachAI/
-├── core/
-│   ├── engine.py              # Главный класс системы
-│   ├── config.py              # Конфигурация
-│   ├── state_manager.py       # Управление состоянием
-│   └── logger.py              # Логирование
+├── engine.py                   # Главный класс системы
+├── config.py                   # Конфигурация
+├── state_manager.py            # Управление состоянием
+├── logger.py                   # Логирование
 │
-├── generators/
-│   ├── content_generator.py   # Фасад для генерации контента
+├── Генераторы контента:
+│   ├── content_generator.py    # Фасад для генерации контента
 │   ├── course_plan_generator.py
 │   ├── lesson_generator.py
 │   ├── examples_generator.py
+│   ├── assessment_generator.py
 │   └── ...
 │
-├── ui/
-│   ├── interface.py           # Главный интерфейс
+├── Интерфейсы:
+│   ├── interface.py            # Главный интерфейс
 │   ├── setup_interface.py
 │   ├── lesson_interface.py
+│   ├── assessment_interface.py
 │   └── ...
 │
-├── managers/
+├── Менеджеры:
 │   ├── user_profile_manager.py
 │   ├── learning_progress_manager.py
 │   └── course_data_manager.py
 │
+├── Важные документы:
+│   ├── ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md   # Полное описание проекта
+│   ├── ОТВЕТ_КУРАТОРУ.md              # О подходе к разработке
+│   └── README.md                      # Этот файл
+│
 ├── data/                       # Данные приложения (git ignored)
 ├── logs/                       # Логи системы (git ignored)
-├── doc/                        # Документация и отчеты (git ignored)
+├── doc/                        # Отчеты разработки (git ignored)
+├── docs/                       # Техническая документация (git ignored)
 │
 ├── requirements.txt            # Зависимости Python
-├── TeachAI.ipynb              # Основной notebook
-├── TeachAI_clean.ipynb        # Чистый notebook для запуска
-└── README.md                   # Этот файл
+├── TeachAI.ipynb              # Основной notebook для запуска
+└── .gitignore                 # Исключения из git
 ```
 
 ## 💻 Зависимости
@@ -170,11 +176,16 @@ TeachAI/
 
 ## 📚 Документация
 
-Подробная документация находится в папке [doc/](doc/):
+### Основная документация
 
-- Описание архитектуры системы
+- **[ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md](ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md)** - подробное описание проекта, архитектуры и реализации (1000+ строк)
+- **[ОТВЕТ_КУРАТОРУ.md](ОТВЕТ_КУРАТОРУ.md)** - объяснение подхода к разработке и использования GPT без дообучения
+
+### Дополнительные материалы
+
+Папка `doc/` (не включена в репозиторий) содержит:
 - Отчеты о разработке
-- Гайды по использованию
+- Логи сессий
 - История исправлений
 
 ## 🔒 Безопасность
