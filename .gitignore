@@ -13,8 +13,7 @@ github-key.ssh.pub
 archive/
 .tmp.drivedownload/
 .tmp.driveupload/
-TeachAI v.5 ChatGPT/
-TeachAI GH v.3/
+
 
 # IDE и текстовые редакторы
 .vscode/
@@ -27,12 +26,10 @@ TeachAI GH v.3/
 # Папки разработки и отладки
 debug_responses/
 doc/
-docs/chat_logs/
-docs/project_docs/
-docs/technical_docs/
-logs/
+docs/
 test/
 tests/
+logs/
 
 # Данные и состояние (исключаем все кроме примеров)
 data/
@@ -53,6 +50,8 @@ env/
 venv/
 venv_home/
 venv_H_L/
+venv_W_L/
+venv*
 
 # Логи
 *.log

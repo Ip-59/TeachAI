@@ -57,6 +57,20 @@ class ConfigManager:
                 )
                 return False
 
+            # Требуем прокси для обращений к OpenAI
+            proxy = (
+                os.getenv("OPENAI_PROXY")
+                or os.getenv("HTTPS_PROXY")
+                or os.getenv("HTTP_PROXY")
+                or os.getenv("https_proxy")
+                or os.getenv("http_proxy")
+            )
+            if not proxy:
+                self.logger.error(
+                    "Прокси не задан. Укажите OPENAI_PROXY или HTTPS_PROXY/HTTP_PROXY."
+                )
+                return False
+
             self.logger.info("Конфигурация успешно загружена")
             return True
         except Exception as e:
@@ -76,7 +90,8 @@ class ConfigManager:
             return None
 
         # Валидация ключа по формату (базовая, не проверяем актуальность)
-        if not api_key.startswith(("REMOVED", "org-")):
+        valid_prefixes = ("sk-", "sk-proj-", "org-")
+        if not api_key.startswith(valid_prefixes):
             self.logger.warning("API ключ имеет неправильный формат")
 
         return api_key
@@ -96,6 +111,8 @@ class ConfigManager:
                 f.write("# Конфигурационный файл для TeachAI\n\n")
                 f.write("# API ключ OpenAI\n")
                 f.write("OPENAI_API_KEY=your_openai_api_key_here\n")
+                f.write("\n# Прокси для доступа к OpenAI (обязательно)\n")
+                f.write("OPENAI_PROXY=http://user:pass@host:port\n")
 
             self.logger.info(f"Образец .env файла создан: {file_path}")
             return True

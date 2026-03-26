@@ -120,6 +120,9 @@ class SetupInterface:
                 )
 
                 if success:
+                    # Сбрасываем старые данные курса и прогресса при новом профиле
+                    self.state_manager.reset_learning_and_course_data()
+
                     # Устанавливаем флаг, что это не первый запуск
                     self.state_manager.set_not_first_run()
 

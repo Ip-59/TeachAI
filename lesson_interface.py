@@ -47,6 +47,9 @@ class LessonInterface:
         self.engine = engine
         self.logger = logging.getLogger(__name__)
 
+        # Back-reference to the facade interface (set by UserInterface)
+        self.interface = None
+
         # Утилиты интерфейса
         self.utils = InterfaceUtils()
 

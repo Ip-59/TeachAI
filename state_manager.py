@@ -159,6 +159,23 @@ class StateManager:
             self.logger.error(f"Ошибка при сохранении состояния: {str(e)}")
             return False
 
+    def reset_learning_and_course_data(self):
+        """
+        Сбрасывает данные курса и прогресса обучения, сохраняя профиль пользователя.
+
+        Returns:
+            bool: True если сброс прошел успешно, иначе False
+        """
+        try:
+            defaults = self._create_default_state()
+            self.state["learning"] = defaults["learning"]
+            self.state["course_plan"] = defaults["course_plan"]
+            self.state["system"]["first_run"] = True
+            return self.save_state()
+        except Exception as e:
+            self.logger.error(f"Ошибка при сбросе данных курса и прогресса: {str(e)}")
+            return False
+
     def is_first_run(self):
         """
         Проверяет, является ли текущий запуск первым.

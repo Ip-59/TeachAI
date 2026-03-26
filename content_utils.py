@@ -274,13 +274,14 @@ class BaseContentGenerator:
                 or os.getenv("HTTP_PROXY")
                 or ""
             ).strip()
-            if proxy_url and not proxy_url.startswith("${"):
-                self.http_client = httpx.Client(proxy=proxy_url)
-                self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
-                self.logger.info(f"{self.__class__.__name__} инициализирован с прокси")
-            else:
-                self.client = OpenAI(api_key=self.api_key)
-                self.logger.info(f"{self.__class__.__name__} успешно инициализирован")
+            if not proxy_url or proxy_url.startswith("${"):
+                raise RuntimeError(
+                    "Прокси не задан. Укажите OPENAI_PROXY или HTTPS_PROXY/HTTP_PROXY."
+                )
+
+            self.http_client = httpx.Client(proxy=proxy_url)
+            self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
+            self.logger.info(f"{self.__class__.__name__} инициализирован с прокси")
         except Exception as e:
             self.logger.error(f"Ошибка при инициализации клиента OpenAI: {str(e)}")
             raise

@@ -69,6 +69,7 @@ class UserInterface:
             self.lesson_interface = LessonInterface(
                 state_manager, content_generator, system_logger, assessment
             )
+            self.lesson_interface.interface = self
             self.assessment_interface = AssessmentInterface(
                 state_manager, assessment, system_logger, None
             )
