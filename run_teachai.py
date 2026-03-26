@@ -2,6 +2,12 @@
 Запуск TeachAI без Jupyter Notebook
 """
 
+import os
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env
+load_dotenv()
+
 from engine import TeachAIEngine
 
 

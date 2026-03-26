@@ -423,3 +423,46 @@ class BaseContentGenerator:
         except Exception as e:
             self.logger.error(f"Ошибка при запросе к OpenAI API: {str(e)}")
             raise
+
+    def make_api_request_with_retries(
+        self,
+        messages,
+        temperature=0.7,
+        max_tokens=3500,
+        response_format=None,
+        retries=3,
+        backoff_factor=2,
+        initial_delay=2,
+    ):
+        """Выполняет запрос к OpenAI API с повторными попытками для ошибок сети."""
+        last_exception = None
+        delay = initial_delay
+
+        for attempt in range(1, retries + 1):
+            try:
+                return self.make_api_request(
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format=response_format,
+                )
+            except Exception as e:
+                last_exception = e
+                self.logger.warning(
+                    f"Попытка {attempt}/{retries} неудачна: {str(e)}. "
+                    f"Повтор через {delay} сек..."
+                )
+
+                if attempt == retries:
+                    break
+
+                import time
+
+                time.sleep(delay)
+                delay *= backoff_factor
+
+        raise Exception(
+            "Сервер не отвечает. Попробуйте повторить запрос через несколько секунд. "
+            f"Если ошибка сохраняется, проверьте подключение и настройки прокси. "
+            f"Исходная ошибка: {str(last_exception)}"
+        )
