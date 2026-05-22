@@ -107,7 +107,9 @@ if interface_element:
 ### Переменные окружения
 
 ```env
-OPENAI_API_KEY=sk-...    # API ключ OpenAI (обязательный)
+OPENAI_API_KEY=sk-...       # API ключ OpenAI (обязательный)
+LLM_MODEL=gpt-4o-mini       # Модель по умолчанию (gpt-4o — для сложных задач)
+OPENAI_PROXY=http://...     # Прокси (обязательный)
 ```
 
 ### Стили общения
