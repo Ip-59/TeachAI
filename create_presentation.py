@@ -14,13 +14,20 @@ import os
 TEMPLATE_PATH = "Шаблон презентации.pptx"
 OUTPUT_PATH = "TeachAI_Stage4.pptx"
 
-# Paths to generated images
+# Paths to generated images (Safe access)
 BRAIN_DIR = "/home/ip-59/.gemini/antigravity/brain/242bef71-a864-4600-8d99-4906f89eaa57"
-IMG_ARCHITECTURE = os.path.join(BRAIN_DIR, [f for f in os.listdir(BRAIN_DIR) if f.startswith("architecture_diagram")][0])
-IMG_LIFECYCLE = os.path.join(BRAIN_DIR, [f for f in os.listdir(BRAIN_DIR) if f.startswith("lesson_lifecycle")][0])
-IMG_METRICS = os.path.join(BRAIN_DIR, [f for f in os.listdir(BRAIN_DIR) if f.startswith("quality_metrics")][0])
-IMG_TECH = os.path.join(BRAIN_DIR, [f for f in os.listdir(BRAIN_DIR) if f.startswith("tech_stack")][0])
-IMG_PROMPT = os.path.join(BRAIN_DIR, [f for f in os.listdir(BRAIN_DIR) if f.startswith("prompt_engineering")][0])
+
+def get_img(prefix):
+    if os.path.exists(BRAIN_DIR):
+        files = [f for f in os.listdir(BRAIN_DIR) if f.startswith(prefix)]
+        if files: return os.path.join(BRAIN_DIR, files[0])
+    return None
+
+IMG_ARCHITECTURE = get_img("architecture_diagram")
+IMG_LIFECYCLE = get_img("lesson_lifecycle")
+IMG_METRICS = get_img("quality_metrics")
+IMG_TECH = get_img("tech_stack")
+IMG_PROMPT = get_img("prompt_engineering")
 
 
 def clear_shape_text(shape):
@@ -132,6 +139,7 @@ def set_multiline_text(shape, lines, font_size=None, color=None, bold=None, line
 
 def replace_placeholder_image(slide, shape_name, image_path):
     """Replace a placeholder image shape with a new image."""
+    if not image_path or not os.path.exists(image_path): return False
     for shape in slide.shapes:
         if shape.name == shape_name:
             # Get position and size
@@ -150,6 +158,7 @@ def replace_placeholder_image(slide, shape_name, image_path):
 
 def add_image_to_slide(slide, image_path, left, top, width, height=None):
     """Add an image to a slide at specific position."""
+    if not image_path or not os.path.exists(image_path): return
     if height:
         slide.shapes.add_picture(image_path, left, top, width, height)
     else:
@@ -340,13 +349,14 @@ def create_presentation():
                 ], font_size=10)
     
     # Find and replace image placeholder
-    for shape in slide.shapes:
-        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-            left, top, w, h = shape.left, shape.top, shape.width, shape.height
-            sp = shape._element
-            sp.getparent().remove(sp)
-            slide.shapes.add_picture(IMG_PROMPT, left, top, w, h)
-            break
+    if IMG_PROMPT and os.path.exists(IMG_PROMPT):
+        for shape in slide.shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                left, top, w, h = shape.left, shape.top, shape.width, shape.height
+                sp = shape._element
+                sp.getparent().remove(sp)
+                slide.shapes.add_picture(IMG_PROMPT, left, top, w, h)
+                break
     
     # ================================================================
     # SLIDE 8: Параметризация данных
@@ -378,13 +388,14 @@ def create_presentation():
                 ], font_size=10)
     
     # Replace image with lifecycle diagram  
-    for shape in slide.shapes:
-        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-            left, top, w, h = shape.left, shape.top, shape.width, shape.height
-            sp = shape._element
-            sp.getparent().remove(sp)
-            slide.shapes.add_picture(IMG_LIFECYCLE, left, top, w, h)
-            break
+    if IMG_LIFECYCLE and os.path.exists(IMG_LIFECYCLE):
+        for shape in slide.shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                left, top, w, h = shape.left, shape.top, shape.width, shape.height
+                sp = shape._element
+                sp.getparent().remove(sp)
+                slide.shapes.add_picture(IMG_LIFECYCLE, left, top, w, h)
+                break
     
     # ================================================================
     # SLIDE 9: Жизненный цикл (слайд с картинкой и текстом)
@@ -422,13 +433,14 @@ def create_presentation():
             set_shape_text(shape, "Точка входа: TeachAI.ipynb → engine.py → start()", font_size=11)
     
     # Replace the main image with tech stack
-    for shape in slide.shapes:
-        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-            left, top, w, h = shape.left, shape.top, shape.width, shape.height
-            sp = shape._element
-            sp.getparent().remove(sp)
-            slide.shapes.add_picture(IMG_TECH, left, top, w, h)
-            break
+    if IMG_TECH and os.path.exists(IMG_TECH):
+        for shape in slide.shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                left, top, w, h = shape.left, shape.top, shape.width, shape.height
+                sp = shape._element
+                sp.getparent().remove(sp)
+                slide.shapes.add_picture(IMG_TECH, left, top, w, h)
+                break
     
     # ================================================================
     # SLIDE 11: 3 картинки (метрики)
@@ -450,16 +462,17 @@ def create_presentation():
                 pass
     
     # Replace the 3 placeholder images with the metrics image
-    replaced = 0
-    for shape in list(slide.shapes):
-        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-            left, top, w, h = shape.left, shape.top, shape.width, shape.height
-            sp = shape._element
-            sp.getparent().remove(sp)
-            if replaced == 0:
-                # First image slot — use the full metrics image spanning all 3 slots
-                slide.shapes.add_picture(IMG_METRICS, left, top, Inches(10), h)
-            replaced += 1
+    if IMG_METRICS and os.path.exists(IMG_METRICS):
+        replaced = 0
+        for shape in list(slide.shapes):
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                left, top, w, h = shape.left, shape.top, shape.width, shape.height
+                sp = shape._element
+                sp.getparent().remove(sp)
+                if replaced == 0:
+                    # First image slot — use the full metrics image spanning all 3 slots
+                    slide.shapes.add_picture(IMG_METRICS, left, top, Inches(10), h)
+                replaced += 1
     
     # Update captions
     caption_idx = 0
