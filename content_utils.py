@@ -264,6 +264,7 @@ class BaseContentGenerator:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.api_key = api_key
         self.debug_dir = debug_dir
+        self.model = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
         # Инициализация клиента OpenAI (с прокси из OPENAI_PROXY/HTTPS_PROXY/HTTP_PROXY)
         self.http_client = None
@@ -281,7 +282,11 @@ class BaseContentGenerator:
 
             self.http_client = httpx.Client(proxy=proxy_url)
             self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
-            self.logger.info(f"{self.__class__.__name__} инициализирован с прокси")
+            self.logger.info(
+                "%s инициализирован с прокси, модель: %s",
+                self.__class__.__name__,
+                self.model,
+            )
         except Exception as e:
             self.logger.error(f"Ошибка при инициализации клиента OpenAI: {str(e)}")
             raise
@@ -389,7 +394,12 @@ class BaseContentGenerator:
             return text
 
     def make_api_request(
-        self, messages, temperature=0.7, max_tokens=3500, response_format=None
+        self,
+        messages,
+        temperature=0.7,
+        max_tokens=3500,
+        response_format=None,
+        model=None,
     ):
         """
         Выполняет запрос к OpenAI API с едиными настройками.
@@ -399,6 +409,7 @@ class BaseContentGenerator:
             temperature (float): Температура генерации
             max_tokens (int): Максимальное количество токенов
             response_format (dict): Формат ответа (например, {"type": "json_object"})
+            model (str): Модель; если не указана — self.model
 
         Returns:
             str: Ответ от API
@@ -408,7 +419,7 @@ class BaseContentGenerator:
         """
         try:
             kwargs = {
-                "model": "gpt-3.5-turbo-16k",
+                "model": model or self.model,
                 "messages": messages,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
@@ -430,6 +441,7 @@ class BaseContentGenerator:
         temperature=0.7,
         max_tokens=3500,
         response_format=None,
+        model=None,
         retries=3,
         backoff_factor=2,
         initial_delay=2,
@@ -445,6 +457,7 @@ class BaseContentGenerator:
                     temperature=temperature,
                     max_tokens=max_tokens,
                     response_format=response_format,
+                    model=model,
                 )
             except Exception as e:
                 last_exception = e

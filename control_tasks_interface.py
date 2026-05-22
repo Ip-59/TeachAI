@@ -91,6 +91,80 @@ class ControlTasksInterface:
                 f"Ошибка при загрузке задания: {str(e)}"
             )
 
+    def _format_task_instructions(self, task_data: Dict[str, Any]) -> str:
+        """Формирует понятный блок инструкций для студента."""
+        import html
+
+        steps = task_data.get("student_steps") or []
+        description = (task_data.get("description") or "").strip()
+        validation_mode = task_data.get("validation_mode", "structured")
+        check_variables = task_data.get("check_variables") or []
+        if not check_variables and task_data.get("check_variable"):
+            check_variables = [task_data["check_variable"]]
+        validation_criteria = task_data.get("validation_criteria") or []
+        output_format = (task_data.get("output_format") or "").strip()
+
+        parts = [
+            "<div style='background:#eef6ff;border:1px solid #b8daff;border-radius:8px;padding:16px;margin:12px 0;'>",
+            "<h3 style='margin:0 0 10px 0;color:#004085;'>📋 Что нужно сделать</h3>",
+        ]
+
+        if steps:
+            parts.append("<ol style='margin:8px 0 12px 20px;line-height:1.6;'>")
+            for step in steps:
+                parts.append(f"<li>{html.escape(str(step))}</li>")
+            parts.append("</ol>")
+        elif description:
+            parts.append(
+                f"<p style='margin:0 0 12px 0;line-height:1.6;white-space:pre-wrap;'>"
+                f"{html.escape(description)}</p>"
+            )
+        else:
+            parts.append(
+                "<p style='margin:0;color:#856404;'>⚠️ Текст задания не сформирован. "
+                "Допишите код в редакторе ниже и нажмите «Проверить решение».</p>"
+            )
+
+        parts.append(
+            "<h4 style='margin:16px 0 8px 0;color:#004085;'>✅ Как проверяется</h4>"
+        )
+        if validation_criteria:
+            parts.append("<ul style='margin:0 0 8px 20px;line-height:1.6;'>")
+            for criterion in validation_criteria:
+                parts.append(f"<li>{html.escape(str(criterion))}</li>")
+            parts.append("</ul>")
+        elif validation_mode == "llm" or validation_criteria:
+            parts.append(
+                "<p style='margin:0 0 8px 0;line-height:1.6;'>"
+                "Решение проверяет <strong>нейросеть</strong> по смыслу: "
+                "важна правильность логики и результата, а не дословное совпадение текста."
+                "</p>"
+            )
+            if check_variables:
+                parts.append(
+                    "<p style='margin:0 0 8px 0;'>Ключевые переменные: "
+                    + ", ".join(f"<code>{html.escape(v)}</code>" for v in check_variables)
+                    + ".</p>"
+                )
+        elif validation_mode in {"variable", "both"} and check_variables:
+            var_name = check_variables[-1]
+            parts.append(
+                f"<p style='margin:0 0 8px 0;'>Проверяется переменная "
+                f"<code>{html.escape(var_name)}</code>.</p>"
+            )
+        else:
+            parts.append(
+                "<p style='margin:0 0 8px 0;'>Проверяется текстовый вывод программы (print).</p>"
+            )
+            if output_format:
+                parts.append(
+                    f"<p style='margin:0;font-size:14px;'><strong>Формат вывода:</strong> "
+                    f"{html.escape(output_format)}</p>"
+                )
+
+        parts.append("</div>")
+        return "".join(parts)
+
     def _create_task_interface(self, task_data: Dict[str, Any]) -> widgets.VBox:
         """
         Создает интерфейс для отображения задания.
@@ -101,30 +175,46 @@ class ControlTasksInterface:
         Returns:
             widgets.VBox: Виджет с заданием
         """
-        import pprint
-        print("\n[DEBUG] Контрольное задание, которое будет показано студенту:\n")
-        pprint.pprint(task_data)
-        print("\n[DEBUG] КОНЕЦ task_data\n")
+        self.logger.debug("Контрольное задание: %s", task_data.get("title", ""))
+
         # Заголовок задания
         title_html = widgets.HTML(
             value=f"<h2 style='color: #2c3e50; margin: 10px 0;'>{task_data.get('title', 'Контрольное задание')}</h2>",
             layout=widgets.Layout(margin="10px 0"),
         )
 
-        # Описание задания
-        description_html = widgets.HTML(
-            value=f"<p style='margin: 10px 0; line-height: 1.5;'>{task_data.get('description', '')}</p>",
+        instructions_html = widgets.HTML(
+            value=self._format_task_instructions(task_data),
             layout=widgets.Layout(margin="10px 0"),
         )
 
-        # Поле для ввода кода (ИСПРАВЛЕНО: не показываем готовое решение)
+        editor_label = widgets.HTML(
+            value=(
+                "<p style='margin:10px 0 4px 0;'><strong>💻 Ваш код</strong> "
+                "(начальный код уже вставлен — допишите решение после "
+                "<code># Ваш код здесь</code>):</p>"
+            )
+        )
+
+        # Поле для ввода кода: студент дописывает решение к начальному task_code
+        starter_code = task_data.get("task_code", "")
         code_input = widgets.Textarea(
-            value="",  # Пустое поле для ввода кода студентом
-            placeholder="Введите ваш код здесь...",
+            value=starter_code,
+            placeholder="Допишите ваш код здесь...",
             description="Код:",
             layout=widgets.Layout(width="100%", height="200px"),
             style={"description_width": "initial"},
         )
+
+        hints = task_data.get("hints") or []
+        hints_widgets = []
+        if hints:
+            hints_html = widgets.HTML(
+                value="<details style='margin: 10px 0;'><summary><strong>Подсказки</strong></summary><ul>"
+                + "".join(f"<li>{hint}</li>" for hint in hints)
+                + "</ul></details>"
+            )
+            hints_widgets.append(hints_html)
 
         # Кнопка выполнения
         execute_button = widgets.Button(
@@ -158,10 +248,12 @@ class ControlTasksInterface:
                 from contextlib import redirect_stdout
                 
                 output_buffer = io.StringIO()
-                
-                # Выполняем код с перехватом вывода
+                full_code = ControlTasksGenerator.resolve_executable_code(
+                    task_data.get("task_code", ""), code_input.value
+                )
+
                 with redirect_stdout(output_buffer):
-                    exec(code_input.value, namespace)
+                    exec(full_code, namespace)
                 
                 # Получаем результат
                 output = output_buffer.getvalue()
@@ -173,8 +265,13 @@ class ControlTasksInterface:
                     )
                 else:
                     result_html = widgets.HTML(
-                        value="<p style='color: green;'>✅ Код выполнен успешно! (без вывода)</p>"
+                        value=(
+                            "<p style='color: green;'>✅ Код выполнен успешно! (без текстового вывода)</p>"
+                            "<p style='color:#666;font-size:14px;'>Если строился график — он появится "
+                            "в области вывода ноутбука выше или ниже этого блока. "
+                            "Для проверки задания нажмите «✓ Проверить решение».</p>"
                         )
+                    )
                 
                 # Добавляем результат в контейнер
                 results_output.children = [result_html]
@@ -210,7 +307,9 @@ class ControlTasksInterface:
         interface = widgets.VBox(
             [
                 title_html,
-                description_html,
+                instructions_html,
+                editor_label,
+                *hints_widgets,
                 code_input,
                 buttons_container,
                 results_output,
@@ -253,9 +352,7 @@ class ControlTasksInterface:
             # Проверяем выполнение
             validation_result = self.tasks_generator.validate_task_execution(
                 user_code,
-                task_data.get("expected_output", ""),
-                check_variable=check_variable,
-                expected_variable_value=expected_variable_value,
+                task_data=task_data,
             )
 
             print(f"Результат валидации: {validation_result}")
@@ -265,7 +362,7 @@ class ControlTasksInterface:
                 print(f"🔍 [DIAGNOSTIC] Проверка переменной '{check_variable}':")
                 print(f"   Ожидаемое значение: {expected_variable_value}")
                 print(f"   Фактическое значение: {validation_result.get('actual_variable')}")
-                print(f"   Совпадение: {validation_result.get('actual_variable') == expected_variable_value}")
+                print(f"   Совпадение: {validation_result.get('is_correct')}")
             else:
                 print(f"🔍 [DIAGNOSTIC] Проверка вывода:")
                 print(f"   Ожидаемый вывод: '{task_data.get('expected_output', '')}'")
@@ -277,13 +374,20 @@ class ControlTasksInterface:
 
             if validation_result["is_correct"]:
                 # Успех
+                feedback = validation_result.get("feedback", "")
+                feedback_html = ""
+                if feedback:
+                    feedback_html = (
+                        f"<p style='color: #155724; margin: 10px 0;'>"
+                        f"<strong>Комментарий:</strong> {feedback}</p>"
+                    )
                 success_html = widgets.HTML(
                     value="<div style='background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 15px; margin: 10px 0;'>"
                     "<h3 style='color: #155724; margin: 0;'>🎉 Задание выполнено правильно!</h3>"
-                    "<p style='color: #155724; margin: 10px 0;'>Отличная работа! Вы успешно справились с заданием.</p>"
-                    f"<p style='color: #155724; margin: 10px 0;'><strong>Ваш результат:</strong> {validation_result.get('actual_output', 'Нет вывода')}" +
-                    (f"; <strong>Значение переменной:</strong> {validation_result.get('actual_variable')}" if check_variable else "") +
-                    "</p>"
+                    "<p style='color: #155724; margin: 10px 0;'>Отличная работа! Решение принято.</p>"
+                    f"{feedback_html}"
+                    f"<p style='color: #155724; margin: 10px 0;'><strong>Ваш вывод:</strong> "
+                    f"{validation_result.get('actual_output', 'Нет вывода') or 'Нет вывода'}</p>"
                     "</div>"
                 )
                 result_widgets.append(success_html)
@@ -297,21 +401,47 @@ class ControlTasksInterface:
 
             else:
                 # Ошибка
-                error_message = validation_result.get("error_message", "")
+                failure_reason = validation_result.get("failure_reason") or validation_result.get(
+                    "error_message", ""
+                )
+                feedback = validation_result.get("feedback", "")
+                check_variables = task_data.get("check_variables") or []
+                if not check_variables and check_variable:
+                    check_variables = [check_variable]
+
                 error_details = ""
-                if error_message:
-                    error_details = f"<p style='color: #721c24; margin: 10px 0;'><strong>Ошибка исполнения:</strong><br><pre style='background-color: #f8f9fa; padding: 10px; border-radius: 3px; margin: 5px 0; font-size: 12px;'>{error_message}</pre></p>"
-                
+                if failure_reason:
+                    error_details = (
+                        f"<p style='color: #721c24; margin: 10px 0;'>"
+                        f"<strong>Причина:</strong> {failure_reason}</p>"
+                    )
+                if feedback and feedback != failure_reason:
+                    error_details += (
+                        f"<p style='color: #721c24; margin: 10px 0;'>"
+                        f"<strong>Комментарий:</strong> {feedback}</p>"
+                    )
+
+                expected_hint = ""
+                if task_data.get("validation_mode") == "stdout":
+                    expected_hint = (
+                        f"<p style='color: #721c24; margin: 10px 0;'>"
+                        f"<strong>Ожидаемый вывод:</strong> "
+                        f"{task_data.get('expected_output', 'Не указан')}</p>"
+                    )
+                elif check_variables:
+                    vars_list = ", ".join(f"<code>{v}</code>" for v in check_variables)
+                    expected_hint = (
+                        f"<p style='color: #721c24; margin: 10px 0;'>"
+                        f"<strong>Проверяемые переменные:</strong> {vars_list}</p>"
+                    )
+
                 error_html = widgets.HTML(
                         value="<div style='background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 15px; margin: 10px 0;'>"
                         "<h3 style='color: #721c24; margin: 0;'>❌ Задание выполнено неправильно</h3>"
-                        "<p style='color: #721c24; margin: 10px 0;'>Попробуйте еще раз или посмотрите эталонное решение.</p>"
-                    f"<p style='color: #721c24; margin: 10px 0;'><strong>Ваш результат:</strong> {validation_result.get('actual_output', 'Нет вывода')}" +
-                    (f"; <strong>Значение переменной:</strong> {validation_result.get('actual_variable')}" if check_variable else "") +
-                    "</p>"
-                    f"<p style='color: #721c24; margin: 10px 0;'><strong>Ожидаемый результат:</strong> {task_data.get('expected_output', 'Не указан')}" +
-                    (f"; <strong>Ожидалось значение переменной:</strong> {expected_variable_value}" if check_variable else "") +
-                    "</p>"
+                        "<p style='color: #721c24; margin: 10px 0;'>Проверьте шаги задания и попробуйте ещё раз.</p>"
+                    f"<p style='color: #721c24; margin: 10px 0;'><strong>Ваш вывод:</strong> "
+                    f"{validation_result.get('actual_output', 'Нет вывода') or 'Нет вывода'}</p>"
+                    f"{expected_hint}"
                     f"{error_details}"
                         "</div>"
                     )

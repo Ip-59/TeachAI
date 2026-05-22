@@ -317,9 +317,8 @@ class StateManager:
             )
 
         except Exception as e:
-            self.logger.error(
-                f"Ошибка при сохранении результата контрольного задания: {str(e)}"
-            )
+            self.logger.error(f"Ошибка при сохранении результата контрольного задания: {str(e)}")
+
 
     def save_lesson_content(self, lesson_id, lesson_title, lesson_content):
         """

@@ -111,6 +111,8 @@ class ConfigManager:
                 f.write("# Конфигурационный файл для TeachAI\n\n")
                 f.write("# API ключ OpenAI\n")
                 f.write("OPENAI_API_KEY=your_openai_api_key_here\n")
+                f.write("\n# Модель OpenAI (gpt-4o-mini — по умолчанию, gpt-4o — для сложных задач)\n")
+                f.write("LLM_MODEL=gpt-4o-mini\n")
                 f.write("\n# Прокси для доступа к OpenAI (обязательно)\n")
                 f.write("OPENAI_PROXY=http://user:pass@host:port\n")
 

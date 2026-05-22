@@ -5,6 +5,7 @@
 
 import math
 import inspect
+import re
 from typing import Any, Dict, List, Tuple, Union, Callable, Optional
 from abc import ABC, abstractmethod
 
@@ -275,6 +276,118 @@ class FunctionChecker(BaseChecker):
         )
 
 
+class ObjectChecker(BaseChecker):
+    """Проверка сложных объектов: numpy, sklearn Bunch, обученные модели."""
+
+    def check(self, result: Any, expected: Any, **kwargs) -> CheckResult:
+        """Сравнивает объекты с учётом numpy/sklearn структур."""
+        if values_equal(result, expected):
+            return CheckResult(
+                passed=True,
+                message="Правильно! Значение переменной совпадает с ожидаемым.",
+                score=1.0,
+            )
+        return CheckResult(
+            passed=False,
+            message="Неверное значение переменной.",
+            score=0.0,
+            details={"result": result, "expected": expected},
+        )
+
+
+def values_equal(actual: Any, expected: Any) -> bool:
+    """
+    Универсальное сравнение значений для контрольных заданий.
+
+    Поддерживает примитивы, numpy-массивы, sklearn Bunch и обученные модели.
+    """
+    if actual is expected:
+        return True
+
+    try:
+        import numpy as np
+
+        if isinstance(actual, np.ndarray) and isinstance(expected, np.ndarray):
+            return np.array_equal(actual, expected)
+    except Exception:
+        pass
+
+    if actual == expected:
+        return True
+
+    try:
+        import numpy as np
+
+        actual_data = getattr(actual, "data", None)
+        expected_data = getattr(expected, "data", None)
+        if actual_data is not None and expected_data is not None:
+            data_equal = np.array_equal(actual_data, expected_data)
+            actual_target = getattr(actual, "target", None)
+            expected_target = getattr(expected, "target", None)
+            if actual_target is not None and expected_target is not None:
+                return data_equal and np.array_equal(actual_target, expected_target)
+            return data_equal
+
+        if hasattr(actual, "predict") and hasattr(expected, "predict"):
+            actual_labels = getattr(actual, "labels_", None)
+            expected_labels = getattr(expected, "labels_", None)
+            if actual_labels is not None and expected_labels is not None:
+                return np.array_equal(actual_labels, expected_labels)
+
+            actual_coef = getattr(actual, "coef_", None)
+            expected_coef = getattr(expected, "coef_", None)
+            if actual_coef is not None and expected_coef is not None:
+                return np.allclose(actual_coef, expected_coef)
+            actual_intercept = getattr(actual, "intercept_", None)
+            expected_intercept = getattr(expected, "intercept_", None)
+            if actual_intercept is not None and expected_intercept is not None:
+                return np.allclose(actual_intercept, expected_intercept)
+    except Exception:
+        pass
+
+    return False
+
+
+def extract_numpy_arrays(text: str) -> List[Any]:
+    """Извлекает numpy-массивы из текстового вывода print."""
+    import numpy as np
+
+    arrays = []
+    for match in re.finditer(r"\[[^\]]+\]", str(text)):
+        try:
+            arrays.append(np.array(eval(match.group(0))))
+        except Exception:
+            continue
+    return arrays
+
+
+def stdout_outputs_equal(actual: str, expected: str) -> bool:
+    """
+    Сравнивает stdout: точное совпадение или совпадение всех numpy-массивов.
+    """
+    import numpy as np
+
+    actual = (actual or "").strip()
+    expected = (expected or "").strip()
+    if actual == expected:
+        return True
+
+    actual_norm = " ".join(actual.split())
+    expected_norm = " ".join(expected.split())
+    if actual_norm == expected_norm:
+        return True
+
+    actual_arrays = extract_numpy_arrays(actual)
+    expected_arrays = extract_numpy_arrays(expected)
+    if (
+        actual_arrays
+        and len(actual_arrays) == len(expected_arrays)
+        and all(np.array_equal(a, b) for a, b in zip(actual_arrays, expected_arrays))
+    ):
+        return True
+    return False
+
+
 class OutputChecker(BaseChecker):
     """Проверка текстового вывода программы."""
 
@@ -335,6 +448,7 @@ class ResultChecker:
             "list": ListChecker(),
             "function": FunctionChecker(),
             "output": OutputChecker(),
+            "object": ObjectChecker(),
         }
 
     def check_result(

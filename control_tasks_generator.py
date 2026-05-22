@@ -4,204 +4,611 @@
 Создает практические задачи с эталонным кодом для проверки знаний.
 """
 
+import io
 import logging
 import json
-from typing import Dict, List, Any, Optional
+import os
+import re
+from contextlib import redirect_stdout
+from typing import Dict, List, Any, Optional, Tuple
+
 from content_utils import BaseContentGenerator
+from result_checker import ResultChecker, values_equal, stdout_outputs_equal
 
 
 class ControlTasksGenerator(BaseContentGenerator):
     """Генератор контрольных заданий."""
 
-    def __init__(self, api_key: str):
-        """
-        Инициализация генератора.
+    _RESULT_CHECKER = ResultChecker()
+    _SEED = 42
+    _SKLEARN_STABILIZE_FUNCS = (
+        "make_classification",
+        "train_test_split",
+        "KMeans",
+        "RandomForestClassifier",
+        "LogisticRegression",
+    )
 
-        Args:
-            api_key (str): API ключ для OpenAI
-        """
+    def __init__(self, api_key: str):
         super().__init__(api_key)
         self.logger = logging.getLogger(__name__)
+        self.validation_model = os.getenv(
+            "VALIDATION_MODEL",
+            os.getenv("LLM_MODEL", "gpt-4o-mini"),
+        )
+
+    @staticmethod
+    def resolve_executable_code(task_code: str, editor_code: str) -> str:
+        editor = (editor_code or "").strip()
+        starter = (task_code or "").strip()
+        if not editor:
+            return starter
+        if starter and (editor == starter or editor.startswith(starter)):
+            return editor
+        return ControlTasksGenerator.combine_code(starter, editor)
+
+    @staticmethod
+    def combine_code(task_code: str, user_code: str) -> str:
+        starter = (task_code or "").strip()
+        student = (user_code or "").strip()
+        if starter and student:
+            return f"{starter}\n{student}"
+        return starter or student
+
+    @staticmethod
+    def execute_code(code: str) -> Tuple[str, Dict[str, Any]]:
+        output_buffer = io.StringIO()
+        local_vars: Dict[str, Any] = {}
+        with redirect_stdout(output_buffer):
+            exec(code, {}, local_vars)
+        return output_buffer.getvalue().strip(), local_vars
+
+    @classmethod
+    def _inject_random_state(cls, func_name: str, args: str) -> str:
+        if "random_state" in args:
+            return f"{func_name}({args})"
+        args = args.strip()
+        if func_name == "KMeans":
+            if args:
+                return f"KMeans({args}, random_state={cls._SEED}, n_init=10)"
+            return f"KMeans(n_clusters=3, random_state={cls._SEED}, n_init=10)"
+        if args:
+            return f"{func_name}({args}, random_state={cls._SEED})"
+        return f"{func_name}(random_state={cls._SEED})"
+
+    @classmethod
+    def stabilize_sklearn_code(cls, code: str) -> str:
+        """Добавляет random_state в вызовы sklearn для воспроизводимой проверки."""
+        stabilized = code
+        for func_name in cls._SKLEARN_STABILIZE_FUNCS:
+            pattern = rf"{func_name}\(([^)]*)\)"
+
+            def _replace(match: re.Match, name: str = func_name) -> str:
+                return cls._inject_random_state(name, match.group(1))
+
+            stabilized = re.sub(pattern, _replace, stabilized)
+        return stabilized
+
+    @classmethod
+    def _collect_assigned_names(cls, code: str) -> List[str]:
+        names: List[str] = []
+        for line in code.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if stripped.startswith(
+                (
+                    "import ",
+                    "from ",
+                    "def ",
+                    "class ",
+                    "for ",
+                    "while ",
+                    "if ",
+                    "elif ",
+                    "else:",
+                    "return ",
+                    "print(",
+                )
+            ):
+                continue
+            match = re.match(r"^([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s*=", stripped)
+            if not match:
+                continue
+            for part in match.group(1).split(","):
+                names.append(part.strip())
+        return names
+
+    @classmethod
+    def infer_printed_variables(cls, solution_code: str) -> List[str]:
+        variables: List[str] = []
+        for line in solution_code.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith("print("):
+                continue
+            match = re.search(r"print\([^)]*,\s*([A-Za-z_]\w*)\s*\)", stripped)
+            if match:
+                variables.append(match.group(1))
+            else:
+                match = re.search(r"print\(([A-Za-z_]\w*)\s*\)", stripped)
+                if match:
+                    variables.append(match.group(1))
+        return variables
+
+    @classmethod
+    def _is_sklearn_estimator(cls, value: Any) -> bool:
+        return (
+            value is not None
+            and hasattr(value, "fit")
+            and hasattr(value, "predict")
+            and not isinstance(value, type)
+        )
+
+    @classmethod
+    def _looks_like_result_variable(cls, name: str, value: Any) -> bool:
+        result_name_patterns = (
+            r".*_pred$",
+            r"^predictions",
+            r"^clusters$",
+            r".*_labels$",
+            r"^cluster_labels$",
+            r"^semi_pred$",
+            r"^regression_pred$",
+            r"^my_list$",
+        )
+        if any(re.match(pattern, name) for pattern in result_name_patterns):
+            return True
+        try:
+            import numpy as np
+
+            if isinstance(value, (np.ndarray, list, tuple, dict, str, int, float, bool)):
+                return True
+        except Exception:
+            pass
+        return False
+
+    @classmethod
+    def infer_check_variables(
+        cls,
+        task_data: Dict[str, Any],
+        solution_code: str,
+        local_vars: Dict[str, Any],
+    ) -> List[str]:
+        """Определяет переменные для структурной проверки."""
+        explicit = task_data.get("check_variables") or []
+        if isinstance(explicit, str):
+            explicit = [explicit] if explicit else []
+        if task_data.get("check_variable"):
+            explicit.append(task_data["check_variable"])
+
+        candidates: List[str] = []
+        for name in explicit:
+            if name and name in local_vars and name not in candidates:
+                candidates.append(name)
+        if candidates:
+            return candidates
+
+        for name in cls.infer_printed_variables(solution_code):
+            if name and name in local_vars and name not in candidates:
+                if cls._looks_like_result_variable(name, local_vars[name]):
+                    candidates.append(name)
+
+        if candidates:
+            return candidates
+
+        assigned = cls._collect_assigned_names(solution_code)
+        for name in reversed(assigned):
+            if name not in local_vars or name in candidates:
+                continue
+            value = local_vars[name]
+            if name in {"X", "y", "X_train", "X_test", "y_train", "y_test", "data", "target"}:
+                continue
+            if cls._looks_like_result_variable(name, value) and not cls._is_sklearn_estimator(value):
+                candidates.insert(0, name)
+            elif cls._is_sklearn_estimator(value) and not candidates:
+                candidates.insert(0, name)
+        return candidates
+
+    @classmethod
+    def build_validation_criteria(
+        cls, task_data: Dict[str, Any], check_variables: List[str]
+    ) -> List[str]:
+        """Формирует понятные критерии проверки для студента."""
+        criteria: List[str] = []
+        for var_name in check_variables:
+            criteria.append(
+                f"Переменная `{var_name}` должна содержать корректный результат вычислений."
+            )
+
+        output_format = (task_data.get("output_format") or "").strip()
+        if output_format:
+            criteria.append(f"Если используете print — формат вывода: {output_format}")
+
+        steps = task_data.get("student_steps") or []
+        if steps and not criteria:
+            criteria.extend(steps)
+
+        if not criteria:
+            criteria.append("Код должен выполняться без ошибок и соответствовать шагам задания.")
+
+        criteria.append(
+            "Проверка выполняется нейросетью по смыслу решения: "
+            "важна логика и корректность результата, а не дословное совпадение текста."
+        )
+        return criteria
+
+    @classmethod
+    def serialize_value_for_llm(cls, value: Any, max_items: int = 24) -> str:
+        """Сериализует значение переменной для передачи в промпт проверки."""
+        if value is None:
+            return "None"
+        try:
+            import numpy as np
+
+            if isinstance(value, np.ndarray):
+                flat = value.ravel()
+                if flat.size <= max_items:
+                    return f"ndarray shape={value.shape}, values={value.tolist()}"
+                preview = flat[:max_items].tolist()
+                return (
+                    f"ndarray shape={value.shape}, dtype={value.dtype}, "
+                    f"preview={preview}, ... (всего {flat.size} элементов)"
+                )
+        except Exception:
+            pass
+
+        if isinstance(value, (list, tuple)):
+            if len(value) <= max_items:
+                return repr(value)
+            return f"{type(value).__name__} len={len(value)}, head={repr(value[:max_items])}"
+
+        if cls._is_sklearn_estimator(value):
+            parts = [f"{type(value).__name__}("]
+            for attr in (
+                "n_features_in_",
+                "n_clusters",
+                "classes_",
+                "n_iter_",
+                "labels_",
+                "coef_",
+                "intercept_",
+            ):
+                if hasattr(value, attr):
+                    attr_val = getattr(value, attr)
+                    parts.append(f"  {attr}={cls.serialize_value_for_llm(attr_val, max_items=8)}")
+            parts.append(")")
+            return "\n".join(parts)
+
+        text = repr(value)
+        if len(text) > 800:
+            return text[:800] + "..."
+        return text
+
+    @classmethod
+    def build_variables_snapshot(
+        cls,
+        local_vars: Dict[str, Any],
+        variable_names: List[str],
+    ) -> Dict[str, str]:
+        """Формирует снимок переменных для LLM-проверки."""
+        snapshot: Dict[str, str] = {}
+        for name in variable_names:
+            if name in local_vars:
+                snapshot[name] = cls.serialize_value_for_llm(local_vars[name])
+            else:
+                snapshot[name] = "<переменная не создана>"
+        return snapshot
+
+    @classmethod
+    def extract_student_code_part(cls, task_code: str, user_code: str) -> str:
+        """Выделяет код, написанный студентом (без дублирования starter-кода)."""
+        starter = (task_code or "").strip()
+        editor = (user_code or "").strip()
+        if not starter:
+            return editor
+        if editor == starter:
+            return ""
+        if editor.startswith(starter):
+            student_part = editor[len(starter) :].strip()
+            return student_part or editor
+        return editor
+
+    def build_llm_validation_prompt(
+        self,
+        task_data: Dict[str, Any],
+        student_code: str,
+        student_stdout: str,
+        student_vars: Dict[str, Any],
+        reference_stdout: str,
+        reference_vars: Dict[str, Any],
+        execution_error: Optional[str] = None,
+    ) -> str:
+        """Строит промпт для интеллектуальной проверки решения студента."""
+        check_variables = task_data.get("check_variables") or []
+        if not check_variables and task_data.get("check_variable"):
+            check_variables = [task_data["check_variable"]]
+
+        student_part = self.extract_student_code_part(
+            task_data.get("task_code", ""), student_code
+        )
+        steps = task_data.get("student_steps") or []
+        criteria = task_data.get("validation_criteria") or []
+
+        return f"""
+Проверь решение студента по контрольному заданию.
+
+=== ЗАДАНИЕ ===
+Название: {task_data.get("title", "")}
+Описание:
+{task_data.get("description", "")}
+
+Шаги для студента:
+{json.dumps(steps, ensure_ascii=False, indent=2)}
+
+Критерии проверки:
+{json.dumps(criteria, ensure_ascii=False, indent=2)}
+
+Проверяемые переменные (если заданы): {json.dumps(check_variables, ensure_ascii=False)}
+Формат вывода (если задан): {task_data.get("output_format") or "не указан"}
+
+=== ЭТАЛОННОЕ РЕШЕНИЕ (solution_code) ===
+{task_data.get("solution_code", "")}
+
+=== ВЫПОЛНЕНИЕ ЭТАЛОНА ===
+stdout:
+{reference_stdout or "<пусто>"}
+
+переменные:
+{json.dumps(self.build_variables_snapshot(reference_vars, check_variables), ensure_ascii=False, indent=2)}
+
+=== КОД СТУДЕНТА ===
+Полный код в редакторе:
+{student_code}
+
+Код, написанный студентом (без starter task_code):
+{student_part or "<студент не дописал код>"}
+
+=== ВЫПОЛНЕНИЕ СТУДЕНТА ===
+ошибка выполнения: {execution_error or "нет"}
+
+stdout:
+{student_stdout or "<пусто>"}
+
+переменные:
+{json.dumps(self.build_variables_snapshot(student_vars, check_variables), ensure_ascii=False, indent=2)}
+
+=== ПРАВИЛА ОЦЕНКИ ===
+1. is_correct=true ТОЛЬКО если решение полностью выполняет ВСЕ шаги задания.
+2. Оценивай СМЫСЛ и КОРРЕКТНОСТЬ, а не дословное совпадение print/пробелов.
+3. Для sklearn/ML при random_state=42 численные результаты должны быть эквивалентны эталону.
+4. Если в задании указаны конкретные имена переменных — они обязательны.
+5. Если код не выполняется или студент не дописал решение — is_correct=false.
+6. Неверный алгоритм, не те данные, пропущенный шаг — is_correct=false.
+7. feedback — кратко и по-русски, конструктивно; failure_reason — конкретная причина отказа.
+
+Верни ТОЛЬКО JSON:
+{{
+  "is_correct": true,
+  "score": 100,
+  "feedback": "краткая обратная связь студенту",
+  "failure_reason": ""
+}}
+"""
+
+    @staticmethod
+    def parse_llm_validation_response(response: str) -> Dict[str, Any]:
+        """Парсит JSON-ответ LLM-проверки."""
+        start_idx = response.find("{")
+        end_idx = response.rfind("}") + 1
+        if start_idx == -1 or end_idx == 0:
+            raise ValueError("JSON не найден в ответе проверки")
+        data = json.loads(response[start_idx:end_idx])
+        return {
+            "is_correct": bool(data.get("is_correct", False)),
+            "score": int(data.get("score", 0)),
+            "feedback": str(data.get("feedback", "")).strip(),
+            "failure_reason": str(data.get("failure_reason", "")).strip(),
+        }
+
+    def validate_solution_with_llm(
+        self,
+        task_data: Dict[str, Any],
+        student_code: str,
+        student_stdout: str,
+        student_vars: Dict[str, Any],
+        reference_stdout: str,
+        reference_vars: Dict[str, Any],
+        execution_error: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Проверяет решение студента через LLM."""
+        prompt = self.build_llm_validation_prompt(
+            task_data=task_data,
+            student_code=student_code,
+            student_stdout=student_stdout,
+            student_vars=student_vars,
+            reference_stdout=reference_stdout,
+            reference_vars=reference_vars,
+            execution_error=execution_error,
+        )
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Ты — строгий, но справедливый преподаватель Python и машинного обучения. "
+                    "Проверяешь контрольные задания по смыслу решения. "
+                    "Отвечай только валидным JSON на русском языке в полях feedback и failure_reason."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ]
+        response = self.make_api_request_with_retries(
+            messages=messages,
+            temperature=0.1,
+            max_tokens=1200,
+            response_format={"type": "json_object"},
+            model=self.validation_model,
+        )
+        result = self.parse_llm_validation_response(response)
+        result["validation_method"] = "llm"
+        return result
+
+    def _validate_structured_fallback(
+        self,
+        materialized: Dict[str, Any],
+        user_code: str,
+        task_code: str,
+        validation_mode: str,
+        check_variables: List[str],
+        actual_output: str,
+        local_vars: Dict[str, Any],
+        expected_output: str,
+    ) -> Tuple[bool, str, str]:
+        """Резервная проверка без LLM (при недоступности API)."""
+        failure_reason = ""
+        is_correct = False
+        solution_code = materialized.get("solution_code", "")
+
+        if validation_mode in {"structured", "llm"} and check_variables and solution_code:
+            is_correct, failure_reason = self.compare_structured_variables(
+                solution_code,
+                user_code,
+                task_code,
+                check_variables,
+            )
+        elif validation_mode in {"variable", "both"} and materialized.get("check_variable"):
+            var_name = materialized["check_variable"]
+            actual_var = local_vars.get(var_name)
+            expected_val = materialized.get("expected_variable_value")
+            is_correct = (
+                values_equal(actual_var, expected_val)
+                if expected_val is not None
+                else actual_var is not None
+            )
+            if not is_correct:
+                failure_reason = f"Неверное значение переменной `{var_name}`"
+        elif expected_output:
+            is_correct = stdout_outputs_equal(actual_output, expected_output.strip())
+            if not is_correct:
+                failure_reason = "Вывод программы не совпадает с ожидаемым"
+        else:
+            is_correct = True
+
+        feedback = "Решение принято." if is_correct else failure_reason
+        return is_correct, failure_reason, feedback
+
+    def compare_structured_variables(
+        self,
+        solution_code: str,
+        user_code: str,
+        task_code: str,
+        check_variables: List[str],
+    ) -> Tuple[bool, Optional[str]]:
+        """Сравнивает ключевые переменные эталона и решения студента."""
+        if not check_variables:
+            return False, "Не заданы переменные для проверки"
+
+        stable_task = self.stabilize_sklearn_code(task_code)
+        stable_solution = self.stabilize_sklearn_code(solution_code)
+        stable_user = self.stabilize_sklearn_code(
+            self.resolve_executable_code(stable_task, user_code)
+        )
+
+        try:
+            _, solution_vars = self.execute_code(stable_solution)
+            _, user_vars = self.execute_code(stable_user)
+        except Exception as exc:
+            return False, f"Ошибка выполнения: {exc}"
+
+        for var_name in check_variables:
+            if var_name not in user_vars:
+                return False, f"Не найдена переменная `{var_name}`"
+            if not values_equal(user_vars.get(var_name), solution_vars.get(var_name)):
+                return False, f"Неверное значение переменной `{var_name}`"
+        return True, None
+
+    def materialize_validation_metadata(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Выполняет solution_code и вычисляет параметры проверки."""
+        task_data["task_code"] = self.stabilize_sklearn_code(
+            (task_data.get("task_code") or "").strip()
+        )
+        solution_code = self.stabilize_sklearn_code(
+            (task_data.get("solution_code") or "").strip()
+        )
+        task_data["solution_code"] = solution_code
+
+        if not solution_code:
+            return task_data
+
+        try:
+            actual_output, local_vars = self.execute_code(solution_code)
+        except Exception as exc:
+            self.logger.warning("Не удалось выполнить solution_code: %s", exc)
+            task_data["is_needed"] = False
+            task_data["skip_reason"] = f"Эталонное решение не выполняется: {exc}"
+            return task_data
+
+        if actual_output:
+            task_data["expected_output"] = actual_output
+
+        check_variables = self.infer_check_variables(task_data, solution_code, local_vars)
+        task_data["check_variables"] = check_variables
+
+        validation_mode = (task_data.get("validation_mode") or "").strip().lower()
+        if validation_mode in {"", "both", "variable", "stdout", "structured"}:
+            validation_mode = "llm"
+
+        if check_variables:
+            task_data["check_variable"] = check_variables[-1]
+            task_data["expected_variable_value"] = local_vars.get(check_variables[-1])
+        else:
+            task_data.pop("check_variable", None)
+            task_data.pop("expected_variable_value", None)
+
+        task_data["validation_mode"] = validation_mode
+        task_data["validation_criteria"] = self.build_validation_criteria(
+            task_data, check_variables
+        )
+        return task_data
 
     def generate_control_task(
-        self, lesson_data: Dict[str, Any], lesson_content: str, communication_style: str = "friendly", course_context: Optional[Dict[str, Any]] = None
+        self,
+        lesson_data: Dict[str, Any],
+        lesson_content: str,
+        communication_style: str = "friendly",
+        course_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Генерирует контрольное задание для урока.
-
-        Args:
-            lesson_data (Dict[str, Any]): Данные урока
-            lesson_content (str): Содержание урока
-            communication_style (str): Стиль общения
-            course_context (Optional[Dict[str, Any]]): Контекст курса
-
-        Returns:
-            Dict[str, Any]: Данные контрольного задания
-        """
-        print("\n" + "="*80)
-        print("🔍 [DIAGNOSTIC] generate_control_task ВЫЗВАН")
-        print("="*80)
-        
         try:
-            # Строим промпт для генерации контрольного задания
-            prompt = self._build_control_task_prompt(lesson_data, lesson_content, communication_style, course_context)
-            
-            print(f"\n📤 [DIAGNOSTIC] Промпт, отправляемый в OpenAI:")
-            print(f"Длина промпта: {len(prompt)} символов")
-            print(f"Первые 500 символов: {prompt[:500]}...")
-            
-            # Отправляем запрос к OpenAI
+            prompt = self._build_control_task_prompt(
+                lesson_data, lesson_content, communication_style, course_context
+            )
             messages = [
                 {
                     "role": "system",
-                    "content": "Ты - опытный преподаватель программирования, создающий практические контрольные задания. Все ответы должны быть на русском языке и в формате JSON.",
+                    "content": (
+                        "Ты — опытный преподаватель Python и ML. "
+                        "Создавай однозначные контрольные задания. Ответ — только JSON."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ]
-            
             response = self.make_api_request(
                 messages=messages,
-                temperature=0.7,
-                max_tokens=1500,
+                temperature=0.3,
+                max_tokens=2000,
                 response_format={"type": "json_object"},
             )
-            
-            print(f"\n📥 [DIAGNOSTIC] Ответ от OpenAI:")
-            print(f"Длина ответа: {len(response)} символов")
-            print(f"Первые 500 символов: {response[:500]}...")
-            
-            # Парсим ответ
-            task_data = self._parse_control_task_response(response)
-            
-            print(f"\n✅ [DIAGNOSTIC] Результат парсинга:")
-            print(f"title: {task_data.get('title', 'НЕТ')}")
-            print(f"description: {task_data.get('description', 'НЕТ')[:100]}...")
-            print(f"task_code: {task_data.get('task_code', 'НЕТ')[:100]}...")
-            print(f"expected_output: {task_data.get('expected_output', 'НЕТ')}")
-            print("="*80 + "\n")
-            
-            return task_data
-
+            return self._parse_control_task_response(response, lesson_data)
         except Exception as e:
-            print(f"\n❌ [DIAGNOSTIC] ОШИБКА в generate_control_task: {str(e)}")
-            print("="*80 + "\n")
-            self.logger.error(f"Ошибка при генерации контрольного задания: {str(e)}")
+            self.logger.error("Ошибка при генерации контрольного задания: %s", e)
             return {
                 "title": "Ошибка генерации",
-                "description": f"Не удалось сгенерировать задание: {str(e)}",
+                "description": f"Не удалось сгенерировать задание: {e}",
                 "task_code": "",
                 "expected_output": "",
                 "solution_code": "",
                 "is_needed": False,
-                "skip_reason": f"Ошибка генерации: {str(e)}"
+                "skip_reason": f"Ошибка генерации: {e}",
             }
-
-    def _check_task_relevance(
-        self,
-        lesson_title: str,
-        lesson_description: str,
-        lesson_content: str,
-        communication_style: str,
-    ) -> Dict[str, Any]:
-        """
-        Проверяет, нужно ли контрольное задание с кодом для данного урока.
-
-        Args:
-            lesson_title (str): Название урока
-            lesson_description (str): Описание урока
-            lesson_content (str): Содержание урока
-            communication_style (str): Стиль общения
-
-        Returns:
-            Dict[str, Any]: Результат проверки:
-                - is_needed (bool): Нужно ли задание
-                - reason (str): Причина решения
-        """
-        try:
-            # Расширяем анализируемый материал урока
-            extended_content = lesson_content[:2000] if len(lesson_content) > 2000 else lesson_content
-            
-            prompt = f"""
-            Проанализируй урок и определи, нужно ли создавать контрольное задание с написанием кода на Python.
-
-            НАЗВАНИЕ УРОКА: {lesson_title}
-            ОПИСАНИЕ УРОКА: {lesson_description}
-            СОДЕРЖАНИЕ УРОКА: {extended_content}
-
-            КРИТЕРИИ АНАЛИЗА:
-            1. Если урок о настройке среды, установке программ, теории без кода - задание НЕ НУЖНО
-            2. Если урок содержит примеры кода и объясняет как что-то программировать - задание НУЖНО
-            3. Если урок для начинающих, которые еще не умеют программировать - задание НЕ НУЖНО
-            4. Если урок объясняет концепции без практики - задание НЕ НУЖНО
-            5. Если урок показывает как писать код или содержит практические примеры - задание НУЖНО
-
-            ПРИМЕРЫ УРОКОВ БЕЗ ЗАДАНИЯ:
-            - "Установка Python и настройка среды"
-            - "Что такое программирование"
-            - "История Python"
-            - "Настройка IDE"
-
-            ПРИМЕРЫ УРОКОВ С ЗАДАНИЕМ:
-            - "Переменные и типы данных"
-            - "Условные операторы"
-            - "Циклы в Python"
-            - "Функции"
-
-            Формат ответа (только JSON):
-            {{
-                "is_needed": true/false,
-                "reason": "Объяснение почему задание нужно или не нужно"
-            }}
-
-            Верни только JSON без дополнительного текста.
-            """
-
-            # Генерируем анализ через OpenAI
-            messages = [
-                {
-                    "role": "system",
-                    "content": "Ты - опытный преподаватель программирования, анализирующий уроки. Все ответы должны быть на русском языке и в формате JSON.",
-                },
-                {"role": "user", "content": prompt},
-            ]
-
-            response = self.make_api_request(
-                messages=messages,
-                temperature=0.3,  # Низкая температура для более точного анализа
-                max_tokens=500,
-                response_format={"type": "json_object"},
-            )
-
-            # Парсим ответ
-            import json
-            try:
-                # Ищем JSON в ответе
-                start_idx = response.find("{")
-                end_idx = response.rfind("}") + 1
-                
-                if start_idx != -1 and end_idx != -1:
-                    json_str = response[start_idx:end_idx]
-                    result = json.loads(json_str)
-                    
-                    # Проверяем обязательные поля
-                    if "is_needed" not in result:
-                        result["is_needed"] = True  # По умолчанию создаем задание
-                    if "reason" not in result:
-                        result["reason"] = "Анализ показал необходимость задания"
-                    
-                    return result
-                else:
-                    # Fallback - создаем задание
-                    return {"is_needed": True, "reason": "Не удалось проанализировать урок"}
-                    
-            except json.JSONDecodeError:
-                # Fallback - создаем задание
-                return {"is_needed": True, "reason": "Ошибка парсинга анализа"}
-
-        except Exception as e:
-            self.logger.error(f"Ошибка при проверке необходимости задания: {str(e)}")
-            # Fallback - создаем задание
-            return {"is_needed": True, "reason": "Ошибка анализа, создаем задание"}
 
     def _build_control_task_prompt(
         self,
@@ -210,357 +617,207 @@ class ControlTasksGenerator(BaseContentGenerator):
         communication_style: str,
         course_context: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """
-        Создает prompt для генерации контрольного задания.
-
-        Args:
-            lesson_data (Dict[str, Any]): Данные урока
-            lesson_content (str): Содержание урока
-            communication_style (str): Стиль общения
-            course_context (Dict[str, Any]): Контекст курса
-
-        Returns:
-            str: Prompt для OpenAI
-        """
-        style_instruction = (
-            "дружелюбно и понятно"
-            if communication_style == "friendly"
-            else "профессионально"
-        )
-
-        extended_content = lesson_content
+        lesson_title = lesson_data.get("title", "")
+        lesson_description = lesson_data.get("description", "")
 
         return f"""
-Создай практическое контрольное задание СТРОГО на основе lesson_content.
+Создай ОДНОЗНАЧНОЕ контрольное задание строго по lesson_content.
+
+НАЗВАНИЕ УРОКА: {lesson_title}
+ОПИСАНИЕ УРОКА: {lesson_description}
 
 lesson_content:
-{extended_content}
+{lesson_content}
 
-КРИТИЧЕСКИЕ ТРЕБОВАНИЯ:
-- Задание должно проверять понимание КОНКРЕТНОГО материала, примеров и кода из lesson_content.
-- Используй только те концепции, примеры и код, которые реально объяснены и показаны в lesson_content.
-- НЕ создавай generic задания типа "Привет, мир!" или "Выведите числа от 1 до 5".
-- Если в lesson_content нет кода или практики — верни is_needed: false и skip_reason: "В уроке нет кода для практики".
-- Все переменные, структуры данных и исходные значения должны быть явно заданы в task_code.
-- expected_output должен соответствовать выводу print из эталонного решения.
-- Не используй input() и другие интерактивные функции.
-- Задание должно быть СЛОЖНЫМ и проверять реальное понимание материала.
+ГЛАВНОЕ ПРАВИЛО: студент должен понять задание с ОДНОГО прочтения и решить ЕДИНСТВЕННЫМ способом.
+- Каждый шаг — конкретное действие: «создайте», «обучите», «сохраните в переменную X», «выведите print(...)».
+- Не используй слова «и т.д.», «например», «подобным образом», «результаты предсказаний» без уточнения.
+- Если нужен print — укажи ТОЧНЫЕ подписи в output_format.
+- Имена переменных в задании и в solution_code должны совпадать.
 
-ВАЖНО: В УСЛОВИИ ЗАДАНИЯ ВСЕГДА ПРИВОДИ ВЕСЬ НЕОБХОДИМЫЙ КОД!
-- Не используй формулировки типа "вам предоставлен фрагмент кода", "см. пример выше", "анализируйте код из урока" и т.п.
-- Задание должно быть полностью понятно без обращения к другим материалам.
-- В description всегда должен быть приведён весь код, который требуется анализировать, запускать или дополнять.
+task_code:
+- Только импорты, данные и комментарий "# Ваш код здесь".
+- Без fit(), predict(), print(), plt.show().
+- ВСЕ генераторы случайных данных: random_state=42 (make_classification, train_test_split, KMeans, RandomForestClassifier).
 
-КРИСТАЛЬНО ЧЕТКИЕ ФОРМУЛИРОВКИ:
-- Если требуется список результатов — явно укажи "соберите результаты в список", "накопите результаты", "создайте список"
-- Если требуется вывод каждого элемента — явно укажи "выведите каждое число", "выведите каждый результат"
-- Если требуется сумма — явно укажи "найдите сумму", "вычислите сумму", "сложите все числа"
-- НЕ допускай двусмысленностей типа "выведите результаты" (непонятно: каждый отдельно или список)
-- Используй конкретные глаголы: "соберите", "накопите", "выведите каждое", "найдите сумму"
+validation_mode:
+- "llm" — ВСЕГДА используй этот режим (проверка нейросетью по смыслу решения).
+- Укажи check_variables — переменные-результаты для контекста проверки.
 
-ВАЖНО: Эталонное решение (solution_code) должно точно соответствовать формулировке задания!
-- Если задание говорит "вставьте по индексу 2" - в solution_code должно быть insert(2, ...)
-- Если задание говорит "удалите элемент X" - в solution_code должно быть remove(X)
-- Проверь, что expected_output соответствует реальному выводу solution_code
+check_variables:
+- Список имён переменных-результатов, которые создаёт студент (например: ["predictions", "centers"]).
 
-КРИТИЧЕСКО ВАЖНО: task_code должен содержать ВСЕ начальные данные!
-- Если в description упоминается "список my_list = [1, 2, 3]" - в task_code должно быть "my_list = [1, 2, 3]"
-- Если в description упоминается "словарь my_dict = {{'a': 'apple'}}" - в task_code должно быть "my_dict = {{'a': 'apple'}}"
-- НЕ оставляй пустые структуры данных в task_code!
-- Студент должен получить ВСЕ начальные данные в task_code
+Если в lesson_content нет кода — is_needed: false.
 
-Формат ответа (ТОЛЬКО JSON!):
-{{{{
-  "title": "Название задания",
-  "description": "Описание задачи, с явным указанием исходных данных и ПОЛНЫМ КОДОМ, который требуется анализировать или запускать",
-  "task_code": "Исходные переменные и структуры данных, которые используются в решении",
-  "expected_output": "Ожидаемый результат выполнения (конкретный вывод)",
-  "solution_code": "Полное правильное решение",
-  "hints": ["Подсказка 1", "Подсказка 2"],
-  "is_needed": true/false,
-  "skip_reason": "Причина, если задание не требуется"
-}}}}
-
-Пример хорошего задания:
-{{{{
-  "title": "Работа со списками и словарями",
-  "description": "Дан список my_list = [1, 2, 3, 'apple', 'banana', 'cherry'] и словарь my_dict = {{{{'a': 'apple', 'b': 'banana', 'c': 'cherry'}}}}. Добавьте число 5 в список, вставьте строку 'grape' по индексу 2, удалите элемент 'cherry' из списка. Затем добавьте новую пару ключ-значение 'd'-'dog' в словарь. В конце выведите получившийся список и словарь.",
-  "task_code": "my_list = [1, 2, 3, 'apple', 'banana', 'cherry']\nmy_dict = {{{{'a': 'apple', 'b': 'banana', 'c': 'cherry'}}}}\n# Ваш код здесь",
-  "expected_output": "[1, 2, 'grape', 3, 'apple', 'banana', 5]\n{{{{'a': 'apple', 'b': 'banana', 'c': 'cherry', 'd': 'dog'}}}}",
-  "solution_code": "my_list = [1, 2, 3, 'apple', 'banana', 'cherry']\nmy_dict = {{{{'a': 'apple', 'b': 'banana', 'c': 'cherry'}}}}\nmy_list.append(5)\nmy_list.insert(2, 'grape')\nmy_list.remove('cherry')\nmy_dict['d'] = 'dog'\nprint(my_list)\nprint(my_dict)",
-  "hints": ["Используйте методы append и insert для списка", "Для удаления используйте remove", "Для добавления пары в словарь используйте my_dict['d'] = 'dog'"],
+Формат JSON:
+{{
+  "title": "...",
+  "description": "Задание:\\n1. ...\\n2. ...\\n3. ...",
+  "student_steps": ["...", "..."],
+  "task_code": "...\\n# Ваш код здесь",
+  "solution_code": "полное решение = task_code + код студента",
+  "validation_mode": "llm",
+  "check_variables": ["var1", "var2"],
+  "output_format": "опционально: точный формат print, если validation_mode=stdout",
+  "hints": ["..."],
   "is_needed": true,
   "skip_reason": ""
-}}}}
+}}
 
-Верни только JSON без дополнительного текста.
+Верни только JSON.
 """
 
-    def _parse_control_task_response(self, response: str) -> Dict[str, Any]:
-        """
-        Парсит ответ от OpenAI в структурированные данные.
-
-        Args:
-            response (str): Ответ от OpenAI
-
-        Returns:
-            Dict[str, Any]: Структурированные данные задания
-        """
+    def _parse_control_task_response(
+        self, response: str, lesson_data: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         try:
-            # Ищем JSON в ответе
             start_idx = response.find("{")
             end_idx = response.rfind("}") + 1
-
-            if start_idx != -1 and end_idx != -1:
-                json_str = response[start_idx:end_idx]
-                task_data = json.loads(json_str)
-
-                # Проверяем обязательные поля
-                required_fields = [
-                    "title",
-                    "description",
-                    "task_code",
-                    "expected_output",
-                    "solution_code",
-                ]
-                for field in required_fields:
-                    if field not in task_data:
-                        task_data[field] = ""
-
-                # Добавляем hints если нет
-                if "hints" not in task_data:
-                    task_data["hints"] = []
-
-                # --- ПРОВЕРКА СООТВЕТСТВИЯ ЭТАЛОННОГО РЕШЕНИЯ ---
-                # Проверяем, что solution_code соответствует expected_output
-                try:
-                    import io
-                    from contextlib import redirect_stdout
-                    output_buffer = io.StringIO()
-                    local_vars = {}
-                    with redirect_stdout(output_buffer):
-                        exec(task_data["solution_code"], {}, local_vars)
-                    actual_solution_output = output_buffer.getvalue().strip()
-                    
-                    # Если expected_output не соответствует реальному выводу solution_code
-                    if task_data["expected_output"] and actual_solution_output != task_data["expected_output"].strip():
-                        print(f"⚠️ [DIAGNOSTIC] Несоответствие в эталонном решении:")
-                        print(f"   expected_output: '{task_data['expected_output']}'")
-                        print(f"   actual_solution_output: '{actual_solution_output}'")
-                        # Исправляем expected_output
-                        task_data["expected_output"] = actual_solution_output
-                        print(f"   ✅ Исправлен expected_output")
-                except Exception as e:
-                    print(f"⚠️ [DIAGNOSTIC] Ошибка проверки эталонного решения: {e}")
-
-                # --- ПРОВЕРКА ПОЛНОТЫ TASK_CODE ---
-                # Проверяем, что task_code содержит все необходимые начальные данные
-                try:
-                    import re
-                    
-                    # Ищем упоминания структур данных в description
-                    description = task_data.get("description", "")
-                    task_code = task_data.get("task_code", "")
-                    
-                    # Ищем упоминания списков и словарей в description
-                    list_patterns = [
-                        r"список\s+(\w+)\s*=\s*\[([^\]]+)\]",
-                        r"(\w+)\s*=\s*\[([^\]]+)\].*список",
-                        r"список\s+(\w+).*=\s*\[([^\]]+)\]"
-                    ]
-                    
-                    dict_patterns = [
-                        r"словарь\s+(\w+)\s*=\s*\{([^}]+)\}",
-                        r"(\w+)\s*=\s*\{([^}]+)\}.*словарь",
-                        r"словарь\s+(\w+).*=\s*\{([^}]+)\}"
-                    ]
-                    
-                    missing_data = []
-                    
-                    # Проверяем списки
-                    for pattern in list_patterns:
-                        matches = re.findall(pattern, description, re.IGNORECASE)
-                        for var_name, var_content in matches:
-                            if f"{var_name} = [" not in task_code:
-                                missing_data.append(f"Список {var_name} = [{var_content}]")
-                    
-                    # Проверяем словари
-                    for pattern in dict_patterns:
-                        matches = re.findall(pattern, description, re.IGNORECASE)
-                        for var_name, var_content in matches:
-                            if f"{var_name} = {{" not in task_code:
-                                missing_data.append(f"Словарь {var_name} = {{{var_content}}}")
-                    
-                    if missing_data:
-                        print(f"⚠️ [DIAGNOSTIC] В task_code отсутствуют начальные данные:")
-                        for item in missing_data:
-                            print(f"   - {item}")
-                        print(f"   task_code: '{task_code}'")
-                        print(f"   ⚠️ Проблема: Студент не получит начальные данные!")
-                        
-                except Exception as e:
-                    print(f"⚠️ [DIAGNOSTIC] Ошибка проверки task_code: {e}")
-
-                # --- УЛУЧШЕНО: эвристика для проверки переменной ---
-                # Если expected_output пустой, а в solution_code есть присваивание
-                if not task_data["expected_output"].strip():
-                    import re
-                    # Ищем строку вида: имя = значение (более гибкий поиск)
-                    lines = task_data["solution_code"].strip().split('\n')
-                    for line in lines:
-                        # Ищем присваивание переменной
-                        match = re.search(r"^(\w+)\s*=\s*(.+)$", line.strip())
-                        if match:
-                            var_name = match.group(1)
-                            var_value = match.group(2).strip()
-                            # Пробуем вычислить значение (безопасно)
-                            try:
-                                # Создаем безопасное окружение для eval
-                                safe_dict = {}
-                                expected_value = eval(var_value, {"__builtins__": {}}, safe_dict)
-                                task_data["check_variable"] = var_name
-                                task_data["expected_variable_value"] = expected_value
-                                print(f"🔍 [DIAGNOSTIC] Найдена переменная: {var_name} = {expected_value}")
-                                break
-                            except Exception as e:
-                                print(f"⚠️ [DIAGNOSTIC] Не удалось вычислить значение {var_value}: {e}")
-                                # Используем строковое значение как fallback
-                                task_data["check_variable"] = var_name
-                                task_data["expected_variable_value"] = var_value
-                                break
-                # --- ДИАГНОСТИКА: проверяем, что в description есть код ---
-                description = task_data.get("description", "")
-                if not ("code:" in description.lower() or "код:" in description.lower() or "```" in description or "\n" in description and any(word in description for word in ["=", "print", "if", "for", "while", "def", "class"])):
-                    print(f"⚠️ [DIAGNOSTIC] ВНИМАНИЕ: В description нет явного кода! Задание может быть неполным или непонятным.")
-                    print(f"   description: {description}")
-
-                # --- ДИАГНОСТИКА: проверяем соответствие description и expected_output ---
-                expected_output = task_data.get("expected_output", "")
-                description_lower = description.lower()
-                
-                # Проверка на двусмысленность: если в expected_output есть список [...], но в description нет слов о списке
-                if "[" in expected_output and "]" in expected_output and not any(word in description_lower for word in ["список", "соберите", "накопите", "создайте список"]):
-                    print(f"⚠️ [DIAGNOSTIC] ВНИМАНИЕ: В expected_output ожидается список, но в description нет явного указания 'соберите в список'!")
-                    print(f"   description: {description}")
-                    print(f"   expected_output: {expected_output}")
-                
-                # Проверка на двусмысленность: если в expected_output есть print() для каждого элемента, но в description нет "каждое"
-                if "print(" in expected_output and not any(word in description_lower for word in ["каждое", "каждый", "отдельно"]):
-                    print(f"⚠️ [DIAGNOSTIC] ВНИМАНИЕ: В expected_output ожидается вывод каждого элемента, но в description нет явного указания 'каждое'!")
-                    print(f"   description: {description}")
-                    print(f"   expected_output: {expected_output}")
-                return task_data
-            else:
+            if start_idx == -1 or end_idx == 0:
                 raise ValueError("JSON не найден в ответе")
 
+            task_data = json.loads(response[start_idx:end_idx])
+            for field in (
+                "title",
+                "description",
+                "task_code",
+                "expected_output",
+                "solution_code",
+            ):
+                task_data.setdefault(field, "")
+
+            task_data.setdefault("hints", [])
+            task_data.setdefault("student_steps", [])
+            task_data.setdefault("validation_mode", "llm")
+            task_data.setdefault("check_variables", [])
+            task_data.setdefault("check_variable", "")
+            task_data.setdefault("output_format", "")
+            task_data.setdefault("validation_criteria", [])
+
+            if task_data.get("is_needed", True) and task_data.get("solution_code", "").strip():
+                task_data = self.materialize_validation_metadata(task_data)
+
+            return task_data
         except Exception as e:
-            self.logger.error(f"Ошибка при парсинге ответа: {str(e)}")
-            return self._create_fallback_task("Задание")
+            self.logger.error("Ошибка при парсинге ответа: %s", e)
+            lesson_title = (lesson_data or {}).get("title", "Задание")
+            return self._create_fallback_task(lesson_title)
 
     def _create_fallback_task(self, lesson_title: str) -> Dict[str, Any]:
-        """
-        Создает fallback задание при ошибке генерации.
-
-        Args:
-            lesson_title (str): Название урока
-
-        Returns:
-            Dict[str, Any]: Fallback задание
-        """
         self.logger.warning(
-            f"Сработал fallback для контрольного задания по теме: {lesson_title}"
+            "Сработал fallback для контрольного задания по теме: %s", lesson_title
         )
-
-        # Создаем тематическое fallback задание в зависимости от темы урока
-        if "цикл" in lesson_title.lower() or "циклы" in lesson_title.lower():
-            return {
-                "is_needed": True,
-                "title": f"Практическое задание по теме '{lesson_title}'",
-                "description": "Напишите программу, которая выводит числа от 1 до 5, используя цикл for.",
-                "task_code": "# Напишите ваш код здесь\n# Используйте цикл for для вывода чисел от 1 до 5",
-                "expected_output": "1\n2\n3\n4\n5",
-                "solution_code": "# Правильное решение\nfor i in range(1, 6):\n    print(i)",
-                "hints": [
-                    "Используйте цикл for",
-                    "Функция range(1, 6) создает последовательность от 1 до 5",
-                    "Используйте print() для вывода",
-                ],
-            }
-        elif "условн" in lesson_title.lower() or "if" in lesson_title.lower():
-            return {
-                "is_needed": True,
-                "title": f"Практическое задание по теме '{lesson_title}'",
-                "description": "Дано число number = 10. Напишите программу, которая проверяет, является ли это число четным, и выводит 'Четное' или 'Нечетное'.",
-                "task_code": "number = 10\n# Напишите ваш код здесь\n# Проверьте, является ли number четным",
-                "expected_output": "Четное",
-                "solution_code": "number = 10\nif number % 2 == 0:\n    print('Четное')\nelse:\n    print('Нечетное')",
-                "hints": [
-                    "Используйте оператор % для проверки остатка",
-                    "Условие: если остаток от деления на 2 равен 0",
-                    "Используйте if-else",
-                ],
-            }
-        else:
-            return {
-                "is_needed": True,
-                "title": f"Практическое задание по теме '{lesson_title}'",
-                "description": "Напишите программу, которая выводит на экран текст 'Привет, мир!'. Используйте функцию print().",
-                "task_code": "# Напишите ваш код здесь\n# Используйте print() для вывода текста",
-                "expected_output": "Привет, мир!",
-                "solution_code": "# Правильное решение\nprint('Привет, мир!')",
-                "hints": [
-                    "Используйте функцию print()",
-                    "Текст должен быть в кавычках",
-                    "Проверьте синтаксис",
-                ],
-            }
+        return {
+            "is_needed": False,
+            "title": f"Задание по теме '{lesson_title}'",
+            "description": "Не удалось сгенерировать задание автоматически.",
+            "task_code": "",
+            "expected_output": "",
+            "solution_code": "",
+            "hints": [],
+            "skip_reason": "Ошибка генерации задания",
+        }
 
     def validate_task_execution(
-        self, user_code: str, expected_output: str, check_variable: Optional[str] = None, expected_variable_value: Optional[Any] = None
+        self,
+        user_code: str,
+        task_data: Optional[Dict[str, Any]] = None,
+        expected_output: str = "",
+        check_variable: Optional[str] = None,
+        expected_variable_value: Optional[Any] = None,
+        task_code: str = "",
     ) -> Dict[str, Any]:
-        """
-        Проверяет выполнение задания пользователем.
+        """Проверяет решение студента через LLM; structured — только fallback при сбое API."""
+        task_data = task_data or {}
+        task_code = task_data.get("task_code", task_code)
+        solution_code = task_data.get("solution_code", "")
 
-        Args:
-            user_code (str): Код пользователя
-            expected_output (str): Ожидаемый результат (stdout)
-            check_variable (Optional[str], optional): Имя переменной для проверки
-            expected_variable_value (Optional[Any], optional): Ожидаемое значение переменной
+        materialized = dict(task_data)
+        if solution_code:
+            materialized = self.materialize_validation_metadata(dict(task_data))
 
-        Returns:
-            Dict[str, Any]: Результат проверки:
-                - is_correct (bool): Правильно ли выполнено
-                - actual_output (str): Фактический результат
-                - actual_variable (Any): Значение переменной (если проверяется)
-                - error_message (str): Сообщение об ошибке (если есть)
-        """
+        validation_mode = materialized.get("validation_mode", "llm")
+        check_variables = materialized.get("check_variables") or []
+        expected_output = materialized.get("expected_output", expected_output)
+
+        student_stdout = ""
+        local_vars: Dict[str, Any] = {}
+        execution_error: Optional[str] = None
+
         try:
-            import io
-            from contextlib import redirect_stdout
-            output_buffer = io.StringIO()
-            local_vars = {}
-            with redirect_stdout(output_buffer):
-                exec(user_code, {}, local_vars)
-            actual_output = output_buffer.getvalue().strip()
-            # Если требуется проверка переменной
-            if check_variable is not None:
-                actual_var = local_vars.get(check_variable, None)
-                is_correct = actual_var == expected_variable_value
-                return {
-                    "is_correct": is_correct,
-                    "actual_output": actual_output,
-                    "actual_variable": actual_var,
-                    "error_message": "",
-                }
-            # Обычная проверка вывода
-            is_correct = actual_output == expected_output.strip()
-            return {
-                "is_correct": is_correct,
-                "actual_output": actual_output,
-                "actual_variable": None,
-                "error_message": "",
-            }
-        except Exception as e:
-            import traceback
-            tb = traceback.format_exc()
-            return {"is_correct": False, "actual_output": "", "actual_variable": None, "error_message": f"{e}\n{tb}"}
+            full_code = self.resolve_executable_code(task_code, user_code)
+            student_stdout, local_vars = self.execute_code(
+                self.stabilize_sklearn_code(full_code)
+            )
+        except Exception as exc:
+            execution_error = str(exc)
+            student_stdout = ""
+
+        reference_stdout = ""
+        reference_vars: Dict[str, Any] = {}
+        if solution_code:
+            try:
+                reference_stdout, reference_vars = self.execute_code(
+                    self.stabilize_sklearn_code(materialized["solution_code"])
+                )
+            except Exception as exc:
+                self.logger.warning("Эталонное решение не выполнилось: %s", exc)
+
+        is_correct = False
+        failure_reason = execution_error or ""
+        feedback = ""
+        validation_method = "llm"
+
+        if getattr(self, "client", None):
+            try:
+                llm_result = self.validate_solution_with_llm(
+                    task_data=materialized,
+                    student_code=user_code,
+                    student_stdout=student_stdout,
+                    student_vars=local_vars,
+                    reference_stdout=reference_stdout,
+                    reference_vars=reference_vars,
+                    execution_error=execution_error,
+                )
+                is_correct = llm_result["is_correct"]
+                failure_reason = llm_result.get("failure_reason") or failure_reason
+                feedback = llm_result.get("feedback", "")
+                validation_method = "llm"
+            except Exception as exc:
+                self.logger.error("LLM-проверка недоступна, fallback: %s", exc)
+                validation_method = "structured_fallback"
+                is_correct, failure_reason, feedback = self._validate_structured_fallback(
+                    materialized,
+                    user_code,
+                    task_code,
+                    validation_mode,
+                    check_variables,
+                    student_stdout,
+                    local_vars,
+                    expected_output,
+                )
+                feedback = (
+                    f"{feedback} (нейросеть временно недоступна, применена резервная проверка)"
+                )
+        else:
+            validation_method = "structured_fallback"
+            is_correct, failure_reason, feedback = self._validate_structured_fallback(
+                materialized,
+                user_code,
+                task_code,
+                validation_mode,
+                check_variables,
+                student_stdout,
+                local_vars,
+                expected_output,
+            )
+
+        return {
+            "is_correct": is_correct,
+            "actual_output": student_stdout,
+            "actual_variable": local_vars.get(materialized.get("check_variable", "")),
+            "error_message": failure_reason,
+            "failure_reason": failure_reason,
+            "feedback": feedback,
+            "validation_method": validation_method,
+        }
