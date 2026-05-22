@@ -1,101 +1,63 @@
 """
 Модуль для валидации и повторной генерации практических примеров.
-Отвечает за проверку релевантности примеров и их повторную генерацию при необходимости.
-ИСПРАВЛЕНО: Строгий контроль релевантности примеров теме курса (проблема #88)
 """
 
+import io
+import logging
+from contextlib import redirect_stdout
+from typing import List
+
 from content_utils import BaseContentGenerator
+from examples_html_utils import (
+    contains_forbidden_non_python_code,
+    extract_code_blocks_from_html,
+    has_runnable_examples,
+    normalize_markdown_fences_to_html,
+    parse_examples_json_response,
+    render_examples_json_to_html,
+    strip_examples_wrapper,
+    validate_examples_payload,
+    normalize_examples_payload,
+)
 
 
 class ExamplesValidation(BaseContentGenerator):
     """Валидатор и генератор повторных примеров."""
 
+    MIN_EXAMPLES = 3
+    MIN_CODE_LINES = 3
+
     def __init__(self, api_key):
-        """
-        Инициализация валидатора примеров.
-
-        Args:
-            api_key (str): API ключ OpenAI
-        """
         super().__init__(api_key)
-        self.logger.info("ExamplesValidation инициализирован")
+        self.logger = logging.getLogger(__name__)
 
-    def validate_examples_relevance(self, examples, course_subject):
-        """
-        НОВОЕ: Проверяет релевантность сгенерированных примеров предметной области.
+    def validate_examples_quality(self, examples: str) -> bool:
+        """Проверяет, что примеры содержат реальный исполняемый код."""
+        content = strip_examples_wrapper(normalize_markdown_fences_to_html(examples))
+        if not has_runnable_examples(
+            content, min_blocks=self.MIN_EXAMPLES, min_lines=self.MIN_CODE_LINES
+        ):
+            self.logger.warning("Недостаточно блоков исполняемого кода в примерах")
+            return False
+        if contains_forbidden_non_python_code(content):
+            self.logger.warning("Найден запрещённый не-Python код в примерах")
+            return False
+        return True
 
-        Args:
-            examples (str): Сгенерированные примеры
-            course_subject (str): Предметная область курса
-
-        Returns:
-            bool: True если примеры релевантны, иначе False
-        """
-        try:
-            examples_lower = examples.lower()
-
-            # Проверяем на наличие нерелевантных технологий
-            irrelevant_patterns = [
-                "html",
-                "<html>",
-                "<head>",
-                "<body>",
-                "<div>",
-                "<script>",
-                "javascript",
-                "css",
-                "var ",
-                "document.",
-                "function(",
-                "onclick",
-                "onload",
-                "jquery",
-                "$(",
-                "java ",
-                "c++",
-                "c#",
-                "php",
-                "ruby",
-                "go ",
-            ]
-
-            # Если найдены нерелевантные паттерны
-            for pattern in irrelevant_patterns:
-                if pattern in examples_lower:
-                    self.logger.warning(f"Найден нерелевантный паттерн: {pattern}")
-                    return False
-
-            # Проверяем наличие релевантных Python паттернов
-            if "python" in course_subject.lower():
-                relevant_patterns = [
-                    "python",
-                    "def ",
-                    "import ",
-                    "print(",
-                    "if __name__",
-                    "for ",
-                    "while ",
-                    "class ",
-                    "return ",
-                    "# ",
-                    ".py",
-                    "список",
-                    "словарь",
-                    "кортеж",
-                ]
-
-                has_relevant = any(
-                    pattern in examples_lower for pattern in relevant_patterns
-                )
-                if not has_relevant:
-                    self.logger.warning("Не найдено релевантных Python паттернов")
-                    return False
-
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Ошибка при проверке релевантности примеров: {str(e)}")
-            return True  # В случае ошибки считаем релевантными
+    def validate_examples_execute(self, examples: str) -> bool:
+        """Пробует выполнить каждый блок кода."""
+        content = strip_examples_wrapper(examples)
+        blocks = extract_code_blocks_from_html(content)
+        if len(blocks) < self.MIN_EXAMPLES:
+            return False
+        for index, code in enumerate(blocks[: self.MIN_EXAMPLES], start=1):
+            try:
+                with redirect_stdout(io.StringIO()):
+                    exec(code, {})
+            except Exception as exc:
+                self.logger.warning("Пример %s не выполняется: %s", index, exc)
+                return False
+        return True
 
     def regenerate_with_strict_prompt(
         self,
@@ -105,100 +67,137 @@ class ExamplesValidation(BaseContentGenerator):
         lesson_content,
         communication_style,
         course_subject,
-    ):
-        """
-        НОВОЕ: Повторная генерация с более строгим промптом.
+    ) -> str:
+        """Повторная генерация с жёстким JSON-промптом."""
+        strict_prompt = f"""
+Сгенерируй РОВНО 3 примера Python для урока "{lesson_title}" ({course_subject}).
 
-        Returns:
-            str: Примеры с повышенной релевантностью
-        """
-        try:
-            strict_prompt = f"""
-            КРИТИЧЕСКИ ВАЖНО: Создай примеры СТРОГО по теме "{course_subject}".
+Описание: {lesson_description}
+Ключевые слова: {keywords_str}
 
-            Урок: {lesson_title}
-            Описание: {lesson_description}
-            Ключевые слова: {keywords_str}
+Материал урока:
+{lesson_content[:2500]}
 
-            Содержание урока (первые 1500 символов):
-            {lesson_content[:1500]}
+ОБЯЗАТЕЛЬНО:
+- JSON с массивом examples из 3 элементов
+- У каждого элемента поля title, description, code
+- code — минимум 5 строк рабочего Python-кода, готового к запуску
+- ЗАПРЕЩЕНЫ заглушки без кода («в этом примере мы создадим...»)
+- Без внешних файлов, без input()
 
-            СТРОЖАЙШИЕ ТРЕБОВАНИЯ:
-            1. ВСЕ примеры должны быть ТОЛЬКО на Python
-            2. НЕ ИСПОЛЬЗУЙ HTML, JavaScript, CSS или другие языки
-            3. Каждый пример должен содержать Python код
-            4. Показывай практическое применение концепций из урока
-            5. Все примеры должны быть исполняемыми Python скриптами
-            6. Используй синтаксис Python: def, import, print(), if, for, while, class
+Формат:
+{{
+  "examples": [
+    {{"title": "...", "description": "...", "code": "..."}},
+    {{"title": "...", "description": "...", "code": "..."}},
+    {{"title": "...", "description": "...", "code": "..."}}
+  ]
+}}
+"""
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Ты генерируешь только JSON с рабочими Python-примерами. "
+                    "Каждый пример обязан содержать исполняемый код в поле code."
+                ),
+            },
+            {"role": "user", "content": strict_prompt},
+        ]
+        response = self.make_api_request(
+            messages=messages,
+            temperature=0.2,
+            max_tokens=4000,
+            response_format={"type": "json_object"},
+        )
+        payload = parse_examples_json_response(response)
+        validate_examples_payload(payload, min_examples=3)
+        return render_examples_json_to_html(normalize_examples_payload(payload))
 
-            ЗАПРЕЩЕНО:
-            - HTML теги (<html>, <body>, <script>, etc.)
-            - JavaScript код (var, function, document., etc.)
-            - CSS стили
-            - Любые языки кроме Python
+    def _create_fallback_python_example(self, lesson_title: str, lesson_content: str = "") -> str:
+        """Создаёт три готовых примера с кодом по основам Python."""
+        content_lower = (lesson_content or lesson_title).lower()
+        examples: List[dict] = []
 
-            Формат: HTML с <h3> заголовками, <pre><code> для Python кода, <p> для объяснений.
-            """
-
-            messages = [
-                {
-                    "role": "system",
-                    "content": f"Ты - эксперт по {course_subject}. Генерируй ТОЛЬКО Python примеры, НИКАКИХ других языков программирования.",
-                },
-                {"role": "user", "content": strict_prompt},
-            ]
-
-            examples = self.make_api_request(
-                messages=messages,
-                temperature=0.3,  # Еще более низкая температура для точности
-                max_tokens=3000,
+        if any(word in content_lower for word in ("переменн", "тип", "python", "основ")):
+            examples.extend(
+                [
+                    {
+                        "title": "Переменные и типы данных",
+                        "description": "Создаём переменные разных типов и выводим их значения.",
+                        "code": (
+                            'name = "Игорь"\n'
+                            "age = 25\n"
+                            "height = 1.75\n"
+                            "is_student = True\n"
+                            'print(name, age, height, is_student)\n'
+                            "print(type(name), type(age), type(height), type(is_student))"
+                        ),
+                    },
+                    {
+                        "title": "Операторы и выражения",
+                        "description": "Складываем числа и сохраняем результат в переменную.",
+                        "code": (
+                            "a = 10\n"
+                            "b = 5\n"
+                            "sum_result = a + b\n"
+                            "product = a * b\n"
+                            'print("sum:", sum_result)\n'
+                            'print("product:", product)'
+                        ),
+                    },
+                    {
+                        "title": "Условия и циклы",
+                        "description": "Проверяем возраст и выводим числа циклом for.",
+                        "code": (
+                            "age = 18\n"
+                            'status = "Взрослый" if age >= 18 else "Несовершеннолетний"\n'
+                            "print(status)\n"
+                            "for i in range(5):\n"
+                            "    print(i)"
+                        ),
+                    },
+                ]
+            )
+        else:
+            examples.extend(
+                [
+                    {
+                        "title": f"Пример 1: {lesson_title}",
+                        "description": "Базовая демонстрация переменных и вывода.",
+                        "code": (
+                            f'topic = "{lesson_title}"\n'
+                            "values = [1, 2, 3, 4, 5]\n"
+                            "total = sum(values)\n"
+                            'print("Тема:", topic)\n'
+                            'print("Сумма:", total)'
+                        ),
+                    },
+                    {
+                        "title": f"Пример 2: {lesson_title}",
+                        "description": "Цикл for для обработки списка.",
+                        "code": (
+                            "numbers = [2, 4, 6, 8]\n"
+                            "squares = []\n"
+                            "for n in numbers:\n"
+                            "    squares.append(n ** 2)\n"
+                            "print(squares)"
+                        ),
+                    },
+                    {
+                        "title": f"Пример 3: {lesson_title}",
+                        "description": "Функция для переиспользования логики.",
+                        "code": (
+                            "def normalize(value, min_val, max_val):\n"
+                            "    return (value - min_val) / (max_val - min_val)\n"
+                            "result = normalize(5, 0, 10)\n"
+                            "print(round(result, 2))"
+                        ),
+                    },
+                ]
             )
 
-            # Очищаем от markdown
-            examples = self.clean_markdown_code_blocks(examples)
-
-            self.logger.info("Повторная генерация с строгим промптом завершена")
-            return examples
-
-        except Exception as e:
-            self.logger.error(f"Ошибка при повторной генерации: {str(e)}")
-            # Возвращаем базовый пример Python
-            return self._create_fallback_python_example(lesson_title)
-
-    def _create_fallback_python_example(self, lesson_title):
-        """
-        НОВОЕ: Создает базовый Python пример в случае сбоя генерации.
-
-        Args:
-            lesson_title (str): Название урока
-
-        Returns:
-            str: Базовый Python пример
-        """
-        return f"""
-        <h3>Базовый пример Python по теме: {lesson_title}</h3>
-        <p>Вот простой пример, демонстрирующий основные концепции Python:</p>
-        <pre><code># Пример Python кода
-print("Изучаем тему: {lesson_title}")
-
-# Переменные
-название_урока = "{lesson_title}"
-изучено = True
-
-# Условная конструкция
-if изучено:
-    print(f"Урок '{{название_урока}}' изучен!")
-else:
-    print("Продолжайте изучение")
-
-# Функция
-def показать_прогресс(урок):
-    return f"Прогресс по уроку: {{урок}}"
-
-результат = показать_прогресс(название_урока)
-print(результат)</code></pre>
-        <p>Этот пример демонстрирует базовые элементы Python: переменные, условия, функции и вывод.</p>
-        """
+        return render_examples_json_to_html({"examples": examples})
 
     def validate_and_regenerate_if_needed(
         self,
@@ -209,42 +208,27 @@ print(результат)</code></pre>
         keywords_str,
         lesson_content,
         communication_style,
-    ):
-        """
-        Проверяет релевантность примеров и при необходимости выполняет повторную генерацию.
+    ) -> str:
+        """Проверяет качество примеров и перегенерирует при необходимости."""
+        if self.validate_examples_quality(examples) and self.validate_examples_execute(examples):
+            return examples
 
-        Args:
-            examples (str): Исходные примеры
-            course_subject (str): Предметная область курса
-            lesson_title (str): Название урока
-            lesson_description (str): Описание урока
-            keywords_str (str): Ключевые слова урока
-            lesson_content (str): Содержание урока
-            communication_style (str): Стиль общения
+        self.logger.warning("Примеры не прошли проверку качества, повторная генерация...")
+        examples = self.regenerate_with_strict_prompt(
+            lesson_title,
+            lesson_description,
+            keywords_str,
+            lesson_content,
+            communication_style,
+            course_subject,
+        )
 
-        Returns:
-            str: Валидные примеры (исходные или повторно сгенерированные)
-        """
-        # Проверяем релевантность
-        if not self.validate_examples_relevance(examples, course_subject):
-            self.logger.warning(
-                "Сгенерированные примеры не прошли проверку релевантности, повторная генерация..."
-            )
-            # Повторная генерация с более строгим промптом
-            examples = self.regenerate_with_strict_prompt(
-                lesson_title,
-                lesson_description,
-                keywords_str,
-                lesson_content,
-                communication_style,
-                course_subject,
-            )
+        if self.validate_examples_quality(examples) and self.validate_examples_execute(examples):
+            return examples
 
-            # Проверяем повторно сгенерированные примеры
-            if not self.validate_examples_relevance(examples, course_subject):
-                self.logger.error(
-                    "Повторная генерация не дала релевантных примеров, используем fallback"
-                )
-                examples = self._create_fallback_python_example(lesson_title)
+        self.logger.error("Повторная генерация не дала рабочих примеров, используем fallback")
+        return self._create_fallback_python_example(lesson_title, lesson_content)
 
-        return examples
+    # Обратная совместимость
+    def validate_examples_relevance(self, examples, course_subject) -> bool:
+        return self.validate_examples_quality(examples)

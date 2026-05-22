@@ -6,6 +6,13 @@
 """
 
 from content_utils import BaseContentGenerator, ContentUtils
+from examples_html_utils import (
+    normalize_markdown_fences_to_html,
+    normalize_examples_payload,
+    parse_examples_json_response,
+    render_examples_json_to_html,
+    validate_examples_payload,
+)
 
 
 class ExamplesGeneration(BaseContentGenerator):
@@ -73,45 +80,61 @@ class ExamplesGeneration(BaseContentGenerator):
             messages = [
                 {
                     "role": "system",
-                    "content": f"Ты - опытный преподаватель в области {course_subject}. СТРОГО генерируй примеры ТОЛЬКО по этой предметной области, НЕ отклоняйся от темы курса.",
+                    "content": (
+                        f"Ты — преподаватель {course_subject}. "
+                        "Генерируешь ТОЛЬКО JSON с массивом examples. "
+                        "Каждый example обязан содержать поле code с рабочим Python-кодом."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ]
 
             examples = self.make_api_request(
                 messages=messages,
-                temperature=0.5,  # Снижаем для более точного следования теме
-                max_tokens=3500,
+                temperature=0.35,
+                max_tokens=4000,
+                response_format={"type": "json_object"},
             )
 
-            # Очищаем от возможных markdown меток
-            examples = self.clean_markdown_code_blocks(examples)
+            examples_html = self._parse_and_render_examples(examples)
+
+            # Очищаем от возможных markdown меток (fallback для старого формата)
+            examples_html = normalize_markdown_fences_to_html(examples_html)
+            examples_html = self.clean_markdown_code_blocks(examples_html)
 
             # Сохраняем отладочную информацию
             self.save_debug_response(
                 "examples",
                 prompt,
-                examples,
+                examples_html,
                 {
                     "lesson_title": lesson_title,
                     "lesson_description": lesson_description,
                     "keywords": keywords_str,
                     "communication_style": communication_style,
                     "course_subject": course_subject,
+                    "raw_llm_response": examples[:2000],
                 },
             )
-
-            # Применяем ВИДИМЫЕ стили для примеров
-            styled_examples = self._apply_visible_styles(examples, communication_style)
 
             self.logger.info(
                 f"Примеры по теме '{course_subject}' успешно сгенерированы"
             )
-            return styled_examples
+            return examples_html
 
         except Exception as e:
             self.logger.error(f"Критическая ошибка при генерации примеров: {str(e)}")
             raise Exception(f"Не удалось сгенерировать примеры: {str(e)}")
+
+    def _parse_and_render_examples(self, response: str) -> str:
+        """Парсит JSON-ответ LLM и рендерит HTML с блоками кода."""
+        payload = parse_examples_json_response(response)
+        validate_examples_payload(payload, min_examples=3)
+        normalized = normalize_examples_payload(payload)
+        html_output = render_examples_json_to_html(normalized)
+        if not html_output.strip():
+            raise ValueError("LLM вернул примеры без исполняемого кода")
+        return html_output
 
     def _determine_course_subject(
         self, course_context, lesson_content, lesson_keywords
@@ -389,139 +412,46 @@ class ExamplesGeneration(BaseContentGenerator):
         )
 
         return f"""
-Создай практические примеры СТРОГО по теме "{course_subject}" для следующего урока:
+Создай РОВНО 3 практических примера на Python для урока по теме "{course_subject}".
 
 Название урока: {lesson_title}
 Описание урока: {lesson_description}
 Ключевые слова: {keywords_str}
-Предметная область: {course_subject}
 
-Содержание урока (для понимания контекста):
-{lesson_content[:2000]}
+Содержание урока:
+{lesson_content[:3000]}
 
-Стиль общения: {style_description}
+Стиль пояснений: {style_description}
 
-КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
-1. ВСЕ примеры должны быть ТОЛЬКО на Python - никаких других языков!
-2. НЕ ИСПОЛЬЗУЙ HTML, JavaScript, CSS, Java, C++ или любые другие языки
-3. Каждый пример должен содержать исполняемый Python код
-4. Примеры должны иллюстрировать концепции именно из данного урока
-5. Показывай практическое применение изученного материала
-6. Используй Python синтаксис: def, import, print(), if, for, while, class, etc.
+КРИТИЧЕСКИ ВАЖНО:
+1. Каждый пример — это РЕАЛЬНЫЙ исполняемый Python-код в поле "code" (минимум 5 строк кода).
+2. ЗАПРЕЩЕНО писать заглушки: «в этом примере мы создадим», «здесь мы создадим».
+3. Поле description — в настоящем времени: «Создаёт переменные…», «Суммирует список…».
+4. Код должен работать при запуске (без внешних файлов, без input()).
+5. Примеры должны иллюстрировать концепции ИМЕННО из lesson_content выше.
+6. Для ML-уроков: random_state=42, правильные импорты sklearn (from sklearn.datasets import ...).
+7. НЕ используй pd.read_csv(), open('file.txt') и другие внешние файлы.
 
-ФОРМАТИРОВАНИЕ КОДА (КРИТИЧЕСКИ ВАЖНО):
-- Код должен начинаться БЕЗ отступов
-- Первая строка кода должна быть flush left (без пробелов в начале)
-- Все строки кода должны быть выровнены по левому краю
-- НЕ добавляй лишние пробелы в начале строк кода
+Формат ответа — ТОЛЬКО JSON:
+{{
+  "examples": [
+    {{
+      "title": "Краткий заголовок примера 1",
+      "description": "1-2 предложения: что делает код и зачем это для ML/Python.",
+      "code": "import ...\\n\\n# рабочий код\\nprint(...)"
+    }},
+    {{
+      "title": "Пример 2",
+      "description": "...",
+      "code": "..."
+    }},
+    {{
+      "title": "Пример 3",
+      "description": "...",
+      "code": "..."
+    }}
+  ]
+}}
 
-ИМПОРТЫ (КРИТИЧЕСКИ ВАЖНО - ЗАПРЕЩЕНО ИСПОЛЬЗОВАТЬ НЕПРАВИЛЬНЫЕ ИМПОРТЫ):
-- СТРОГО ЗАПРЕЩЕНО: from sklearn import datasets (это вызовет NameError!)
-- СТРОГО ЗАПРЕЩЕНО: from sklearn import model_selection (это вызовет NameError!)
-- СТРОГО ЗАПРЕЩЕНО: from sklearn import ensemble (это вызовет NameError!)
-
-- ВМЕСТО ЭТОГО используй ТОЛЬКО правильные импорты:
-  * from sklearn.datasets import load_iris, make_classification, make_regression
-  * from sklearn.model_selection import train_test_split, cross_val_score
-  * from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-  * from sklearn.linear_model import LinearRegression, LogisticRegression
-  * from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
-  * from sklearn.cluster import KMeans, DBSCAN
-
-- Если используешь pandas - добавь: import pandas as pd
-- Если используешь numpy - добавь: import numpy as np
-- Если используешь matplotlib - добавь: import matplotlib.pyplot as plt
-
-- НЕ используй функции без импорта - это вызовет NameError!
-- НЕ используй сокращения типа 'datasets' - всегда указывай полный путь!
-
-ДАННЫЕ (КРИТИЧЕСКИ ВАЖНО - ЗАПРЕЩЕНО ИСПОЛЬЗОВАТЬ ВНЕШНИЕ ФАЙЛЫ):
-- СТРОГО ЗАПРЕЩЕНО: pd.read_csv('data.csv'), pd.read_excel('file.xlsx'), open('file.txt')
-- СТРОГО ЗАПРЕЩЕНО: любые пути к файлам, которые могут не существовать
-- СТРОГО ЗАПРЕЩЕНО: загрузка данных из внешних источников
-
-- ВМЕСТО ЭТОГО используй ТОЛЬКО:
-  * numpy.random для генерации случайных данных
-  * sklearn.datasets для встроенных датасетов
-  * pandas.DataFrame для создания таблиц
-  * Встроенные возможности Python для создания тестовых данных
-
-ПРИМЕРЫ ПРАВИЛЬНОЙ ГЕНЕРАЦИИ ДАННЫХ:
-```python
-# ✅ ПРАВИЛЬНО - генерация данных
-import numpy as np
-import pandas as pd
-
-# Создание случайных данных
-np.random.seed(42)
-n_samples = 1000
-feature1 = np.random.randn(n_samples) * 2 + 5
-feature2 = np.random.randn(n_samples) * 1.5 + 3
-y = 2 * feature1 + 1.5 * feature2 + np.random.randn(n_samples) * 0.5
-
-# Создание DataFrame
-data = pd.DataFrame({{
-    'feature1': feature1,
-    'feature2': feature2,
-    'target': y
-}})
-
-# ✅ ПРАВИЛЬНО - встроенные датасеты sklearn
-from sklearn.datasets import load_iris, make_classification
-iris = load_iris()
-X, y = make_classification(n_samples=1000, n_features=20)
-```
-
-ПРИМЕРЫ НЕПРАВИЛЬНОЙ ЗАГРУЗКИ ДАННЫХ (СТРОГО ЗАПРЕЩЕНО):
-```python
-# ❌ ЗАПРЕЩЕНО - внешние файлы
-data = pd.read_csv('data.csv')           # FileNotFoundError!
-data = pd.read_excel('dataset.xlsx')     # FileNotFoundError!
-data = pd.read_json('data.json')         # FileNotFoundError!
-with open('data.txt', 'r') as f:         # FileNotFoundError!
-    data = f.read()
-
-# ❌ ЗАПРЕЩЕНО - неправильные импорты
-from sklearn import datasets              # NameError!
-from sklearn import model_selection      # NameError!
-from sklearn import ensemble             # NameError!
-```
-
-ПРИОРИТЕТ ПРИМЕРОВ:
-1. **Встроенные возможности Python** (без внешних библиотек) - ВЫСШИЙ ПРИОРИТЕТ
-2. **Стандартная библиотека Python** (os, sys, datetime, json, etc.)
-3. **Популярные библиотеки** (если нужны) - добавляй инструкции по установке
-
-ПРАВИЛА ДЛЯ ВНЕШНИХ БИБЛИОТЕК:
-- Если используешь sklearn, pandas, numpy, matplotlib - добавляй в начало примера:
-  "# Для работы примера установите: pip install scikit-learn pandas numpy matplotlib"
-- Предпочитай встроенные возможности Python
-- Создавай альтернативные примеры без внешних зависимостей
-
-Генерируй разнообразные примеры:
-1. Простые примеры для начинающих (только Python)
-2. Средние примеры с пояснениями
-3. Практические применения
-4. Избегай частых ошибок
-
-СТРОГО ЗАПРЕЩЕНО:
-- HTML теги (html, head, body, div, script, etc.)
-- JavaScript код (var, function, document, onclick, etc.)
-- CSS стили и свойства
-- Любые языки программирования кроме Python
-- Лишние отступы в начале строк кода
-- Использование функций без импорта (NameError)
-- Загрузка внешних файлов (FileNotFoundError)
-- Использование несуществующих путей к файлам
-- Использование сокращений типа 'datasets' вместо 'sklearn.datasets'
-- pd.read_csv(), pd.read_excel(), open() с внешними файлами
-- from sklearn import datasets, from sklearn import model_selection, from sklearn import ensemble
-
-Используй ТОЛЬКО HTML для форматирования ответа:
-- <h3> для заголовков примеров
-- <pre><code> для Python кода (без отступов!)
-- <p> для объяснений
-- <div class="example-block"> для группировки примеров
-
-Каждый пример должен быть самодостаточным и исполняемым в Python.
+Поле "code" обязательно в каждом примере. Без markdown, без HTML — только чистый Python-код в JSON-строке.
 """

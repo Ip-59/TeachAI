@@ -222,9 +222,32 @@ class LessonInteractiveHandlers:
                     course_context=course_context,
                 )
 
+                from examples_display import _create_code_widget
+                from examples_html_utils import extract_example_sections, strip_examples_wrapper
+                from cell_integration import cell_adapter
+
                 clear_output(wait=True)
                 display(widgets.HTML(value="<h3>Практические примеры</h3>"))
-                display(widgets.HTML(value=f"<div>{examples}</div>"))
+                sections = extract_example_sections(strip_examples_wrapper(examples))
+                rendered = 0
+                for section in sections:
+                    code_widget = _create_code_widget(
+                        section.get("code", ""), cell_adapter
+                    )
+                    if code_widget is None:
+                        continue
+                    if section.get("title"):
+                        display(widgets.HTML(value=f"<h4>{section['title']}</h4>"))
+                    if section.get("description"):
+                        display(widgets.HTML(value=f"<p>{section['description']}</p>"))
+                    display(code_widget)
+                    rendered += 1
+                if rendered == 0:
+                    display(
+                        widgets.HTML(
+                            value="<p style='color:#721c24;'>Не удалось показать исполняемые примеры.</p>"
+                        )
+                    )
 
                 # Кнопка закрытия примеров
                 close_button = widgets.Button(

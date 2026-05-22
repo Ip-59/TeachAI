@@ -259,57 +259,6 @@ class LessonNavigation:
             # Показываем выбор типа объяснения
             self.lesson_interface._show_explanation_choice()
 
-        def extract_code_blocks_from_html(html: str) -> list:
-            """
-            Рекурсивно ищет все <pre><code>...</code></pre> в HTML и возвращает список кусков кода.
-            """
-            code_blocks = []
-            for match in re.finditer(r"<pre><code>([\s\S]*?)</code></pre>", html):
-                code = match.group(1)
-                code = re.sub(r"<.*?>", "", code)  # Удаляем все HTML-теги внутри кода
-                code_blocks.append(code.strip())
-            return code_blocks
-
-        def extract_titles_and_texts(html: str) -> list:
-            """
-            Извлекает заголовки (<h3>) и пояснения (<p>) из HTML, возвращает список (заголовок, текст).
-            ИСПРАВЛЕНО: Убрано дублирование блоков.
-            """
-            blocks = []
-            # Ищем <h3> и <p> в порядке следования
-            pattern = re.compile(r"(<h3>.*?</h3>|<p>.*?</p>)", re.DOTALL)
-            matches = list(pattern.finditer(html))
-
-            i = 0
-            while i < len(matches):
-                current_block = matches[i].group(0)
-
-                if current_block.startswith("<h3>"):
-                    title = re.sub("<.*?>", "", current_block).strip()
-                    text = None
-
-                    # Ищем следующий <p> после заголовка
-                    if i + 1 < len(matches) and matches[i + 1].group(0).startswith(
-                        "<p>"
-                    ):
-                        text = re.sub("<.*?>", "", matches[i + 1].group(0)).strip()
-                        i += 2  # Пропускаем и заголовок, и текст
-                    else:
-                        i += 1  # Только заголовок
-
-                    blocks.append((title, text))
-
-                elif current_block.startswith("<p>"):
-                    # Если встретили <p> без заголовка, добавляем как отдельный блок
-                    text = re.sub("<.*?>", "", current_block).strip()
-                    blocks.append((None, text))
-                    i += 1
-
-                else:
-                    i += 1
-
-            return blocks
-
         def on_examples_button_clicked(b):
             # Скрываем другие контейнеры
             self.lesson_interface._hide_other_containers()
@@ -322,6 +271,7 @@ class LessonNavigation:
                 self.lesson_interface.examples_container.children = [loading_html]
                 try:
                     from examples_generator import ExamplesGenerator
+                    from examples_display import build_examples_widgets
 
                     examples_generator = ExamplesGenerator(
                         self.lesson_interface.content_generator.api_key
@@ -334,73 +284,9 @@ class LessonNavigation:
                         ]["communication_style"],
                         course_context=self.lesson_interface.current_course_info,
                     )
-                    # --- Новый парсер: только один заголовок, все коды — отдельные ячейки ---
-                    widgets_to_display = []
 
-                    # Добавляем только один заголовок "Примеры:" (если есть в ответе)
-                    if "Примеры" in examples:
-                        widgets_to_display.append(
-                            widgets.HTML(value="<h3>Примеры</h3>")
-                        )
+                    widgets_to_display = build_examples_widgets(examples, cell_adapter)
 
-                    # Извлекаем все блоки кода
-                    code_blocks = extract_code_blocks_from_html(examples)
-
-                    # Извлекаем заголовки и пояснения (если есть)
-                    titles_and_texts = extract_titles_and_texts(examples)
-
-                    # ИСПРАВЛЕНО: Убираем дублирование и улучшаем структуру
-                    processed_blocks = set()  # Для отслеживания уже обработанных блоков
-
-                    # Для каждого кода — отдельная ячейка, перед ней (если есть) — заголовок/пояснение
-                    for i, code in enumerate(code_blocks):
-                        # Создаем уникальный идентификатор для блока
-                        block_id = f"code_{i}_{hash(code)}"
-
-                        if block_id in processed_blocks:
-                            continue  # Пропускаем дублирующиеся блоки
-
-                        processed_blocks.add(block_id)
-
-                        # Добавляем заголовок и пояснение, если они есть
-                        if i < len(titles_and_texts):
-                            title, text = titles_and_texts[i]
-                            if title and title.strip():
-                                widgets_to_display.append(
-                                    widgets.HTML(value=f"<h4>{title}</h4>")
-                                )
-                            if text and text.strip():
-                                widgets_to_display.append(
-                                    widgets.HTML(value=f"<p>{text}</p>")
-                                )
-
-                        # Создаем демо-ячейки для кода
-                        try:
-                            demo_cells = cell_adapter.create_demo_cells(
-                                [{"code": code}]
-                            )
-                            widgets_to_display.extend(demo_cells)
-                        except Exception as e:
-                            # Fallback: если не удалось создать демо-ячейки
-                            self.logger.warning(f"Не удалось создать демо-ячейки: {e}")
-                            # Создаем простой виджет с кодом
-                            code_widget = widgets.HTML(
-                                value=f"<pre><code>{code}</code></pre>",
-                                layout=widgets.Layout(
-                                    margin="10px 0",
-                                    padding="10px",
-                                    border="1px solid #ddd",
-                                    border_radius="5px",
-                                    background_color="#f8f8f8",
-                                ),
-                            )
-                            widgets_to_display.append(code_widget)
-
-                    # Если не найдено ни одного кода — fallback: просто текст
-                    if not code_blocks:
-                        widgets_to_display.append(widgets.HTML(value=examples))
-
-                    # Кнопка закрытия
                     close_button = widgets.Button(
                         description="✕ Закрыть",
                         button_style="danger",
@@ -413,15 +299,10 @@ class LessonNavigation:
                     close_button.on_click(on_close_button_clicked)
                     widgets_to_display.append(close_button)
 
-                    # ИСПРАВЛЕНО: Очищаем контейнер перед добавлением новых виджетов
-                    self.lesson_interface.examples_container.children = []
-                    self.lesson_interface.examples_container.children = (
-                        widgets_to_display
-                    )
+                    self.lesson_interface.examples_container.children = widgets_to_display
                 except Exception as e:
                     self.logger.error(f"Ошибка при генерации примеров: {str(e)}")
 
-                    # ИСПРАВЛЕНО: Очищаем контейнер перед добавлением сообщения об ошибке
                     self.lesson_interface.examples_container.children = []
 
                     error_html = widgets.HTML(

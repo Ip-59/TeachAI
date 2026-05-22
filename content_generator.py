@@ -168,7 +168,11 @@ class ContentGenerator:
             raise
 
     def generate_examples(
-        self, lesson_data, lesson_content, communication_style="friendly"
+        self,
+        lesson_data,
+        lesson_content,
+        communication_style="friendly",
+        course_context=None,
     ):
         """
         Генерирует практические примеры по материалу урока.
@@ -177,6 +181,7 @@ class ContentGenerator:
             lesson_data (dict): Данные об уроке (название, описание, ключевые слова)
             lesson_content (str): Содержание урока
             communication_style (str): Стиль общения
+            course_context (dict, optional): Контекст курса
 
         Returns:
             str: Строка с практическими примерами
@@ -185,7 +190,10 @@ class ContentGenerator:
             Exception: Если не удалось сгенерировать примеры
         """
         return self.examples_gen.generate_examples(
-            lesson_data, lesson_content, communication_style
+            lesson_data,
+            lesson_content,
+            communication_style,
+            course_context=course_context,
         )
 
     def generate_assessment(
