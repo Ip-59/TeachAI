@@ -175,21 +175,41 @@ class ContentGenerator:
         course_context=None,
     ):
         """
-        Генерирует практические примеры по материалу урока.
+        Генерирует практические примеры по материалу урока (HTML, legacy).
 
-        Args:
-            lesson_data (dict): Данные об уроке (название, описание, ключевые слова)
-            lesson_content (str): Содержание урока
-            communication_style (str): Стиль общения
-            course_context (dict, optional): Контекст курса
+        Возвращает HTML-строку для обратной совместимости. Внутри использует
+        структурированный путь generate_examples_data + render.
 
         Returns:
-            str: Строка с практическими примерами
-
-        Raises:
-            Exception: Если не удалось сгенерировать примеры
+            str: HTML с практическими примерами.
         """
         return self.examples_gen.generate_examples(
+            lesson_data,
+            lesson_content,
+            communication_style,
+            course_context=course_context,
+        )
+
+    def generate_examples_data(
+        self,
+        lesson_data,
+        lesson_content,
+        communication_style="friendly",
+        course_context=None,
+    ):
+        """
+        Генерирует практические примеры в виде списка словарей.
+
+        Это основной путь: данные приходят к потребителям (виджеты Jupyter)
+        без какого-либо обратного парсинга HTML.
+
+        Returns:
+            list[dict]: Каждый элемент — {"title", "description", "code"}.
+
+        Raises:
+            Exception: Если не удалось сгенерировать примеры.
+        """
+        return self.examples_gen.generate_examples_data(
             lesson_data,
             lesson_content,
             communication_style,

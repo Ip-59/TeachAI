@@ -213,7 +213,7 @@ class LessonInteractiveHandlers:
                     "topic_title": self.current_course_info["topic_title"],
                 }
 
-                examples = self.content_generator.generate_examples(
+                examples_data = self.content_generator.generate_examples_data(
                     lesson_data=self.current_lesson_data,
                     lesson_content=self.current_lesson_content,
                     communication_style=self.current_course_info["user_profile"][
@@ -222,32 +222,12 @@ class LessonInteractiveHandlers:
                     course_context=course_context,
                 )
 
-                from examples_display import _create_code_widget
-                from examples_html_utils import extract_example_sections, strip_examples_wrapper
+                from examples_display import build_examples_widgets
                 from cell_integration import cell_adapter
 
                 clear_output(wait=True)
-                display(widgets.HTML(value="<h3>Практические примеры</h3>"))
-                sections = extract_example_sections(strip_examples_wrapper(examples))
-                rendered = 0
-                for section in sections:
-                    code_widget = _create_code_widget(
-                        section.get("code", ""), cell_adapter
-                    )
-                    if code_widget is None:
-                        continue
-                    if section.get("title"):
-                        display(widgets.HTML(value=f"<h4>{section['title']}</h4>"))
-                    if section.get("description"):
-                        display(widgets.HTML(value=f"<p>{section['description']}</p>"))
-                    display(code_widget)
-                    rendered += 1
-                if rendered == 0:
-                    display(
-                        widgets.HTML(
-                            value="<p style='color:#721c24;'>Не удалось показать исполняемые примеры.</p>"
-                        )
-                    )
+                for widget in build_examples_widgets(examples_data, cell_adapter):
+                    display(widget)
 
                 # Кнопка закрытия примеров
                 close_button = widgets.Button(

@@ -1,15 +1,20 @@
-"""Сборка виджетов Jupyter для отображения примеров."""
+"""Сборка виджетов Jupyter для отображения примеров.
+
+Источник данных — list[dict] {"title", "description", "code"}.
+HTML-парсинг полностью удалён: код приходит из структурированных данных
+и попадает в виджет без потерь.
+"""
 
 from __future__ import annotations
 
 import html
 import io
 from contextlib import redirect_stdout
-from typing import Any, List
+from typing import Any, Dict, List
 
 import ipywidgets as widgets
 
-from examples_html_utils import extract_example_sections, looks_like_python_code, strip_examples_wrapper
+from examples_html_utils import is_stub_only_description, looks_like_python_code
 
 
 def _create_fallback_code_widget(code: str) -> widgets.VBox:
@@ -57,12 +62,14 @@ def _create_code_widget(code: str, cell_adapter: Any) -> widgets.Widget | None:
     return _create_fallback_code_widget(code)
 
 
-def build_examples_widgets(styled_html: str, cell_adapter: Any) -> List[widgets.Widget]:
-    """
-    Строит виджеты для блока «Показать примеры» из HTML, собранного из JSON.
+def build_examples_widgets(
+    examples_data: List[Dict[str, str]],
+    cell_adapter: Any,
+) -> List[widgets.Widget]:
+    """Строит виджеты для блока «Показать примеры» из list[dict].
 
     Args:
-        styled_html: HTML после render_examples_json_to_html + стилей.
+        examples_data: Список словарей {"title", "description", "code"}.
         cell_adapter: Адаптер для создания интерактивных code-ячеек.
 
     Returns:
@@ -72,29 +79,34 @@ def build_examples_widgets(styled_html: str, cell_adapter: Any) -> List[widgets.
         widgets.HTML(value="<h3>Практические примеры</h3>")
     ]
 
-    sections = extract_example_sections(strip_examples_wrapper(styled_html))
-    rendered_count = 0
+    if not isinstance(examples_data, list):
+        widgets_to_display.append(
+            widgets.HTML(
+                value=(
+                    "<p style='color:#721c24;'>"
+                    "Не удалось показать примеры: неверный формат данных."
+                    "</p>"
+                )
+            )
+        )
+        return widgets_to_display
 
-    for section in sections:
-        title = section.get("title", "").strip()
-        description = section.get("description", "").strip()
-        code = section.get("code", "").strip()
+    rendered_count = 0
+    for index, example in enumerate(examples_data, start=1):
+        if not isinstance(example, dict):
+            continue
+        code = (example.get("code") or "").strip()
         code_widget = _create_code_widget(code, cell_adapter)
         if code_widget is None:
             continue
 
-        if title:
-            widgets_to_display.append(
-                widgets.HTML(value=f"<h4>{html.escape(title)}</h4>")
-            )
-        if description and not any(
-            phrase in description.lower()
-            for phrase in (
-                "в этом примере мы",
-                "здесь мы создадим",
-                "мы создадим",
-            )
-        ):
+        title = (example.get("title") or f"Пример {index}").strip()
+        description = (example.get("description") or "").strip()
+
+        widgets_to_display.append(
+            widgets.HTML(value=f"<h4>{html.escape(title)}</h4>")
+        )
+        if description and not is_stub_only_description(description):
             widgets_to_display.append(
                 widgets.HTML(value=f"<p>{html.escape(description)}</p>")
             )

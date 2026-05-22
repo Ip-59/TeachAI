@@ -1,56 +1,87 @@
 """
-Модуль для валидации и повторной генерации практических примеров.
+Валидация и повторная генерация практических примеров.
+
+Работает со списком словарей вида {"title", "description", "code"}.
+Никакого парсинга HTML — структура примеров проходит через систему как данные.
 """
 
 import io
 import logging
 from contextlib import redirect_stdout
-from typing import List
+from typing import Dict, List
 
 from content_utils import BaseContentGenerator
 from examples_html_utils import (
-    contains_forbidden_non_python_code,
-    extract_code_blocks_from_html,
-    has_runnable_examples,
-    normalize_markdown_fences_to_html,
-    parse_examples_json_response,
-    render_examples_json_to_html,
-    strip_examples_wrapper,
-    validate_examples_payload,
+    looks_like_python_code,
     normalize_examples_payload,
+    parse_examples_json_response,
+    validate_examples_payload,
 )
 
 
 class ExamplesValidation(BaseContentGenerator):
-    """Валидатор и генератор повторных примеров."""
+    """Валидатор и регенератор примеров (в формате list[dict])."""
 
     MIN_EXAMPLES = 3
     MIN_CODE_LINES = 3
+    FORBIDDEN_MARKERS = (
+        "document.",
+        "function(",
+        "var ",
+        "let ",
+        "const ",
+        "<html",
+        "<script",
+        "onclick",
+    )
 
     def __init__(self, api_key):
         super().__init__(api_key)
         self.logger = logging.getLogger(__name__)
 
-    def validate_examples_quality(self, examples: str) -> bool:
-        """Проверяет, что примеры содержат реальный исполняемый код."""
-        content = strip_examples_wrapper(normalize_markdown_fences_to_html(examples))
-        if not has_runnable_examples(
-            content, min_blocks=self.MIN_EXAMPLES, min_lines=self.MIN_CODE_LINES
-        ):
-            self.logger.warning("Недостаточно блоков исполняемого кода в примерах")
+    def validate_examples_quality(self, examples: List[Dict[str, str]]) -> bool:
+        """Проверяет, что в списке есть достаточно блоков исполняемого Python-кода."""
+        if not isinstance(examples, list) or len(examples) < self.MIN_EXAMPLES:
+            self.logger.warning(
+                "Получено %s примеров, нужно минимум %s",
+                len(examples) if isinstance(examples, list) else "не-list",
+                self.MIN_EXAMPLES,
+            )
             return False
-        if contains_forbidden_non_python_code(content):
-            self.logger.warning("Найден запрещённый не-Python код в примерах")
+
+        valid = 0
+        for example in examples:
+            code = (example.get("code") or "").strip()
+            if not code or not looks_like_python_code(code):
+                continue
+            lines = [
+                line
+                for line in code.splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            if len(lines) < self.MIN_CODE_LINES:
+                continue
+            lower = code.lower()
+            if any(marker in lower for marker in self.FORBIDDEN_MARKERS):
+                self.logger.warning("Найден запрещённый не-Python код в примере '%s'", example.get("title"))
+                return False
+            valid += 1
+
+        if valid < self.MIN_EXAMPLES:
+            self.logger.warning("Только %s исполняемых примеров из %s", valid, len(examples))
             return False
         return True
 
-    def validate_examples_execute(self, examples: str) -> bool:
-        """Пробует выполнить каждый блок кода."""
-        content = strip_examples_wrapper(examples)
-        blocks = extract_code_blocks_from_html(content)
-        if len(blocks) < self.MIN_EXAMPLES:
+    def validate_examples_execute(self, examples: List[Dict[str, str]]) -> bool:
+        """Пытается выполнить код каждого примера в изолированном окружении."""
+        if not isinstance(examples, list) or len(examples) < self.MIN_EXAMPLES:
             return False
-        for index, code in enumerate(blocks[: self.MIN_EXAMPLES], start=1):
+
+        for index, example in enumerate(examples[: self.MIN_EXAMPLES], start=1):
+            code = (example.get("code") or "").strip()
+            if not code:
+                self.logger.warning("Пример %s без кода", index)
+                return False
             try:
                 with redirect_stdout(io.StringIO()):
                     exec(code, {})
@@ -67,8 +98,8 @@ class ExamplesValidation(BaseContentGenerator):
         lesson_content,
         communication_style,
         course_subject,
-    ) -> str:
-        """Повторная генерация с жёстким JSON-промптом."""
+    ) -> List[Dict[str, str]]:
+        """Повторная генерация с жёстким JSON-промптом. Возвращает list[dict]."""
         strict_prompt = f"""
 Сгенерируй РОВНО 3 примера Python для урока "{lesson_title}" ({course_subject}).
 
@@ -112,123 +143,116 @@ class ExamplesValidation(BaseContentGenerator):
         )
         payload = parse_examples_json_response(response)
         validate_examples_payload(payload, min_examples=3)
-        return render_examples_json_to_html(normalize_examples_payload(payload))
+        return normalize_examples_payload(payload).get("examples", [])
 
-    def _create_fallback_python_example(self, lesson_title: str, lesson_content: str = "") -> str:
-        """Создаёт три готовых примера с кодом по основам Python."""
+    def _create_fallback_python_example(
+        self, lesson_title: str, lesson_content: str = ""
+    ) -> List[Dict[str, str]]:
+        """Готовые примеры по основам Python — последний рубеж, если LLM не справился."""
         content_lower = (lesson_content or lesson_title).lower()
-        examples: List[dict] = []
 
         if any(word in content_lower for word in ("переменн", "тип", "python", "основ")):
-            examples.extend(
-                [
-                    {
-                        "title": "Переменные и типы данных",
-                        "description": "Создаём переменные разных типов и выводим их значения.",
-                        "code": (
-                            'name = "Игорь"\n'
-                            "age = 25\n"
-                            "height = 1.75\n"
-                            "is_student = True\n"
-                            'print(name, age, height, is_student)\n'
-                            "print(type(name), type(age), type(height), type(is_student))"
-                        ),
-                    },
-                    {
-                        "title": "Операторы и выражения",
-                        "description": "Складываем числа и сохраняем результат в переменную.",
-                        "code": (
-                            "a = 10\n"
-                            "b = 5\n"
-                            "sum_result = a + b\n"
-                            "product = a * b\n"
-                            'print("sum:", sum_result)\n'
-                            'print("product:", product)'
-                        ),
-                    },
-                    {
-                        "title": "Условия и циклы",
-                        "description": "Проверяем возраст и выводим числа циклом for.",
-                        "code": (
-                            "age = 18\n"
-                            'status = "Взрослый" if age >= 18 else "Несовершеннолетний"\n'
-                            "print(status)\n"
-                            "for i in range(5):\n"
-                            "    print(i)"
-                        ),
-                    },
-                ]
-            )
-        else:
-            examples.extend(
-                [
-                    {
-                        "title": f"Пример 1: {lesson_title}",
-                        "description": "Базовая демонстрация переменных и вывода.",
-                        "code": (
-                            f'topic = "{lesson_title}"\n'
-                            "values = [1, 2, 3, 4, 5]\n"
-                            "total = sum(values)\n"
-                            'print("Тема:", topic)\n'
-                            'print("Сумма:", total)'
-                        ),
-                    },
-                    {
-                        "title": f"Пример 2: {lesson_title}",
-                        "description": "Цикл for для обработки списка.",
-                        "code": (
-                            "numbers = [2, 4, 6, 8]\n"
-                            "squares = []\n"
-                            "for n in numbers:\n"
-                            "    squares.append(n ** 2)\n"
-                            "print(squares)"
-                        ),
-                    },
-                    {
-                        "title": f"Пример 3: {lesson_title}",
-                        "description": "Функция для переиспользования логики.",
-                        "code": (
-                            "def normalize(value, min_val, max_val):\n"
-                            "    return (value - min_val) / (max_val - min_val)\n"
-                            "result = normalize(5, 0, 10)\n"
-                            "print(round(result, 2))"
-                        ),
-                    },
-                ]
-            )
+            return [
+                {
+                    "title": "Переменные и типы данных",
+                    "description": "Создаём переменные разных типов и выводим их значения.",
+                    "code": (
+                        'name = "Игорь"\n'
+                        "age = 25\n"
+                        "height = 1.75\n"
+                        "is_student = True\n"
+                        "print(name, age, height, is_student)\n"
+                        "print(type(name), type(age), type(height), type(is_student))"
+                    ),
+                },
+                {
+                    "title": "Операторы и выражения",
+                    "description": "Складываем числа и сохраняем результат в переменную.",
+                    "code": (
+                        "a = 10\n"
+                        "b = 5\n"
+                        "sum_result = a + b\n"
+                        "product = a * b\n"
+                        'print("sum:", sum_result)\n'
+                        'print("product:", product)'
+                    ),
+                },
+                {
+                    "title": "Условия и циклы",
+                    "description": "Проверяем возраст и выводим числа циклом for.",
+                    "code": (
+                        "age = 18\n"
+                        'status = "Взрослый" if age >= 18 else "Несовершеннолетний"\n'
+                        "print(status)\n"
+                        "for i in range(5):\n"
+                        "    print(i)"
+                    ),
+                },
+            ]
 
-        return render_examples_json_to_html({"examples": examples})
+        return [
+            {
+                "title": f"Пример 1: {lesson_title}",
+                "description": "Базовая демонстрация переменных и вывода.",
+                "code": (
+                    f'topic = "{lesson_title}"\n'
+                    "values = [1, 2, 3, 4, 5]\n"
+                    "total = sum(values)\n"
+                    'print("Тема:", topic)\n'
+                    'print("Сумма:", total)'
+                ),
+            },
+            {
+                "title": f"Пример 2: {lesson_title}",
+                "description": "Цикл for для обработки списка.",
+                "code": (
+                    "numbers = [2, 4, 6, 8]\n"
+                    "squares = []\n"
+                    "for n in numbers:\n"
+                    "    squares.append(n ** 2)\n"
+                    "print(squares)"
+                ),
+            },
+            {
+                "title": f"Пример 3: {lesson_title}",
+                "description": "Функция для переиспользования логики.",
+                "code": (
+                    "def normalize(value, min_val, max_val):\n"
+                    "    return (value - min_val) / (max_val - min_val)\n"
+                    "result = normalize(5, 0, 10)\n"
+                    "print(round(result, 2))"
+                ),
+            },
+        ]
 
     def validate_and_regenerate_if_needed(
         self,
-        examples,
+        examples: List[Dict[str, str]],
         course_subject,
         lesson_title,
         lesson_description,
         keywords_str,
         lesson_content,
         communication_style,
-    ) -> str:
-        """Проверяет качество примеров и перегенерирует при необходимости."""
+    ) -> List[Dict[str, str]]:
+        """Проверяет качество, при необходимости перегенерирует, иначе — fallback."""
         if self.validate_examples_quality(examples) and self.validate_examples_execute(examples):
             return examples
 
         self.logger.warning("Примеры не прошли проверку качества, повторная генерация...")
-        examples = self.regenerate_with_strict_prompt(
-            lesson_title,
-            lesson_description,
-            keywords_str,
-            lesson_content,
-            communication_style,
-            course_subject,
-        )
-
-        if self.validate_examples_quality(examples) and self.validate_examples_execute(examples):
-            return examples
+        try:
+            regenerated = self.regenerate_with_strict_prompt(
+                lesson_title,
+                lesson_description,
+                keywords_str,
+                lesson_content,
+                communication_style,
+                course_subject,
+            )
+            if self.validate_examples_quality(regenerated) and self.validate_examples_execute(regenerated):
+                return regenerated
+        except Exception as exc:
+            self.logger.warning("Повторная генерация упала: %s", exc)
 
         self.logger.error("Повторная генерация не дала рабочих примеров, используем fallback")
         return self._create_fallback_python_example(lesson_title, lesson_content)
-
-    # Обратная совместимость
-    def validate_examples_relevance(self, examples, course_subject) -> bool:
-        return self.validate_examples_quality(examples)

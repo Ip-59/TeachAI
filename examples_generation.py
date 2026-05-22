@@ -5,9 +5,11 @@
 ИСПРАВЛЕНО: Строгий контроль релевантности примеров теме курса (проблема #88)
 """
 
+import json
+from typing import Any, Dict, List
+
 from content_utils import BaseContentGenerator, ContentUtils
 from examples_html_utils import (
-    normalize_markdown_fences_to_html,
     normalize_examples_payload,
     parse_examples_json_response,
     render_examples_json_to_html,
@@ -28,42 +30,34 @@ class ExamplesGeneration(BaseContentGenerator):
         super().__init__(api_key)
         self.logger.info("ExamplesGeneration инициализирован")
 
-    def generate_examples(
+    def generate_examples_data(
         self,
         lesson_data,
         lesson_content,
         communication_style="friendly",
         course_context=None,
-    ):
-        """
-        ИСПРАВЛЕНО: Генерирует практические примеры строго по материалу урока и теме курса.
+    ) -> List[Dict[str, str]]:
+        """Возвращает примеры в виде структурированного списка словарей.
 
-        Args:
-            lesson_data (dict): Данные об уроке (название, описание, ключевые слова)
-            lesson_content (str): Содержание урока
-            communication_style (str): Стиль общения
-            course_context (dict, optional): Контекст курса для обеспечения релевантности
+        Это основной (чистый) путь генерации. HTML здесь не строится.
 
         Returns:
-            str: Строка с практическими примерами
+            list[dict]: Каждый элемент — {"title": str, "description": str, "code": str}.
 
         Raises:
-            Exception: Если не удалось сгенерировать примеры
+            Exception: Если не удалось сгенерировать примеры.
         """
         try:
-            # Проверяем наличие необходимых ключей в lesson_data
             lesson_title = lesson_data.get("title", "Урок")
             lesson_description = lesson_data.get("description", "Нет описания")
             lesson_keywords = lesson_data.get("keywords", [])
 
-            # Преобразуем keywords в строку, если это список
             keywords_str = (
                 ", ".join(lesson_keywords)
                 if isinstance(lesson_keywords, list)
                 else str(lesson_keywords)
             )
 
-            # НОВОЕ: Определяем контекст курса и предметную область
             course_subject = self._determine_course_subject(
                 course_context, lesson_content, lesson_keywords
             )
@@ -89,52 +83,67 @@ class ExamplesGeneration(BaseContentGenerator):
                 {"role": "user", "content": prompt},
             ]
 
-            examples = self.make_api_request(
+            raw_response = self.make_api_request(
                 messages=messages,
                 temperature=0.35,
                 max_tokens=4000,
                 response_format={"type": "json_object"},
             )
 
-            examples_html = self._parse_and_render_examples(examples)
+            examples_data = self._parse_and_validate(raw_response)
 
-            # Очищаем от возможных markdown меток (fallback для старого формата)
-            examples_html = normalize_markdown_fences_to_html(examples_html)
-            examples_html = self.clean_markdown_code_blocks(examples_html)
-
-            # Сохраняем отладочную информацию
             self.save_debug_response(
                 "examples",
                 prompt,
-                examples_html,
+                json.dumps({"examples": examples_data}, ensure_ascii=False, indent=2),
                 {
                     "lesson_title": lesson_title,
                     "lesson_description": lesson_description,
                     "keywords": keywords_str,
                     "communication_style": communication_style,
                     "course_subject": course_subject,
-                    "raw_llm_response": examples[:2000],
+                    "raw_llm_response": raw_response[:2000],
                 },
             )
 
             self.logger.info(
-                f"Примеры по теме '{course_subject}' успешно сгенерированы"
+                f"Примеры по теме '{course_subject}' успешно сгенерированы ({len(examples_data)} шт.)"
             )
-            return examples_html
+            return examples_data
 
         except Exception as e:
             self.logger.error(f"Критическая ошибка при генерации примеров: {str(e)}")
             raise Exception(f"Не удалось сгенерировать примеры: {str(e)}")
 
-    def _parse_and_render_examples(self, response: str) -> str:
-        """Парсит JSON-ответ LLM и рендерит HTML с блоками кода."""
+    def generate_examples(
+        self,
+        lesson_data,
+        lesson_content,
+        communication_style="friendly",
+        course_context=None,
+    ) -> str:
+        """Возвращает примеры в виде HTML (для обратной совместимости).
+
+        Внутри использует generate_examples_data и рендерит финальный HTML.
+        Никакого обратного парсинга HTML не происходит.
+        """
+        examples_data = self.generate_examples_data(
+            lesson_data=lesson_data,
+            lesson_content=lesson_content,
+            communication_style=communication_style,
+            course_context=course_context,
+        )
+        return render_examples_json_to_html({"examples": examples_data})
+
+    def _parse_and_validate(self, response: str) -> List[Dict[str, str]]:
+        """Парсит JSON-ответ LLM, валидирует и нормализует. Возвращает list[dict]."""
         payload = parse_examples_json_response(response)
         validate_examples_payload(payload, min_examples=3)
         normalized = normalize_examples_payload(payload)
-        html_output = render_examples_json_to_html(normalized)
-        if not html_output.strip():
+        examples = normalized.get("examples", [])
+        if not examples:
             raise ValueError("LLM вернул примеры без исполняемого кода")
-        return html_output
+        return examples
 
     def _determine_course_subject(
         self, course_context, lesson_content, lesson_keywords
@@ -219,9 +228,6 @@ class ExamplesGeneration(BaseContentGenerator):
             str: Примеры с примененными стилями
         """
         try:
-            # Очищаем лишние отступы в коде
-            examples = self._clean_code_indentation(examples)
-            
             # Получаем префикс стиля
             utils = ContentUtils()
             prefix = utils.get_style_prefix(communication_style, "examples")
@@ -318,70 +324,6 @@ class ExamplesGeneration(BaseContentGenerator):
 
         except Exception as e:
             self.logger.error(f"Ошибка при применении стилей к примерам: {str(e)}")
-            return examples
-
-    def _clean_code_indentation(self, examples):
-        """
-        НОВЫЙ МЕТОД: Очищает лишние отступы в блоках кода.
-        
-        Args:
-            examples (str): HTML с примерами кода
-            
-        Returns:
-            str: HTML с очищенными отступами в коде
-        """
-        try:
-            import re
-            
-            # Находим все блоки кода <pre><code>...</code></pre>
-            code_pattern = r'<pre><code>(.*?)</code></pre>'
-            
-            def clean_code_block(match):
-                code_content = match.group(1)
-                
-                # Разбиваем на строки
-                lines = code_content.split('\n')
-                
-                # Находим минимальный отступ среди строк С ОТСТУПАМИ (исключая строки без отступов)
-                min_indent = float('inf')
-                lines_with_indent = []
-                
-                for line in lines:
-                    if line.strip():  # Пропускаем пустые строки
-                        indent = len(line) - len(line.lstrip())
-                        
-                        if indent > 0:  # Только строки с отступами
-                            lines_with_indent.append(indent)
-                            if indent < min_indent:
-                                min_indent = indent
-                
-                # Если есть строки с отступами, убираем минимальный отступ
-                if min_indent > 0 and min_indent != float('inf'):
-                    cleaned_lines = []
-                    for line in lines:
-                        if line.strip():  # Для непустых строк
-                            if len(line) - len(line.lstrip()) > 0:  # Если есть отступ
-                                cleaned_line = line[min_indent:]
-                                cleaned_lines.append(cleaned_line)
-                            else:  # Если отступа нет, оставляем как есть
-                                cleaned_lines.append(line)
-                        else:  # Пустые строки оставляем как есть
-                            cleaned_lines.append('')
-                    code_content = '\n'.join(cleaned_lines)
-                    self.logger.debug(f"Очищены отступы в блоке кода (минимальный отступ: {min_indent})")
-                else:
-                    self.logger.debug("Отступы не найдены или не требуют очистки")
-                
-                return f'<pre><code>{code_content}</code></pre>'
-            
-            # Применяем очистку ко всем блокам кода
-            cleaned_examples = re.sub(code_pattern, clean_code_block, examples, flags=re.DOTALL)
-            
-            self.logger.info("Отступы в коде успешно очищены")
-            return cleaned_examples
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка при очистке отступов в коде: {str(e)}")
             return examples
 
     def _build_enhanced_examples_prompt(

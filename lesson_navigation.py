@@ -276,7 +276,7 @@ class LessonNavigation:
                     examples_generator = ExamplesGenerator(
                         self.lesson_interface.content_generator.api_key
                     )
-                    examples = examples_generator.generate_examples(
+                    examples_data = examples_generator.generate_examples_data(
                         lesson_data=self.lesson_interface.current_lesson_data,
                         lesson_content=self.lesson_interface.current_lesson_content,
                         communication_style=self.lesson_interface.current_course_info[
@@ -285,7 +285,7 @@ class LessonNavigation:
                         course_context=self.lesson_interface.current_course_info,
                     )
 
-                    widgets_to_display = build_examples_widgets(examples, cell_adapter)
+                    widgets_to_display = build_examples_widgets(examples_data, cell_adapter)
 
                     close_button = widgets.Button(
                         description="✕ Закрыть",
