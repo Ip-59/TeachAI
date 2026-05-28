@@ -215,7 +215,7 @@ class TeachAIEngine:
                     from IPython.display import display, clear_output
                     try:
                         # Очищаем вывод перед показом нового интерфейса
-                        clear_output(wait=True)
+                        clear_output(wait=False)
                         
                         # Проверяем, что виджет валидный
                         if widget is not None:
@@ -226,16 +226,10 @@ class TeachAIEngine:
                         print(f"❌ Ошибка при отображении интерфейса: {str(e)}")
                         self.logger.error(f"Ошибка в display_callback: {str(e)}")
                 
-                # Инициализируем полную систему для обработчика кнопки
-                if not self.is_ready:
-                    self.logger.info("Инициализируем полную систему для обработчика кнопки...")
-                    if not self.initialize():
-                        self.logger.error("Не удалось инициализировать полную систему")
-                        return dashboard_widget
-                
-                # Настраиваем обработчик кнопки
+                # Настраиваем обработчик кнопки (полная инициализация — по клику,
+                # чтобы ячейка notebook не блокировалась на 5–10 секунд).
                 self.startup_dashboard.setup_continue_button_handler(self, display_callback)
-                
+
                 return dashboard_widget
         
         # Для первого запуска инициализируем все компоненты

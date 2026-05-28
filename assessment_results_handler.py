@@ -428,7 +428,10 @@ class AssessmentResultsHandler:
                 task_interface = (
                     self.lesson_interface.control_tasks_interface.show_control_task(
                         lesson_data=self.lesson_interface.current_lesson_data,
-                        lesson_content=self.lesson_interface.current_lesson_content,
+                        lesson_content=(
+                            self.lesson_interface.current_lesson_raw_content
+                            or self.lesson_interface.current_lesson_content
+                        ),
                     )
                 )
                 display(task_interface)

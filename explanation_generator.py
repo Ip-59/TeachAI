@@ -5,6 +5,7 @@
 """
 
 from content_utils import BaseContentGenerator, ContentUtils
+from content_renderer import enhance_content, get_display_css
 
 
 class ExplanationGenerator(BaseContentGenerator):
@@ -70,7 +71,6 @@ class ExplanationGenerator(BaseContentGenerator):
                 messages=messages, temperature=0.7, max_tokens=3500
             )
 
-            # Сохраняем отладочную информацию
             self.save_debug_response(
                 "detailed_explanation",
                 prompt,
@@ -84,7 +84,11 @@ class ExplanationGenerator(BaseContentGenerator):
                 },
             )
 
-            # ИСПРАВЛЕНО: Применяем улучшенные CSS стили с компактными интервалами
+            # Снимаем возможные markdown-обёртки ```html ... ```, '''html ... ''',
+            # ~~~html ... ~~~ — LLM иногда возвращает HTML, завёрнутый в код-fence.
+            explanation = self.clean_markdown_code_blocks(explanation)
+            explanation = enhance_content(explanation)
+
             styled_explanation = self._apply_compact_styles(
                 explanation, communication_style
             )
@@ -171,8 +175,9 @@ class ExplanationGenerator(BaseContentGenerator):
             margin: 10px 0;
             font-family: 'Courier New', monospace;
             font-size: 14px;
-            line-height: 1.05;
+            line-height: 1.5;
             border: 2px solid #333;
+            white-space: pre;
         }
         .explanation-compact pre code {
             background: none;
@@ -207,7 +212,7 @@ class ExplanationGenerator(BaseContentGenerator):
         <div class="explanation-compact">
         """
 
-        return f"{compact_css}{prefix}{explanation}</div>"
+        return f"{get_display_css()}{compact_css}{prefix}{explanation}</div>"
 
     def _build_explanation_prompt(
         self, course, section, topic, lesson_title, lesson_content, communication_style
@@ -264,6 +269,13 @@ class ExplanationGenerator(BaseContentGenerator):
         - Важные концепции оборачивай в <div class="concept-block">
         - Ключевые моменты выделяй в <div class="highlight">
         - Используй <strong> для акцентов и <em> для пояснений
+
+        🚨 ФОРМАТ ВЫВОДА:
+        - Верни ТОЛЬКО чистый HTML без какой-либо markdown-обёртки.
+        - НЕ оборачивай ответ в ```html ... ```, ``` ... ```, '''html ... ''' или
+          ~~~html ... ~~~. Никаких кодовых ограждений вокруг всего ответа.
+        - Внутри <pre><code> также не используй ```; HTML-блоки <pre><code> уже
+          задают разметку кода.
 
         ПЕРЕД ОТВЕТОМ ПРОВЕРЬ: все ли объяснения основаны на содержании урока выше?
         """

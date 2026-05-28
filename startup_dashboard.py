@@ -89,31 +89,50 @@ class StartupDashboard:
             """Обработчик нажатия кнопки продолжения."""
             try:
                 self.logger.info("Нажата кнопка 'Продолжить обучение'")
-                
-                # Очищаем вывод перед показом индикатора
+
                 from IPython.display import clear_output
-                clear_output(wait=True)
-                
-                # Показываем индикатор загрузки
-                if self.content_generator and hasattr(self.content_generator, 'loading_manager') and self.content_generator.loading_manager:
+
+                clear_output(wait=False)
+
+                # Ленивая инициализация: тяжёлые компоненты поднимаем здесь,
+                # а не при старте ячейки — иначе kernel «висит» без вывода.
+                if not engine.is_ready:
+                    self.logger.info("Инициализация компонентов по клику «Продолжить»...")
+                    loading = self.show_loading_indicator(
+                        "⏳ Инициализация компонентов..."
+                    )
+                    if display_callback:
+                        display_callback(loading)
+                    if not engine.initialize():
+                        error_widget = self._create_error_widget(
+                            "Не удалось инициализировать систему. "
+                            "Проверьте .env и API-ключ."
+                        )
+                        if display_callback:
+                            display_callback(error_widget)
+                        return
+
+                # Показываем индикатор загрузки урока
+                if (
+                    self.content_generator
+                    and hasattr(self.content_generator, "loading_manager")
+                    and self.content_generator.loading_manager
+                ):
                     loading_indicator = self.content_generator.loading_manager.show_loading(
                         "default", message="Подготовка к продолжению обучения..."
                     )
-                    if display_callback:
-                        display_callback(loading_indicator)
                 else:
-                    # Используем собственный простой индикатор
-                    loading_indicator = self.show_loading_indicator("Подготовка к продолжению обучения...")
-                    if display_callback:
-                        display_callback(loading_indicator)
-                
-                # Получаем следующий интерфейс
+                    loading_indicator = self.show_loading_indicator(
+                        "Подготовка к продолжению обучения..."
+                    )
+                if display_callback:
+                    display_callback(loading_indicator)
+
                 next_interface = self.get_next_lesson_interface(engine)
-                
-                # Отображаем новый интерфейс
+
                 if display_callback:
                     display_callback(next_interface)
-                
+
             except Exception as e:
                 self.logger.error(f"Ошибка при переходе к следующему уроку: {str(e)}")
                 import traceback

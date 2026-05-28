@@ -1,1035 +1,373 @@
-# TeachAI — Интеллектуальная система персонализированного обучения
+# Описание проекта TeachAI
 
-**Версия проекта:** 1.0.0  
-**Дата последнего обновления:** 31 января 2026 г.  
-**Язык разработки:** Python 3.10+  
-**Платформа:** Jupyter Notebook  
+Документ составлен **по анализу исходного кода** репозитория (май 2026). Устаревшие README/описания не использовались как источник фактов. Всё, что не следует из кода или явных конфигурационных файлов (`courses.json`, `requirements.txt`, `.env.sample`), здесь не утверждается.
 
 ---
 
-## 📋 Содержание
+## 1. Цель и задачи проекта
 
-1. [Общее описание проекта](#общее-описание-проекта)
-2. [Назначение и цели](#назначение-и-цели)
-3. [Ключевые идеи и концепции](#ключевые-идеи-и-концепции)
-4. [Архитектура системы](#архитектура-системы)
-5. [Логика работы системы](#логика-работы-системы)
-6. [Модульная структура проекта](#модульная-структура-проекта)
-7. [Использование GPT-модели](#использование-gpt-модели)
-8. [Управление состоянием и данными](#управление-состоянием-и-данными)
-9. [Интерактивный интерфейс](#интерактивный-интерфейс)
-10. [Технологический стек](#технологический-стек)
-11. [Особенности реализации](#особенности-реализации)
-12. [Вопрос дообучения модели](#вопрос-дообучения-модели)
-13. [Примеры использования](#примеры-использования)
+### 1.1. Цель
 
----
+Создать **интерактивного AI-учителя** для изучения Python и смежных тем в **Jupyter Notebook**: персонализированный маршрут обучения, автоматическая генерация учебных материалов и проверка усвоения без отдельного веб-сервера и без собственной обучаемой модели.
 
-## Общее описание проекта
+Цель следует из назначения модулей:
 
-**TeachAI** — это интеллектуальная образовательная платформа, работающая в среде Jupyter Notebook и использующая API OpenAI GPT для автоматической генерации персонализированных учебных материалов. 
+- `engine.py` — «координация всех компонентов системы» TeachAI;
+- `lesson_generator.py` — генерация «структурированных образовательных материалов»;
+- `content_generator.py` — фасад генерации «уроков, вопросов и обработки ответов пользователя» через OpenAI;
+- `interface.py` — «взаимодействие с пользователем через Jupyter Notebook».
 
-Система способна:
-- 📚 Создавать полноценные учебные планы под заданные параметры обучения
-- 📖 Генерировать детальные уроки с теорией, примерами и кодом
-- 🧪 Создавать тесты для проверки усвоения материала
-- ❓ Отвечать на вопросы студентов по содержанию урока
-- 📊 Отслеживать прогресс обучения и статистику
-- 🎯 Адаптировать стиль общения под предпочтения пользователя
+### 1.2. Задачи (реализованные в коде)
 
----
+| Задача | Реализация |
+|--------|------------|
+| Профиль обучающегося | `SetupInterface`, `UserProfileManager` — имя, часы обучения, длительность урока, стиль общения |
+| Выбор курса из каталога | `courses.json`, `CourseDataManager.get_all_courses()` |
+| Построение учебного плана под время пользователя | `CoursePlanGenerator.generate_course_plan()` → сохранение в `state["course_plan"]` |
+| Генерация содержания урока | `LessonGenerator` + `ContentFormatterFinal` |
+| Интерактив на уроке: вопросы, примеры, объяснения, понятия | `LessonInteraction`, `QAGenerator`, `ExamplesGenerator`, `ExplanationGenerator`, `ConceptsGenerator` |
+| Фильтрация вопросов по теме урока | `RelevanceChecker` |
+| Тестирование после урока | `Assessment`, `AssessmentGenerator`, `AssessmentInterface` |
+| Практика с проверкой кода | `ControlTasksGenerator`, `ControlTasksInterface`, `InteractiveCellWidget`, `ResultChecker` |
+| Учёт прогресса и возврат к незавершённому уроку | `LearningProgressManager`, `StartupDashboard`, `CourseDataManager.get_next_lesson()` |
+| Логирование действий | `Logger` → `logs/` |
+| Локальное хранение состояния | `StateManager` → `data/state.json` |
 
-## Назначение и цели
+Задачи, **не** реализованные в текущем коде (для ясности границ проекта):
 
-### Основная цель
-
-Автоматизация создания персонализированного образовательного контента с использованием современных языковых моделей для обеспечения эффективного и гибкого обучения.
-
-### Задачи проекта
-
-1. **Генерация контента**: автоматическое создание учебных планов, уроков, примеров и тестов
-2. **Персонализация**: адаптация материалов под стиль общения и темп обучения пользователя
-3. **Интерактивность**: поддержка диалога с системой (вопросы, объяснения, примеры)
-4. **Контроль качества**: валидация и проверка сгенерированного контента
-5. **Отслеживание прогресса**: ведение статистики обучения и результатов тестов
-
-### Целевая аудитория
-
-- Студенты, изучающие программирование самостоятельно
-- Преподаватели, нуждающиеся в инструменте для быстрой подготовки материалов
-- Образовательные платформы, желающие автоматизировать создание контента
+- дообучение / fine-tuning модели;
+- централизованный сервер приложений (только клиент в notebook + API OpenAI);
+- парсинг внешних учебников как основной источник контента (контент генерируется LLM по метаданным курса и плану).
 
 ---
 
-## Ключевые идеи и концепции
+## 2. Стек технологий
 
-### 1. Промпт-инженерия вместо дообучения
+### 2.1. Язык и среда выполнения
 
-**Центральная идея:** использование готовой GPT-модели через тщательно разработанные промпты вместо fine-tuning.
+- **Python 3**
+- **Jupyter Notebook** (`TeachAI.ipynb`, зависимости `jupyter`, `ipykernel`, `ipython`)
+- **IPython.display** и **ipywidgets** — UI в notebook
 
-**Преимущества подхода:**
-- ⚡ Быстрое развёртывание без необходимости обучения модели
-- 🔄 Гибкая адаптация под любые предметные области
-- 💰 Экономия ресурсов (нет затрат на GPU и датасеты)
-- 📈 Автоматическое улучшение при обновлении базовой модели
+### 2.2. Искусственный интеллект
 
-### 2. Фасадная архитектура
+- **OpenAI API** (`openai>=1.95.1`) — чат-модель через `client.chat.completions.create` (`BaseContentGenerator.make_api_request`)
+- Модель по умолчанию: **`gpt-4o-mini`** (`os.getenv("LLM_MODEL", "gpt-4o-mini")` в `content_utils.py`)
+- Для части валидации контрольных заданий: **`VALIDATION_MODEL`** (fallback на `LLM_MODEL`, `control_tasks_generator.py`)
+- Транспорт: **httpx** с прокси (`OPENAI_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY`) — **обязателен** (`config.py`, `BaseContentGenerator.__init__`)
 
-**Принцип:** разделение ответственности через специализированные модули-генераторы.
+### 2.3. Конфигурация и данные
 
-```
-ContentGenerator (фасад)
-    ├── CoursePlanGenerator    → планы курсов
-    ├── LessonGenerator         → содержание уроков
-    ├── ExamplesGenerator       → практические примеры
-    ├── AssessmentGenerator     → тесты и вопросы
-    ├── QAGenerator             → ответы на вопросы
-    ├── ConceptsGenerator       → ключевые понятия
-    └── RelevanceChecker        → проверка релевантности
-```
+- **python-dotenv** — `.env`
+- **JSON** — `courses.json`, `data/state.json`, логи в `logs/*.json`
 
-### 3. Многоуровневая валидация
+### 2.4. Отображение контента
 
-**Концепция:** каждый сгенерированный контент проходит несколько уровней проверки.
+- **markdown**, **pygments** — разметка и подсветка
+- **latex2mathml** — формулы в HTML для виджетов (`content_renderer.py`)
+- Собственные модули: `content_formatter_final.py`, `content_renderer.py`, `code_formatter.py`
 
-1. **Структурная валидация**: проверка JSON-схем, наличия обязательных полей
-2. **Семантическая валидация**: проверка релевантности содержания теме
-3. **Формат-валидация**: проверка корректности кода, markdown-разметки
-4. **Автокоррекция**: исправление типичных ошибок и перегенерация при необходимости
+### 2.5. Предметные библиотеки (для примеров и контрольных заданий)
 
-### 4. Сохранение состояния
+По `requirements.txt`, сгруппировано по курсам:
 
-**Идея:** персистентное хранение прогресса обучения в локальном JSON-файле.
+- Анализ данных: pandas, numpy, matplotlib, seaborn, scipy, openpyxl
+- ML: scikit-learn, tensorflow
+- Веб: flask, requests
+- Финансы: yfinance
 
-Хранится:
-- Профиль пользователя (имя, стиль общения, параметры обучения)
-- Текущий прогресс (текущий урок, завершённые уроки)
-- Результаты тестов (оценки, попытки, статистика)
-- План курса (структура разделов, тем и уроков)
+Они не требуются для импорта `engine.py`, но нужны при **выполнении** сгенерированного студентом кода в kernel.
+
+### 2.6. Инфраструктура разработки
+
+- `.pre-commit-config.yaml` — хуки качества (в runtime обучения не участвует)
+- Каталог `archive/` — старые notebook и презентации, **не** подключаются `run_teachai.py`
 
 ---
 
-## Архитектура системы
+## 3. Общая архитектура
 
-### Архитектурная схема
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    TeachAI Engine (Оркестратор)              │
-│  - Инициализация компонентов                                 │
-│  - Координация потока работы                                 │
-│  - Управление жизненным циклом                               │
-└─────────────┬───────────────────────────────────────────────┘
-              │
-      ┌───────┴────────┬──────────────┬─────────────┬──────────┐
-      │                │              │             │          │
-┌─────▼─────┐  ┌──────▼──────┐  ┌───▼────┐  ┌─────▼────┐  ┌─▼────────┐
-│  Config   │  │    State    │  │Content │  │Interface │  │Assessment│
-│  Manager  │  │   Manager   │  │Generator│  │          │  │          │
-└───────────┘  └──────┬──────┘  └────────┘  └──────────┘  └──────────┘
-                      │
-          ┌───────────┼───────────┐
-          │           │           │
-    ┌─────▼─────┐ ┌──▼──────┐ ┌─▼────────┐
-    │  User     │ │Learning │ │  Course  │
-    │  Profile  │ │Progress │ │   Data   │
-    └───────────┘ └─────────┘ └──────────┘
-```
-
-### Ключевые компоненты
-
-| Компонент | Файл | Назначение |
-|-----------|------|------------|
-| **TeachAIEngine** | `engine.py` | Главный оркестратор системы |
-| **ConfigManager** | `config.py` | Управление конфигурацией и .env |
-| **StateManager** | `state_manager.py` | Сохранение/загрузка состояния |
-| **ContentGenerator** | `content_generator.py` | Фасад для генерации контента |
-| **UserInterface** | `interface.py` | Фасад интерактивного UI |
-| **Assessment** | `assessment.py` | Оценивание знаний |
-
----
-
-## Логика работы системы
-
-### Сценарий первого запуска
+### 3.1. Слои системы
 
 ```mermaid
-graph TD
-    A[Запуск TeachAI] --> B{Первый запуск?}
-    B -->|Да| C[Показать форму настройки профиля]
-    B -->|Нет| D[Показать дашборд статистики]
-    
-    C --> E[Сохранить профиль пользователя]
-    E --> F[Показать выбор курса]
-    F --> G[Генерация плана курса через GPT]
-    G --> H[Валидация и сохранение плана]
-    H --> I[Переход к первому уроку]
-    
-    D --> J[Кнопка 'Продолжить обучение']
-    J --> K{Есть незавершённый урок?}
-    K -->|Да| L[Открыть незавершённый урок]
-    K -->|Нет| F
+flowchart TB
+    subgraph presentation [Слой представления]
+        NB[TeachAI.ipynb]
+        RT[run_teachai.py]
+        UI[UserInterface + ipywidgets]
+    end
+
+    subgraph orchestration [Оркестрация]
+        ENG[TeachAIEngine]
+        DASH[StartupDashboard]
+    end
+
+    subgraph domain [Домен обучения]
+        SM[StateManager]
+        CG[ContentGenerator]
+        AS[Assessment]
+    end
+
+    subgraph ai [Генерация через LLM]
+        BCG[BaseContentGenerator]
+        OAI[OpenAI API]
+    end
+
+    subgraph persistence [Хранение]
+        STATE[data/state.json]
+        LOGS[logs/]
+        COURSES[courses.json]
+    end
+
+    NB --> RT
+    RT --> ENG
+    ENG --> UI
+    ENG --> SM
+    ENG --> CG
+    ENG --> AS
+    ENG --> DASH
+    CG --> BCG
+    BCG --> OAI
+    SM --> STATE
+    SM --> COURSES
+    ENG --> LOGS
 ```
 
-### Жизненный цикл урока
+### 3.2. Главные компоненты
 
-```mermaid
-graph LR
-    A[Загрузка урока] --> B[Генерация содержания]
-    B --> C[Отображение материала]
-    C --> D{Действие пользователя}
-    
-    D -->|Объясни подробнее| E[Генерация детального объяснения]
-    D -->|Приведи примеры| F[Генерация практических примеров]
-    D -->|Задать вопрос| G[Проверка релевантности + ответ]
-    D -->|Пройти тест| H[Генерация и показ теста]
-    
-    E --> C
-    F --> C
-    G --> C
-    H --> I[Проверка ответов]
-    I --> J{Тест пройден?}
-    J -->|Да| K[Контрольное задание]
-    J -->|Нет| L[Повторная попытка]
-    K --> M{Задание выполнено?}
-    M -->|Да| N[Урок завершён → Следующий урок]
-    M -->|Нет| C
-```
+| Компонент | Файл | Роль |
+|-----------|------|------|
+| Точка входа | `run_teachai.py` | `start_jupyter()`, `main()`, опциональный `reload_project_modules()` |
+| Движок | `engine.py` | `TeachAIEngine`: init, start, shutdown, проверка урока |
+| Конфигурация | `config.py` | `.env`, API-ключ, прокси, каталоги `logs/`, `data/` |
+| Состояние | `state_manager.py` | Фасад над профилем, прогрессом, планом курса, кэшем уроков |
+| Генерация | `content_generator.py` | Фасад над 8+ генераторами |
+| Оценивание | `assessment.py` | Тесты, проверка ответов, связь с логгером |
+| UI-фасад | `interface.py` | Маршрутизация экранов |
+| Дашборд | `startup_dashboard.py` | Статистика при повторном запуске |
+| Системный лог | `logger.py` | История уроков, вопросов, тестов, активности |
 
-### Алгоритм генерации контента
+### 3.3. Специализация StateManager
 
-```python
-# Псевдокод процесса генерации
-def generate_content(content_type, params):
-    # 1. Построение промпта
-    prompt = build_structured_prompt(content_type, params)
-    
-    # 2. Вызов OpenAI API
-    response = openai_api_call(
-        prompt=prompt,
-        temperature=0.7,
-        max_tokens=3500,
-        response_format={"type": "json_object"}  # для структурированных данных
-    )
-    
-    # 3. Валидация ответа
-    if not validate_response(response, content_type):
-        # 4. Перегенерация с усиленным промптом
-        response = regenerate_with_strict_prompt(content_type, params)
-    
-    # 5. Пост-обработка и форматирование
-    formatted_content = format_and_clean(response)
-    
-    # 6. Сохранение для отладки
-    save_debug_response(content_type, prompt, response)
-    
-    return formatted_content
-```
+`StateManager` делегирует:
+
+- **UserProfileManager** — `state["user"]`
+- **LearningProgressManager** — `state["learning"]`, завершённость уроков, оценки, счётчик вопросов
+- **CourseDataManager** — `state["course_plan"]`, чтение `courses.json`, навигация `get_next_lesson()`
+
+Дополнительные секции в `state.json` (создаются по мере работы):
+
+- `lesson_content_cache` — HTML и `raw_content` уроков
+- `control_tasks` — результаты контрольных заданий
+- `system` — `first_run`, `last_access`, `version` (по умолчанию `"1.0.0"`)
+
+### 3.4. Специализация UserInterface
+
+Состояния интерфейса (`InterfaceState` в `interface_utils.py`):
+
+`INITIAL_SETUP` → `COURSE_SELECTION` → `LESSON_VIEW` → (`ASSESSMENT` | `QUESTION_ANSWER` | …) → `COURSE_COMPLETION`
+
+Реализации экранов:
+
+- `SetupInterface` — профиль и выбор курса + вызов генерации плана
+- `LessonInterface` — урок (делегаты: `LessonDisplay`, `LessonNavigation`, `LessonInteraction`)
+- `AssessmentInterface` — тест
+- `CompletionInterface` — завершение курса
+
+### 3.5. Специализация ContentGenerator
+
+| Генератор | Назначение |
+|-----------|------------|
+| `CoursePlanGenerator` | JSON-план: sections → topics → lessons |
+| `LessonGenerator` | Текст урока (markdown) → HTML |
+| `ExamplesGenerator` | Практические примеры (данные + HTML) |
+| `ExplanationGenerator` | Расширенное объяснение |
+| `ConceptsGenerator` | Ключевые понятия и объяснение понятия |
+| `QAGenerator` | Ответ на вопрос по уроку |
+| `AssessmentGenerator` | Вопросы теста |
+| `RelevanceChecker` | Релевантность вопроса, предупреждения |
+
+Общая база: **`BaseContentGenerator`** — клиент OpenAI, retry, очистка HTML урока для промптов, отладочные дампы в `debug_responses/`.
 
 ---
 
-## Модульная структура проекта
+## 4. Pipeline AI-учителя: от запуска до ответа
 
-### 1. Ядро системы (Core)
+### 4.1. Запуск системы
 
-| Модуль | Описание |
-|--------|----------|
-| `engine.py` | Главный класс TeachAIEngine, инициализация и координация |
-| `config.py` | Управление конфигурацией (.env, API ключи) |
-| `logger.py` | Логирование действий системы |
-| `utils.py` | Общие утилиты |
+1. Пользователь выполняет ячейку в `TeachAI.ipynb`: `from run_teachai import start_jupyter; start_jupyter()`.
+2. `load_dotenv(override=True)` загружает `.env`.
+3. Создаётся `TeachAIEngine()`.
+4. `engine.start()`:
+   - **Повторный запуск** (`state["system"]["first_run"] == false`): быстрая проверка `.env` и `StateManager`, показ `StartupDashboard` с кнопкой «Продолжить обучение»; полная инициализация (`ContentGenerator`, `Assessment`, `UserInterface`) — **по клику** (ленивая загрузка, `startup_dashboard.py`).
+   - **Первый запуск**: `initialize()` → `UserInterface.show_initial_setup()`.
 
-### 2. Управление состоянием (State Management)
+### 4.2. Первичная настройка и план курса
 
-| Модуль | Описание |
-|--------|----------|
-| `state_manager.py` | Базовый менеджер состояния (координатор) |
-| `user_profile_manager.py` | Управление профилем пользователя |
-| `learning_progress_manager.py` | Отслеживание прогресса обучения |
-| `course_data_manager.py` | Управление данными курсов |
+1. `SetupInterface.show_initial_setup()` — форма: имя, часы обучения (1–100), длительность урока (5–120 мин), стиль (`formal` | `friendly` | `casual` | `brief`).
+2. Сохранение в `state["user"]`, `reset_learning_and_course_data()`, `first_run = false`.
+3. `show_course_selection()` — список из `courses.json`.
+4. При подтверждении курса: `ContentGenerator.generate_course_plan(course_data, total_study_hours, lesson_duration_minutes)`:
+   - промпт методиста → OpenAI с `response_format: json_object`;
+   - валидация/нормализация `_validate_and_fix_course_plan`;
+   - `save_course_plan()` в state.
+5. Переход к первому уроку через навигацию (`get_next_lesson` / обработчики в `setup_interface`).
 
-### 3. Генерация контента (Content Generation)
+### 4.3. Показ урока
 
-| Модуль | Описание |
-|--------|----------|
-| `content_generator.py` | **Фасад** для всех генераторов контента |
-| `course_plan_generator.py` | Генерация планов курсов |
-| `lesson_generator.py` | Генерация содержания уроков |
-| `examples_generator.py` | Генерация практических примеров |
-| `explanation_generator.py` | Детальные объяснения материала |
-| `assessment_generator.py` | Генерация тестов и вопросов |
-| `qa_generator.py` | Ответы на вопросы студентов |
-| `concepts_generator.py` | Извлечение ключевых понятий |
-| `relevance_checker.py` | Проверка релевантности вопросов |
-| `content_utils.py` | Базовые классы и утилиты для генераторов |
+Цепочка в `LessonDisplay.show_lesson(section_id, topic_id, lesson_id)`:
 
-### 4. Пользовательский интерфейс (User Interface)
+1. Ключ кэша: `"{section_id}:{topic_id}:{lesson_id}"`.
+2. Загрузка метаданных урока из `course_plan`.
+3. **Кэш** (в порядке приоритета):
+   - `state["lesson_content_cache"]` (постоянный);
+   - in-memory кэш `LessonInterface`;
+   - иначе **`LessonGenerator.generate_lesson(...)`**:
+     - system: «опытный преподаватель Python»;
+     - user: промпт с курсом/разделом/темой/уроком, стилем, требованиями к markdown и блокам ```python;
+     - `make_api_request(temperature=0.7, max_tokens=3500)`;
+     - `ContentFormatterFinal.format_lesson_content()` → HTML;
+     - сохранение `content` + `raw_content` (сырой ответ LLM до CSS).
+4. `update_learning_progress()` — текущая позиция в курсе.
+5. `Logger.log_lesson()` — запись в `logs/lesson_history.md`.
+6. Сборка виджетов: HTML урока (`enhance_content` при необходимости), кнопки («Пройти тест», «Задать вопрос», «Объясни подробнее», «Приведи примеры», контрольное задание), навигация.
 
-| Модуль | Описание |
-|--------|----------|
-| `interface.py` | **Фасад** интерфейса |
-| `setup_interface.py` | Настройка профиля и выбор курса |
-| `lesson_interface.py` | Отображение уроков |
-| `lesson_display.py` | Визуализация содержания урока |
-| `lesson_navigation.py` | Навигация между уроками |
-| `lesson_interaction.py` | Интерактивные функции (объяснения, примеры, Q&A) |
-| `assessment_interface.py` | Интерфейс тестирования |
-| `completion_interface.py` | Экран завершения курса |
-| `startup_dashboard.py` | Дашборд статистики при запуске |
-| `interface_utils.py` | Утилиты для создания UI-элементов |
+**Примечание из кода:** автоматическая вставка интерактивных ячеек через `cell_integration` в `lesson_display.py` **отключена** (`CELLS_INTEGRATION_AVAILABLE = False`). Контрольные задания показываются через `ControlTasksInterface`.
 
-### 5. Оценивание (Assessment)
+### 4.4. Вопрос пользователя (Q&A)
 
-| Модуль | Описание |
-|--------|----------|
-| `assessment.py` | Проверка ответов и расчёт оценок |
-| `assessment_results_handler.py` | Обработка результатов тестов |
-| `control_tasks_generator.py` | Генерация контрольных заданий |
-| `control_tasks_interface.py` | Интерфейс контрольных заданий |
-| `result_checker.py` | Проверка правильности решений |
+Обработчик в `LessonInteraction.setup_enhanced_qa_container`:
 
-### 6. Форматирование и валидация
+1. Ввод текста → `increment_questions_count(lesson_full_id)`.
+2. `check_question_relevance(question, lesson_content, lesson_data, course_context, lesson_raw_content)`:
+   - подготовка текста: срез breadcrumb-заголовков, удаление style/script, лимит символов (`prepare_lesson_text_for_analysis`);
+   - запрос к LLM → JSON: `is_relevant`, `confidence`, `reason`, `suggestions`;
+   - эвристики для базовых тем Python (`_PYTHON_BASICS_STEMS` в `relevance_checker.py`).
+3. Если **нерелевантен**: `generate_non_relevant_response`.
+4. Если **релевантен**: `QAGenerator.answer_question(...)` с контекстом урока и стилем общения.
+5. При `questions_count > 3`: `append_question_reminder` — напоминание вернуться к плану курса.
+6. Ответ выводится в `widgets.HTML`; при необходимости — `enhance_content` (таблицы, LaTeX).
 
-| Модуль | Описание |
-|--------|----------|
-| `content_formatter_final.py` | Финальное форматирование контента |
-| `code_formatter.py` | Форматирование Python-кода |
-| `examples_validation.py` | Валидация практических примеров |
+Альтернативный объединённый метод: `ContentGenerator.get_formatted_answer_with_relevance()` (та же логика релевантности + ответ).
 
-### 7. Вспомогательные модули
+### 4.5. Дополнительные действия на уроке
 
-| Модуль | Описание |
-|--------|----------|
-| `loading_indicators.py` | Индикаторы загрузки |
-| `lesson_utils.py` | Утилиты для работы с уроками |
+| Действие | Вызов |
+|----------|--------|
+| Полное объяснение | `get_detailed_explanation` |
+| Ключевые понятия | `generate_concepts` / `extract_key_concepts` (кэш в `current_lesson_concepts`) |
+| Объяснение понятия | `explain_concept` |
+| Примеры | `generate_examples_data` → виджеты `examples_display` |
 
----
+### 4.6. Тест (assessment)
 
-## Использование GPT-модели
+1. `AssessmentInterface` → `Assessment.generate_questions` → `AssessmentGenerator` (контент урока, ~4000 символов очищенного текста).
+2. Пользователь отвечает в UI; `Assessment.check_answer` сравнивает индекс варианта.
+3. Итоговый балл 0–100%; **прохождение теста: score > 40%** (`assessment_results_handler.py`, `LearningProgressManager.is_test_passed`).
+4. `save_lesson_assessment`, `Logger.log_assessment`.
 
-### Подход к использованию API
+Тест **сам по себе не завершает урок** (комментарий в `save_lesson_assessment`: урок завершается контрольным заданием или вручную).
 
-```python
-# Пример из BaseContentGenerator (content_utils.py)
+### 4.7. Контрольное задание
 
-class BaseContentGenerator:
-    def __init__(self, api_key):
-        self.client = OpenAI(api_key=api_key)
-    
-    def make_api_request(self, messages, temperature=0.7, 
-                         max_tokens=3500, response_format=None):
-        """Единообразный вызов OpenAI API"""
-        response = self.client.chat.completions.create(
-            model="gpt-4",  # или gpt-3.5-turbo
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            response_format=response_format
-        )
-        return response.choices[0].message.content
-```
+1. `ControlTasksGenerator` генерирует задачу (описание, стартовый код, эталон, тип проверки).
+2. `InteractiveCellWidget`: редактор, Run, проверка через `execute_student_code` / `ResultChecker` (типы: exact, numeric, list, function, object, output и др. — `result_checker.py`).
+3. Для sklearn-кода: стабилизация `random_state` (`stabilize_sklearn_code`).
+4. Успех → `StateManager.save_control_task_result(lesson_id, ..., is_correct=True)`.
+5. `ControlTasksLogger` — статистика попыток по `cell_id`.
 
-### Типы промптов
+### 4.8. Завершение урока и переход дальше
 
-#### 1. Системные промпты
+`LearningProgressManager.is_lesson_completed(lesson_id)`:
 
-Определяют роль и поведение модели:
-
-```python
-{
-    "role": "system",
-    "content": "Ты - опытный преподаватель Python. Создавай подробные 
-                уроки БЕЗ финальных прощаний."
-}
-```
-
-#### 2. Пользовательские промпты
-
-Содержат конкретную задачу с детальными инструкциями:
-
-```python
-prompt = f"""
-🚨 КРИТИЧЕСКАЯ ИНСТРУКЦИЯ ДЛЯ API! 🚨
-
-Создай образовательный урок по теме:
-Курс: {course}
-Тема: {topic}
-
-ВАЖНЫЕ ТРЕБОВАНИЯ:
-1. ВСЕ примеры кода должны быть на Python
-2. Код должен быть правильно отформатирован
-3. Каждая строка кода на отдельной строке
-4. Используй markdown-блоки: ```python ... ```
-
-Урок должен содержать:
-- Введение в тему
-- Основные концепции
-- Практические примеры
-- Краткое заключение
-"""
-```
-
-### Стратегии повышения качества
-
-#### 1. Эмоджи-маркеры в промптах
-
-```python
-# Привлечение внимания модели к критическим требованиям
-"""
-🚨 КРИТИЧЕСКИ ВАЖНО! 🚨
-⚠️ ОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ! ⚠️
-"""
-```
-
-#### 2. Многократное повторение требований
-
-```python
-"""
-ЭТО КУРС ПО PYTHON! ВСЕ ПРИМЕРЫ КОДА ДОЛЖНЫ БЫТЬ НА PYTHON!
-...
-🚨 ЭТО КУРС ПО PYTHON! 🚨
-...
-ОБЯЗАТЕЛЬНО ИСПОЛЬЗУЙ PYTHON!
-"""
-```
-
-#### 3. Примеры правильного и неправильного форматирования
-
-```python
-"""
-ПРАВИЛЬНО:
-```python
-count = 0
-while count < 5:
-    print(count)
-    count += 1
-```
-
-НЕПРАВИЛЬНО (НЕ ДЕЛАЙ ТАК!):
-```python
-count = 0 while count < 5: print(count) count += 1
-```
-"""
-```
-
-#### 4. Указание формата ответа
-
-```python
-response = self.make_api_request(
-    messages=messages,
-    response_format={"type": "json_object"}  # Требование JSON
-)
-```
-
-### Обработка ответов
-
-```python
-def process_gpt_response(response_content, content_type):
-    # 1. Парсинг (если JSON)
-    if content_type == "course_plan":
-        data = json.loads(response_content)
-    
-    # 2. Валидация структуры
-    if not validate_structure(data):
-        raise ValidationError("Некорректная структура")
-    
-    # 3. Очистка от markdown-меток
-    cleaned = clean_markdown_code_blocks(data)
-    
-    # 4. Форматирование
-    formatted = format_content(cleaned)
-    
-    return formatted
-```
+- `True`, если **(оценка теста > 40% И контрольное задание верно)** ИЛИ `lesson_completion_status[lesson_id]`.
+- `CourseDataManager.get_next_lesson()` возвращает текущий незавершённый или следующий по плану.
+- `TeachAIEngine._check_current_lesson_status()` — логика возврата к незавершённому уроку при старте.
+- После прохождения всех уроков — `CompletionInterface.show_course_completion()`.
 
 ---
 
-## Управление состоянием и данными
+## 5. Ключевые модули (справочник)
 
-### Структура файла состояния (`data/state.json`)
+### 5.1. Ядро и запуск
 
-```json
-{
-  "user": {
-    "name": "Иван",
-    "total_study_hours": 20,
-    "lesson_duration_minutes": 30,
-    "communication_style": "friendly"
-  },
-  "learning": {
-    "current_course": "python-basics",
-    "current_section": "section-1",
-    "current_topic": "topic-1",
-    "current_lesson": "lesson-1",
-    "completed_lessons": ["section-1:topic-1:lesson-1"],
-    "lesson_scores": {
-      "section-1:topic-1:lesson-1": 85.0
-    },
-    "lesson_attempts": {
-      "section-1:topic-1:lesson-1": [
-        {"score": 70, "timestamp": "2026-01-20T15:30:00", "is_passed": false},
-        {"score": 85, "timestamp": "2026-01-20T16:00:00", "is_passed": true}
-      ]
-    },
-    "lesson_completion_status": {
-      "section-1:topic-1:lesson-1": true
-    },
-    "average_score": 85.0,
-    "course_progress_percent": 33.3
-  },
-  "course_plan": {
-    "id": "python-basics",
-    "title": "Основы Python",
-    "sections": [
-      {
-        "id": "section-1",
-        "title": "Введение в Python",
-        "topics": [...]
-      }
-    ]
-  },
-  "control_tasks": {
-    "section-1:topic-1:lesson-1": {
-      "task_title": "Создание списка",
-      "is_correct": true,
-      "completed_at": "2026-01-20T16:15:00"
-    }
-  },
-  "system": {
-    "first_run": false,
-    "last_access": "2026-01-31T10:00:00",
-    "version": "1.0.0"
-  }
-}
-```
+- **`run_teachai.py`** — единая точка входа, порядок reload модулей для разработки в Jupyter.
+- **`engine.py`** — жизненный цикл, логи в `logs/teachai.log`.
+- **`config.py`** — валидация окружения.
 
-### Специализированные менеджеры
+### 5.2. Генерация и форматирование
 
-#### UserProfileManager
+- **`content_utils.py`** — `BaseContentGenerator`, стили общения, API, подготовка текста.
+- **`lesson_generator.py`** — промпт урока, markdown, Python-примеры.
+- **`course_plan_generator.py`** — JSON-план курса.
+- **`content_formatter_final.py`** — markdown/HTML урока, плейсхолдеры кода.
+- **`content_renderer.py`** — таблицы, LaTeX→MathML, `enhance_content`, `render_markdown_to_html`.
+- **`examples_*.py`** — генерация, валидация, санитизация кода (`examples_code_fixes.py`), отображение.
+- **`qa_generator.py`**, **`explanation_generator.py`**, **`concepts_generator.py`**, **`relevance_checker.py`**, **`assessment_generator.py`**.
 
-```python
-class UserProfileManager:
-    def update_user_profile(self, name, hours, duration, style):
-        """Обновление профиля пользователя"""
-        
-    def get_communication_style(self):
-        """Получение стиля общения"""
-        
-    def validate_user_profile(self):
-        """Проверка корректности профиля"""
-```
+### 5.3. Интерфейс
 
-#### LearningProgressManager
+- **`interface.py`**, **`interface_utils.py`** — фасад и стили.
+- **`setup_interface.py`**, **`lesson_interface.py`**, **`lesson_display.py`**, **`lesson_navigation.py`**, **`lesson_interaction.py`**, **`lesson_utils.py`**.
+- **`assessment_interface.py`**, **`assessment_results_handler.py`**, **`completion_interface.py`**.
+- **`control_tasks_interface.py`**, **`loading_indicators.py`** — UX при долгих запросах к API.
 
-```python
-class LearningProgressManager:
-    def save_lesson_assessment(self, lesson_id, score, is_passed):
-        """Сохранение результата теста"""
-        
-    def is_lesson_completed(self, lesson_id):
-        """Проверка завершённости урока"""
-        # Урок считается завершённым если:
-        # 1. Пройден тест (score > 40%) И
-        # 2. Выполнено контрольное задание
-        
-    def mark_lesson_complete_manually(self, lesson_id):
-        """Принудительное завершение урока"""
-```
+### 5.4. Практика и проверка
 
-#### CourseDataManager
+- **`control_tasks_generator.py`** — генерация и валидация заданий (в т.ч. LLM).
+- **`result_checker.py`** — сравнение результатов выполнения.
+- **`interactive_cell_widget.py`**, **`interactive_cell_logic.py`**, **`interactive_cell_ui.py`**, **`cell_widget_base.py`**.
 
-```python
-class CourseDataManager:
-    def save_course_plan(self, course_plan):
-        """Сохранение плана курса"""
-        
-    def get_next_lesson(self):
-        """Определение следующего урока"""
-        # Логика:
-        # - Если текущий урок не завершён → вернуть его
-        # - Иначе найти следующий урок в плане
-        
-    def get_lesson_data(self, section_id, topic_id, lesson_id):
-        """Получение данных урока из плана"""
-```
+### 5.5. Данные и прогресс
+
+- **`courses.json`** — статический каталог (5 курсов).
+- **`user_profile_manager.py`**, **`learning_progress_manager.py`**, **`course_data_manager.py`**.
 
 ---
 
-## Интерактивный интерфейс
+## 6. Преимущества и особенности реализации
 
-### Компоненты интерфейса на ipywidgets
+Формулировки опираются на **конкретные решения в коде**, а не на маркетинговые обещания.
 
-#### 1. Форма настройки профиля
+1. **Модульная архитектура с фасадами** — `ContentGenerator` и `UserInterface` сохраняют обратную совместимость API при выносе логики в отдельные файлы (комментарии в `content_generator.py`, `interface.py`).
 
-```python
-name_widget = widgets.Text(
-    description="Имя:",
-    placeholder="Введите ваше имя"
-)
+2. **Двухуровневое кэширование уроков** — память сессии + `lesson_content_cache` в `state.json` снижает число дорогих вызовов OpenAI при повторном открытии урока (`lesson_display.py`, `state_manager.py`).
 
-communication_style_widget = widgets.Dropdown(
-    options=[
-        ("Формальный", "formal"),
-        ("Дружелюбный", "friendly"),
-        ("Непринужденный", "casual"),
-        ("Краткий", "brief")
-    ],
-    value="friendly"
-)
-```
+3. **Разделение `content` и `raw_content`** — форматированный HTML для показа, сырой markdown для LLM-анализа (релевантность, понятия), без утечки CSS в промпты (`lesson_generator.py`, `prepare_lesson_text_for_analysis`).
 
-#### 2. Дашборд статистики
+4. **Контроль релевантности вопросов** — отдельный модуль с подготовкой текста урока и отсечением «шапки» курса/раздела/темы, чтобы ответы оставались в рамках урока (`relevance_checker.py`, `strip_lesson_breadcrumb`).
 
-```python
-def show_dashboard(self):
-    """Отображает статистику обучения"""
-    
-    # Данные для дашборда
-    dashboard_data = {
-        "progress_stats": {
-            "completed_lessons": 5,
-            "total_lessons": 15,
-            "progress_percent": 33.3
-        },
-        "assessment_stats": {
-            "average_score": 82.5,
-            "passed_tests": 4,
-            "total_tests": 5
-        },
-        "time_stats": {
-            "days_since_last_access": 2
-        }
-    }
-    
-    # Создание виджетов
-    progress_bar = widgets.IntProgress(
-        value=33,
-        min=0,
-        max=100,
-        description='Прогресс:'
-    )
-    
-    stats_html = widgets.HTML(value=f"""
-        <div>
-            <h3>📊 Статистика обучения</h3>
-            <p>Средняя оценка: {average_score}%</p>
-            <p>Завершено уроков: {completed}/{total}</p>
-        </div>
-    """)
-```
+5. **Комбинированная проверка усвоения** — тест (>40%) + исполняемое контрольное задание с типизированными checker’ами, опционально принудительное завершение (`learning_progress_manager.py`).
 
-#### 3. Интерфейс урока
+6. **Персонализация** — стиль общения в промптах всех генераторов (`ContentUtils.COMMUNICATION_STYLES`), имя пользователя в уроке, план под заданные часы и длительность занятия.
 
-```python
-# Кнопки навигации
-test_button = widgets.Button(
-    description="Пройти тест",
-    button_style="success",
-    icon="check"
-)
+7. **Устойчивость сети** — `make_api_request_with_retries` с экспоненциальной задержкой (`content_utils.py`).
 
-explain_button = widgets.Button(
-    description="Объясни подробнее",
-    button_style="info",
-    icon="book"
-)
+8. **Наблюдаемость** — структурированные логи: `activity_log.json`, `questions_log.json`, `assessment_log.json`, `lesson_history.md` (`logger.py`).
 
-# Контейнеры для интерактивных функций
-qa_container = widgets.VBox(
-    layout=widgets.Layout(display='none')  # Скрыт по умолчанию
-)
+9. **Ленивый старт** — дашборд и тяжёлая инициализация по кнопке, чтобы ячейка notebook не блокировалась 5–10 с (`engine.py`, `startup_dashboard.py`).
 
-# Обработчик кнопки
-def on_test_button_clicked(b):
-    clear_output(wait=True)
-    test_widget = self.show_assessment()
-    display(test_widget)
+10. **Отображение учебного контента в Jupyter** — конвертация LaTeX и markdown-таблиц для `widgets.HTML`, где MathJax недоступен (`content_renderer.py`).
 
-test_button.on_click(on_test_button_clicked)
-```
-
-### Индикаторы загрузки
-
-```python
-class LoadingManager:
-    def show_loading(self, loading_type, **kwargs):
-        """Показывает индикатор загрузки"""
-        
-        if loading_type == "openai":
-            return widgets.HTML(value="""
-                <div style='text-align: center; padding: 20px;'>
-                    <div class='spinner'></div>
-                    <p>Генерация контента через OpenAI API...</p>
-                </div>
-            """)
-```
+11. **Воспроизводимость ML-практики** — фиксация `random_state` в типовых вызовах sklearn при проверке (`control_tasks_generator.py`).
 
 ---
 
-## Технологический стек
+## 7. Ограничения и зависимости (из кода)
 
-### Основные библиотеки
-
-| Библиотека | Версия | Назначение |
-|------------|--------|------------|
-| **Python** | 3.10+ | Язык разработки |
-| **openai** | 1.x | OpenAI Python SDK |
-| **ipywidgets** | 8.x | Интерактивные виджеты для Jupyter |
-| **jupyter** | - | Среда выполнения |
-| **python-dotenv** | - | Управление переменными окружения |
-| **httpx** | - | HTTP-клиент для прокси |
-
-### Инфраструктура
-
-```
-TeachAI/
-├── *.py                    # Модули Python
-├── data/
-│   └── state.json         # Состояние системы
-├── logs/
-│   └── teachai.log        # Логи
-├── debug_responses/       # Отладочные ответы API
-├── docs/                  # Документация
-├── .env                   # Конфигурация (API ключи)
-├── requirements.txt       # Зависимости
-└── TeachAI.ipynb         # Основной Notebook
-```
+- Работа **требует** действующего ключа OpenAI и **прокси**; без них `ConfigManager.load_config()` и `BaseContentGenerator` завершаются ошибкой.
+- Качество и фактическая корректность материалов определяются **внешней LLM**, в коде нет отдельного верификатора учебной истины для всего урока.
+- Состояние **локально** на машине пользователя; синхронизация между устройствами не реализована.
+- Интеграция `cell_integration` в поток урока **выключена** флагом в `lesson_display.py`.
+- В `interface.py` при инициализации есть отладочные `print` — побочный вывод в notebook.
 
 ---
 
-## Особенности реализации
+## 8. Связанные документы
 
-### 1. Валидация и автокоррекция планов курсов
-
-```python
-# course_plan_generator.py
-def _validate_and_fix_course_plan(self, course_plan, ...):
-    """Валидирует и исправляет структуру плана курса"""
-    
-    # Проверка обязательных ключей
-    if "id" not in course_plan:
-        course_plan["id"] = course_data.get("id", "course-1")
-    
-    # Проверка разделов
-    if "sections" not in course_plan:
-        course_plan["sections"] = self._create_minimal_sections(...)
-    
-    # Проверка каждого раздела
-    for section in course_plan["sections"]:
-        if "topics" not in section:
-            section["topics"] = self._create_minimal_topics(...)
-        
-        # Проверка каждой темы
-        for topic in section["topics"]:
-            if "lessons" not in topic:
-                topic["lessons"] = self._create_minimal_lessons(...)
-    
-    return course_plan
-```
-
-### 2. Проверка релевантности вопросов
-
-```python
-# relevance_checker.py
-def check_question_relevance(self, user_question, lesson_content, lesson_data):
-    """Проверяет релевантность вопроса теме урока"""
-    
-    # Создаём промпт для проверки
-    prompt = f"""
-    Проанализируй, насколько вопрос студента релевантен теме урока:
-    
-    ИНФОРМАЦИЯ ОБ УРОКЕ:
-    Название: {lesson_title}
-    Описание: {lesson_description}
-    
-    ВОПРОС СТУДЕНТА:
-    {user_question}
-    
-    ВЕРНИ РЕЗУЛЬТАТ В JSON:
-    {{
-        "is_relevant": true/false,
-        "confidence": 0-100,
-        "reason": "объяснение",
-        "suggestions": ["альтернативные источники"]
-    }}
-    """
-    
-    # Вызов API с низкой temperature для точности
-    response = self.make_api_request(
-        messages=[...],
-        temperature=0.2,
-        response_format={"type": "json_object"}
-    )
-    
-    return json.loads(response)
-```
-
-### 3. Принудительная рандомизация вариантов ответов в тестах
-
-```python
-# assessment_generator.py
-def _force_randomize_questions(self, questions):
-    """Перемешивает варианты ответов (API не всегда следует инструкциям)"""
-    
-    randomized_questions = []
-    
-    for question in questions:
-        original_options = question["options"].copy()
-        correct_option = question["correct_option"]
-        
-        # Получаем правильный ответ
-        correct_answer_text = original_options[correct_option - 1]
-        
-        # Перемешиваем варианты
-        shuffled_options = original_options.copy()
-        random.shuffle(shuffled_options)
-        
-        # Находим новую позицию правильного ответа
-        new_correct_option = shuffled_options.index(correct_answer_text) + 1
-        
-        # Обновляем вопрос
-        question["options"] = shuffled_options
-        question["correct_option"] = new_correct_option
-        
-        randomized_questions.append(question)
-    
-    return randomized_questions
-```
-
-### 4. Кэширование содержания уроков
-
-```python
-# lesson_interface.py
-def show_lesson(self, section_id, topic_id, lesson_id):
-    """Отображает урок с кэшированием"""
-    
-    lesson_cache_key = f"{section_id}:{topic_id}:{lesson_id}"
-    
-    # Проверяем кэш
-    if self.current_lesson_cache_key == lesson_cache_key:
-        # Используем кэшированное содержание
-        lesson_title = self.cached_lesson_title
-        lesson_content = self.cached_lesson_content
-    else:
-        # Генерируем новое содержание
-        lesson_content_data = self.content_generator.generate_lesson(...)
-        
-        # Сохраняем в кэш
-        self.cached_lesson_title = lesson_content_data["title"]
-        self.cached_lesson_content = lesson_content_data["content"]
-        self.current_lesson_cache_key = lesson_cache_key
-```
-
-### 5. Логика завершённости урока
-
-```python
-# learning_progress_manager.py
-def is_lesson_completed(self, lesson_id):
-    """Проверяет завершённость урока"""
-    
-    # Проверяем принудительное завершение (приоритет)
-    if lesson_completion_status.get(lesson_id, False):
-        return True
-    
-    # Проверяем тест
-    test_score = lesson_scores.get(lesson_id, 0)
-    is_test_passed = test_score > 40  # >40% для прохождения
-    
-    # Проверяем контрольное задание
-    control_task = control_tasks.get(lesson_id, {})
-    is_control_task_completed = control_task.get("is_correct", False)
-    
-    # Урок завершён только если И тест И задание выполнены
-    return is_test_passed and is_control_task_completed
-```
+- Краткий обзор и установка: [README.md](README.md)
+- English: [DESCRIPTION.md](DESCRIPTION.md)
 
 ---
 
-## Вопрос дообучения модели
-
-### Архитектурное решение: промпт-инженерия
-
-**TeachAI сознательно НЕ использует fine-tuning GPT-модели** по следующим причинам:
-
-#### 1. Технические причины
-
-- ✅ **Гибкость предметных областей**: система может работать с любой темой без переобучения
-- ✅ **Отсутствие необходимости**: текущий подход обеспечивает требуемое качество
-- ✅ **Малый объём данных**: недостаточно качественно размеченных примеров для fine-tuning
-- ✅ **Динамичность контента**: образовательные материалы меняются, модель устареет
-
-#### 2. Экономические причины
-
-- 💰 Нет затрат на GPU для обучения
-- 💰 Нет затрат на создание и разметку датасетов
-- 💰 Автоматическое улучшение при обновлении базовой модели OpenAI
-
-#### 3. Практические результаты текущего подхода
-
-**Без дообучения система обеспечивает:**
-
-| Метрика | Результат |
-|---------|-----------|
-| Валидность структуры планов | ~95% |
-| Корректность Python-кода | ~90% |
-| Релевантность примеров | ~85% |
-| Скорость разработки | Высокая |
-| Гибкость адаптации | Полная |
-
-#### 4. Методы обеспечения качества БЕЗ дообучения
-
-1. **Строгие промпты** с детальными инструкциями
-2. **Многоуровневая валидация** контента
-3. **Автоматическая перегенерация** при ошибках
-4. **Семантические проверки** (например, релевантности)
-5. **Пост-обработка и форматирование** контента
-
-### Когда дообучение могло бы быть оправдано
-
-Fine-tuning имел бы смысл только при:
-
-1. **Большой корпус данных**: 10,000+ качественных примеров
-2. **Узкая специализация**: очень специфичная предметная область
-3. **Критичная стабильность формата**: абсолютная необходимость JSON-соблюдения
-4. **Массовый масштаб**: тысячи запросов в день
-
-**Ни одно из условий не выполняется в текущем проекте.**
-
-### Вывод
-
-Проект **сознательно построен на prompt engineering** как современном и эффективном подходе к использованию LLM, который:
-- Не требует дополнительного обучения модели
-- Обеспечивает требуемое качество
-- Максимально гибок и адаптивен
-- Экономически оптимален для задач проекта
-
----
-
-## Примеры использования
-
-### Запуск системы
-
-```python
-# В Jupyter Notebook
-from engine import TeachAIEngine
-
-# Создание и запуск системы
-engine = TeachAIEngine()
-interface = engine.start()
-
-if interface:
-    display(interface)
-```
-
-### Первый запуск (настройка профиля)
-
-1. Пользователь заполняет форму:
-   - Имя: "Иван"
-   - Общее время обучения: 20 часов
-   - Длительность урока: 30 минут
-   - Стиль общения: Дружелюбный
-
-2. Выбирает курс из списка
-3. Система генерирует персонализированный план курса
-4. Переход к первому уроку
-
-### Повторный запуск (дашборд)
-
-```
-📊 Статистика обучения
-
-Текущий курс: Основы Python
-Прогресс: █████░░░░░ 33.3% (5/15 уроков)
-
-📈 Результаты тестов:
-Средняя оценка: 82.5%
-Пройдено тестов: 4/5
-Лучший результат: 95%
-
-⏱️ Время обучения:
-Последний раз: 2 дня назад
-Оценочное время: 2.5 часа
-
-🎯 [Продолжить обучение] 👈 кнопка
-```
-
-### Интерактивные функции урока
-
-#### Задать вопрос
-
-```
-Пользователь: "Чем отличается список от кортежа в Python?"
-
-Система:
-1. Проверяет релевантность вопроса теме урока
-2. Генерирует ответ через GPT
-3. Отображает стилизованный ответ с примерами
-4. Увеличивает счётчик вопросов по уроку
-```
-
-#### Объясни подробнее
-
-```
-Пользователь нажимает "Объясни подробнее"
-
-Система показывает выбор:
-- 📖 Полное объяснение урока
-- 🔑 Ключевые понятия
-
-При выборе "Ключевые понятия":
-1. Извлекает ключевые концепции из урока
-2. Показывает список кнопок с понятиями
-3. При клике на понятие - детальное объяснение
-```
-
-### Прохождение теста
-
-```python
-# Генерация теста
-questions = assessment.generate_questions(
-    course="Python",
-    section="Основы",
-    topic="Списки",
-    lesson="Методы списков",
-    lesson_content=lesson_content,
-    num_questions=5
-)
-
-# Отображение вопросов
-# Пользователь отвечает на вопросы
-
-# Проверка ответов
-score, results, correct_answers = assessment.calculate_score(
-    questions, user_answers
-)
-
-# Сохранение результата
-state_manager.save_lesson_assessment(
-    lesson_id="section-1:topic-1:lesson-1",
-    score=score,
-    is_passed=(score > 40)
-)
-```
-
----
-
-## Заключение
-
-**TeachAI** — современная образовательная система, демонстрирующая эффективное применение GPT-моделей через инженерию промптов, архитектурное разделение ответственности и интеллектуальную валидацию контента. 
-
-Проект показывает, что для создания качественной AI-системы **не всегда требуется дообучение модели** — грамотная промпт-инженерия, валидация и пост-обработка позволяют достичь отличных результатов при минимальных затратах ресурсов.
-
----
-
-**Автор проекта:** [Ваше имя]  
-**Дата:** 31 января 2026 г.  
-**Контакты:** [ваш email]
-
----
-
-## Полезные ссылки
-
-- [OpenAI API Documentation](https://platform.openai.com/docs/api-reference)
-- [Prompt Engineering Guide](https://platform.openai.com/docs/guides/prompt-engineering)
-- [Fine-Tuning Guide](https://platform.openai.com/docs/guides/fine-tuning)
-- [ipywidgets Documentation](https://ipywidgets.readthedocs.io/)
+*Версия описания: по состоянию кодовой базы TeachAI, анализ исходников без использования устаревших markdown-описаний как источника фактов.*

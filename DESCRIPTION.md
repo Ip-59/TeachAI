@@ -1,652 +1,194 @@
-# TeachAI - Полное описание проекта
+# TeachAI — Project Description (English)
 
-## СЛАЙД 1: ТИТУЛЬНЫЙ ЛИСТ
+This document is derived **from source-code analysis** of the repository (May 2026). Outdated README files were not used as factual sources. Claims not supported by code or explicit config files (`courses.json`, `requirements.txt`, `.env.sample`) are omitted.
 
-### Название проекта
-
-**TeachAI** — Интеллектуальная система персонализированного обучения на основе ИИ
-
-### Подзаголовок
-
-Система для создания и управления адаптированными учебными курсами с интерактивными уроками, примерами и оценкой знаний
+**Russian full report:** [ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md](ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md)  
+**Quick start:** [README.md](README.md)
 
 ---
 
-## СЛАЙД 2: ПРОБЛЕМА И МОТИВАЦИЯ
+## Purpose and goals
 
-### Вызовы в образовании
+### Purpose
 
-- **Создание контента** — Разработка качественного курса требует:
-  - Значительного времени (недели/месяцы)
-  - Экспертизы по предмету
-  - Много ручной работы
+Build an **interactive AI teacher** for learning Python and related topics inside **Jupyter Notebook**: a personalized learning path, on-demand generated materials, and knowledge checks—without a dedicated application server or a custom trained model.
 
-- **Персонализация** — Стандартный подход "один курс для всех":
-  - Не учитывает индивидуальные стили обучения
-  - Одинаковый темп для всех студентов
-  - Нет адаптации к уровню ученика
+Evidence in code: `engine.py` (system coordination), `content_generator.py` (lessons and Q&A via OpenAI), `interface.py` (Jupyter UI).
 
-- **Масштабируемость** — Создание новых курсов по разным темам требует:
-  - Отдельных авторов-специалистов
-  - Повторяющихся процессов
-  - Новых затрат времени и ресурсов
+### Implemented goals
 
----
+| Goal | Implementation |
+|------|----------------|
+| Learner profile | `SetupInterface`, `UserProfileManager` |
+| Course catalog | `courses.json`, `CourseDataManager` |
+| LLM-built syllabus | `CoursePlanGenerator` → `state["course_plan"]` |
+| Lesson content | `LessonGenerator` + `ContentFormatterFinal` |
+| In-lesson interaction (Q&A, examples, explanations, concepts) | `LessonInteraction`, specialized generators |
+| On-topic questions | `RelevanceChecker` |
+| Post-lesson quiz | `Assessment`, `AssessmentGenerator` |
+| Code practice with auto-check | `ControlTasksGenerator`, `InteractiveCellWidget`, `ResultChecker` |
+| Progress and resume | `LearningProgressManager`, `StartupDashboard` |
+| Activity logging | `Logger` under `logs/` |
+| Local persistence | `data/state.json` |
 
-## СЛАЙД 3: РЕШЕНИЕ - TEACHAI
-
-### Основная идея проекта
-
-TeachAI - это система, которая использует **искусственный интеллект (OpenAI GPT)** для:
-
-1. **Автоматического создания структурированных курсов**
-   - По любой введенной теме
-   - С логической структурой (модули → уроки → концепции)
-   - За считанные минуты вместо недель ручной работы
-
-2. **Адаптации контента под студента**
-   - Учет уровня сложности (beginner, intermediate, advanced)
-   - Выбор стиля общения (friendly, formal, casual, brief)
-   - Персонализированные примеры и задания
-
-3. **Интерактивного обучения прямо в Jupyter Notebook**
-   - Встроенные виджеты для удобства
-   - Примеры кода, которые можно запустить
-   - Вопросы для самопроверки
-
-4. **Автоматической оценки знаний**
-   - ИИ проверяет ответы студентов
-   - Объясняет ошибки
-   - Дает рекомендации для улучшения
+**Not** implemented: model fine-tuning, central app server, external textbook parsing as the main content source.
 
 ---
 
-## СЛАЙД 4: КЛЮЧЕВЫЕ ВОЗМОЖНОСТИ
+## Technology stack
 
-### Функциональность системы
-
-#### 1. 📚 **Генерация курсов по темам**
-
-- Пользователь вводит тему (например, "Python для начинающих")
-- ИИ создает полный план курса:
-  - Модули (5-7 основных разделов)
-  - Уроки в каждом модуле (20-30 уроков)
-  - Ключевые концепции
-  - Примеры и задания
-- **Результат:** Структурированный, готовый к использованию курс
-
-#### 2. 📖 **Интерактивные уроки**
-
-- Понятное объяснение каждой темы
-- Логический переход между концепциями
-- Примеры кода с комментариями
-- Вопросы для проверки понимания
-- **Результат:** Активное вовлечение студента
-
-#### 3. 💻 **Практические примеры**
-
-- Автоматически генерируемые примеры кода (Python, JavaScript и т.д.)
-- Real-world сценарии применения
-- Пошаговые объяснения
-- **Результат:** Студент может сразу применить знания
-
-#### 4. ✍️ **Контрольные задания и тесты**
-
-- Автоматически создаваемые вопросы по материалу
-- Разнообразные типы вопросов
-- ИИ-powered оценка ответов
-- Подробная обратная связь
-- **Результат:** Объективная проверка усвоения материала
-
-#### 5. 📊 **Отслеживание прогресса**
-
-- Статистика по каждому модулю
-- История оценок и результатов
-- Информация о сильных и слабых местах
-- **Результат:** Ученик видит свой прогресс
-
-#### 6. 🎨 **Удобный интерфейс**
-
-- Интеграция с Jupyter Notebook (знакомая среда)
-- Интерактивные виджеты (ipywidgets)
-- Простая навигация
-- **Результат:** Комфортное обучение
+| Layer | Technologies |
+|-------|----------------|
+| Runtime | Python 3, Jupyter, IPython, **ipywidgets** |
+| LLM | **OpenAI API** (`openai`), default model **`gpt-4o-mini`** (`LLM_MODEL`), optional **`VALIDATION_MODEL`** for control tasks |
+| HTTP | **httpx** with mandatory **proxy** (`OPENAI_PROXY` / `HTTPS_PROXY`) |
+| Config | **python-dotenv** (`.env`) |
+| Content rendering | markdown, pygments, latex2mathml, custom formatters |
+| Subject libs (for running generated code) | pandas, numpy, matplotlib, seaborn, scipy, scikit-learn, tensorflow, flask, requests, yfinance (`requirements.txt`) |
+| Storage | JSON (`courses.json`, `data/state.json`, `logs/*.json`) |
 
 ---
 
-## СЛАЙД 5: ЦЕЛЕВАЯ АУДИТОРИЯ
+## Architecture
 
-### Кто может использовать систему?
+### Entry and orchestration
 
-#### 👨‍🎓 **Студенты**
+- **`TeachAI.ipynb`** / **`run_teachai.py`** → **`TeachAIEngine`** (`engine.py`)
+- On repeat launch: **`StartupDashboard`** first; full init on “Continue learning”
+- On first launch: **`initialize()`** then profile setup
 
-- Изучают новую тему самостоятельно
-- Хотят персонализированный подход
-- Работают в Jupyter Notebook
-- **Пример:** Студент хочет выучить Machine Learning
+### Major components
 
-#### 🧑‍🏫 **Преподаватели**
-
-- Дополняют традиционное обучение
-- Создают материалы для разных групп
-- Экономят время на подготовку
-- **Пример:** Учитель создает курс для своего класса
-
-#### 🏢 **Организации и курсы**
-
-- Обучение сотрудников новым технологиям
-- Переподготовка на новые специальности
-- **Пример:** Компания учит разработчиков новому фреймворку
-
-#### 👨‍💼 **Специалисты в Data Science**
-
-- Работают в Python/Jupyter
-- Нуждаются в специализированных знаниях
-- **Пример:** Data Scientist изучает новую библиотеку
-
-### Примеры использования
-
-- Обучение программированию (Python, JavaScript, SQL)
-- Введение в Data Science и машинное обучение
-- Подготовка к собеседованиям (алгоритмы, системный дизайн)
-- Изучение новых технологий и фреймворков
-
----
-
-## СЛАЙД 6: АРХИТЕКТУРА СИСТЕМЫ
-
-### Структура компонентов
-
-```text
-┌──────────────────────────────────────────┐
-│    Jupyter Notebook / JupyterLab         │
-│    (Пользовательский интерфейс)          │
-└────────────────┬─────────────────────────┘
-                 │
-┌────────────────▼──────────────────────────┐
-│      TeachAI Engine (Главный движок)      │
-│  - Координирует все компоненты            │
-│  - Управляет состоянием системы           │
-└────────────────┬──────────────────────────┘
-                 │
-    ┌────────────┼────────────┬──────────┐
-    │            │            │          │
-    ▼            ▼            ▼          ▼
-┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────┐
-│ Генер.  │ │Менеджеры │ │    UI    │ │Утил│
-│контента │ │состояния │ │ компонент│ │ity │
-└─────────┘ └──────────┘ └──────────┘ └────┘
-    │            │            │          │
-    └────────────┼────────────┴──────────┘
-                 │
-    ┌────────────▼──────────────────┐
-    │  OpenAI API (GPT-3.5 / GPT-4) │
-    │  - Генерирование контента     │
-    │  - Оценка ответов студентов   │
-    │  - Генерирование объяснений   │
-    └───────────────────────────────┘
+```
+TeachAIEngine
+├── ConfigManager          (.env, logs/, data/)
+├── StateManager           (facade)
+│   ├── UserProfileManager
+│   ├── LearningProgressManager
+│   └── CourseDataManager  (+ courses.json)
+├── ContentGenerator       (facade → OpenAI generators)
+├── Assessment
+├── Logger
+├── LoadingManager
+├── StartupDashboard
+└── UserInterface          (facade)
+    ├── SetupInterface
+    ├── LessonInterface    (Display, Navigation, Interaction)
+    ├── AssessmentInterface
+    └── CompletionInterface
 ```
 
-### Основные компоненты
+### UI states (`InterfaceState`)
 
-#### **Модули генерации контента**
+`INITIAL_SETUP` → `COURSE_SELECTION` → `LESSON_VIEW` → (`ASSESSMENT`, Q&A, …) → `COURSE_COMPLETION`
 
-- `course_plan_generator` — создает структуру курса (модули, уроки)
-- `lesson_generator` — генерирует материал урока
-- `examples_generator` — создает примеры кода
-- `assessment_generator` — формирует вопросы для тестов
-- `concepts_generator` — выделяет ключевые концепции
-- `qa_generator` — создает вопросы/ответы для закрепления
+### Content generators (under `ContentGenerator`)
 
-#### **Менеджеры состояния**
-
-- `user_profile_manager` — информация о студенте и его предпочтениях
-- `learning_progress_manager` — отслеживание прогресса обучения
-- `course_data_manager` — управление данными курса
-- `state_manager` — сохранение и восстановление состояния
-
-#### **UI Интерфейсы**
-
-- `setup_interface` — начальная настройка (выбор темы, стиля, уровня)
-- `lesson_interface` — отображение уроков
-- `assessment_interface` — интерфейс тестирования
-- `completion_interface` — результаты и завершение
-- `dashboard` — статистика прогресса
-
-#### **Вспомогательные модули**
-
-- `engine.py` — главный класс системы
-- `config.py` — конфигурация и переменные окружения
-- `logger.py` — логирование событий
+`CoursePlanGenerator`, `LessonGenerator`, `ExamplesGenerator`, `ExplanationGenerator`, `ConceptsGenerator`, `QAGenerator`, `AssessmentGenerator`, `RelevanceChecker` — all extend **`BaseContentGenerator`** (shared OpenAI client, retries, lesson text cleanup).
 
 ---
 
-## СЛАЙД 7: ТЕХНОЛОГИЧЕСКИЙ СТЕК
+## AI teacher pipeline
 
-### Использованные технологии
+### 1. Startup
 
-#### **Язык программирования**
+`start_jupyter()` → `load_dotenv` → `TeachAIEngine.start()` → dashboard or initial setup.
 
-- **Python 3.10+** — основной язык разработки
+### 2. Profile and syllabus
 
-#### **Интеграция с ИИ**
+User sets name, total hours, lesson length, communication style (`formal` | `friendly` | `casual` | `brief`).  
+Selected course from **`courses.json`** (5 courses).  
+`generate_course_plan()` returns JSON: sections → topics → lessons; saved to state.
 
-- **OpenAI API** — доступ к моделям GPT-3.5 и GPT-4
-  - Генерирование контента
-  - Оценка ответов студентов
-  - Объяснение материала
+### 3. Lesson display
 
-#### **Пользовательский интерфейс**
+`LessonDisplay.show_lesson`:
 
-- **ipywidgets 8.0+** — интерактивные компоненты UI
-- **Jupyter Notebook / JupyterLab** — платформа выполнения
+1. Cache key `section:topic:lesson`
+2. Use `lesson_content_cache` in state, in-memory cache, or call **`LessonGenerator`**
+3. LLM returns markdown → **`ContentFormatterFinal`** → HTML; store **`raw_content`**
+4. Update progress, log to `lesson_history.md`
+5. Render ipywidgets UI (lesson body, actions, navigation)
 
-#### **Библиотеки и зависимости**
+**Note:** automatic `cell_integration` in lessons is **disabled** (`CELLS_INTEGRATION_AVAILABLE = False` in `lesson_display.py`). Control tasks use **`ControlTasksInterface`**.
 
-```txt
-openai>=1.95.1          # OpenAI Python SDK
-ipywidgets>=8.1.7       # Interactive widgets
-jupyter>=1.1.0          # Jupyter platform
-ipython>=9.4.0          # IPython kernel
-python-dotenv>=1.1.1    # Environment variables
-pandas>=2.3.1           # Data processing
-numpy>=2.3.1            # Numerical computing
-scikit-learn>=1.5.0     # ML utilities
-matplotlib>=3.10.3      # Visualization
-seaborn>=0.13.2         # Statistical graphics
-```
+### 4. User question
 
-#### **Хранение данных**
+`LessonInteraction.setup_enhanced_qa_container`:
 
-- **JSON** — структурированное хранение данных
-- **Python pickle** — сериализация состояния
-- **.env файлы** — управление конфигурацией
+1. Increment question counter per lesson
+2. **`check_question_relevance`** (breadcrumb stripping, HTML cleanup, LLM JSON)
+3. If irrelevant → polite redirect; if relevant → **`QAGenerator.answer_question`**
+4. After more than 3 questions → reminder to follow the course plan
 
-#### **Разработка и тестирование**
+### 5. Quiz
 
-- **Git** — контроль версий
-- **pytest** — модульное тестирование (опционально)
-- **Black** — форматирование кода
-- **pylint** — проверка качества кода
+`AssessmentGenerator` builds questions from lesson text.  
+Pass threshold: **score > 40%** (`LearningProgressManager`, `assessment_results_handler`).  
+Passing the quiz alone does **not** complete the lesson.
 
----
+### 6. Control task
 
-## СЛАЙД 8: ПОЛЬЗОВАТЕЛЬСКИЙ ПУТЬ
+Generated task + **`InteractiveCellWidget`**; execution checked by **`ResultChecker`** (multiple check types).  
+Success → `control_tasks[lesson_id].is_correct = true`.
 
-### Как использовать систему (User Journey)
+### 7. Lesson completion
 
-#### **Этап 1: Начало работы**
+Lesson is **completed** when:
 
-1. Пользователь открывает Jupyter Notebook
-2. Импортирует TeachAI: `from engine import TeachAIEngine`
-3. Запускает систему: `engine = TeachAIEngine()`
-4. Система проверяет конфигурацию и подключение
+- (**test score > 40%** AND **control task correct**), **or**
+- manual flag in `lesson_completion_status`
 
-#### **Этап 2: Начальная настройка**
-
-1. Появляется интерактивный экран выбора
-2. Пользователь выбирает:
-   - **Тему курса:** например, "Python для начинающих"
-   - **Стиль общения:** friendly, formal, casual, brief
-   - **Уровень сложности:** beginner, intermediate, advanced
-   - **Длительность:** желаемое время обучения
-
-#### **Этап 3: Генерирование курса**
-
-1. Система отправляет запрос к OpenAI API
-2. ИИ создает:
-   - План курса (модули и уроки)
-   - Содержимое каждого урока
-   - Примеры кода
-   - Вопросы для проверки
-3. Курс сохраняется локально (JSON)
-4. **Время:** 2-3 минуты создания (не прохождения!)
-
-#### **Этап 4: Обучение**
-
-1. Студент переходит к первому уроку
-2. Видит:
-   - Теоретический материал
-   - Объяснение концепций
-   - Примеры с кодом
-   - Интерактивные вопросы
-3. Может задавать вопросы ИИ
-4. Переходит к следующему уроку
-
-#### **Этап 5: Проверка знаний**
-
-1. После модуля предлагается тест
-2. Типы вопросов:
-   - Множественный выбор
-   - Открытые вопросы
-   - Практические задачи (написать код)
-3. ИИ оценивает ответы в реальном времени
-4. Объясняет правильный ответ
-
-#### **Этап 6: Результаты**
-
-1. Отображается итоговый экран с:
-   - Процентом правильных ответов
-   - Оценкой за тест
-   - Рекомендациями для повторения
-   - Прогрессом (% курса пройдено)
+Then `get_next_lesson()` or course completion screen.
 
 ---
 
-## СЛАЙД 9: ОСНОВНЫЕ ПРЕИМУЩЕСТВА
+## Course catalog (`courses.json`)
 
-### ✨ Ключевые особенности TeachAI
-
-| Характеристика | Как это помогает |
-| --- | --- |
-| **Быстрое создание контента** | Преподаватель создает курс за часы вместо недель |
-| **Автоматизация рутины** | ИИ генерирует примеры, вопросы, объяснения |
-| **Персонализация** | Каждый студент получает подходящий для него уровень |
-| **Адаптивность** | Система учитывает ответы и прогресс студента |
-| **Масштабируемость** | Один шаблон → множество уникальных курсов |
-| **Доступность** | Работает в Jupyter (не нужно учиться новому инструменту) |
-| **Интерактивность** | Моментальная обратная связь и объяснения |
-| **Открытость** | Open-source проект, можно модифицировать |
-
-### Уникальные особенности TeachAI
-
-- ✅ **Только в Jupyter** — полная интеграция с экосистемой Data Science
-- ✅ **Быстрое создание структурированных курсов** — от идеи к полному плану за 5 минут (создание, не обучение!)
-- ✅ **Native поддержка кода** — примеры на Python, JavaScript, SQL
-- ✅ **Открытый исходный код** — можно адаптировать под свои нужды
+| ID | Title |
+|----|-------|
+| `python-basics` | Python basics |
+| `data-analysis` | Data analysis with Python |
+| `machine-learning` | Introduction to machine learning |
+| `web-development` | Web development with Python (Flask) |
+| `python-for-finance` | Python for finance |
 
 ---
 
-## СЛАЙД 10: ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ И УСТАНОВКА
+## Notable implementation features
 
-### Системные требования
-
-#### **Минимальные требования**
-
-- **ОС:** Windows, macOS, Linux
-- **Python:** версия 3.10 или выше
-- **Оперативная память:** 2GB (рекомендуется 4GB+)
-- **Свободное место на диске:** 500MB
-- **Интернет:** постоянное подключение (для OpenAI API)
-
-#### **Необходимое ПО**
-
-- Jupyter Notebook или JupyterLab установлены
-- pip (Python package manager)
-- Активный API ключ от OpenAI
-
-### Инструкция по установке (5 минут)
-
-```bash
-# 1. Клонирование репозитория
-git clone https://github.com/Ip-59/TeachAI.git
-cd TeachAI
-
-# 2. Создание виртуального окружения
-python -m venv venv_teachai
-source venv_teachai/bin/activate    # На Linux/Mac
-# Или на Windows:
-# venv_teachai\Scripts\activate
-
-# 3. Установка зависимостей
-pip install -r requirements.txt
-
-# 4. Конфигурирование
-cp .env.sample .env
-# Отредактируйте .env и добавьте ваш OpenAI API ключ:
-# OPENAI_API_KEY=sk-your-api-key-here
-
-# 5. Запуск
-jupyter notebook TeachAI.ipynb
-```
-
-### Зависимости проекта (requirements.txt)
-
-```txt
-openai>=1.95.1
-ipywidgets>=8.1.7
-jupyter>=1.1.0
-ipython>=9.4.0
-python-dotenv>=1.1.1
-pandas>=2.3.1
-numpy>=2.3.1
-scikit-learn>=1.5.0
-matplotlib>=3.10.3
-seaborn>=0.13.2
-```
+1. Facade pattern for UI and content generation with backward-compatible APIs  
+2. Persistent + in-memory lesson caching to reduce API calls  
+3. Separate `raw_content` vs formatted HTML for LLM downstream tasks  
+4. Relevance gate before Q&A with course/section/topic header removal  
+5. Dual mastery check: quiz + runnable code task  
+6. Communication-style-aware prompts  
+7. API retries with backoff  
+8. Structured logs under `logs/`  
+9. Lazy heavy initialization after dashboard  
+10. LaTeX/tables rendering for `widgets.HTML` in Jupyter  
 
 ---
 
-## СЛАЙД 11: ВЫЗОВЫ И РЕШЕНИЯ
+## Limitations (from code)
 
-### Технические вызовы разработки
-
-| Вызов | Как мы это решаем |
-| --- | --- |
-| **Качество сгенерированного контента** | QA система, проверка промптов, человеческая валидация критичного контента |
-| **Скорость обработки запросов** | Асинхронная обработка, кэширование результатов |
-| **Стоимость OpenAI API** | Оптимизация промптов, минимизация запросов |
-| **Безопасность данных** | Локальное хранение данных студентов, шифрование |
-| **Поддержка разных языков** | Использование multilingual моделей GPT |
-| **Обработка ошибок** | Проверка входных данных, graceful error handling |
-| **Расширяемость** | Модульная архитектура, API для добавления функций |
+- Requires OpenAI API key and proxy  
+- No multi-device sync  
+- Content correctness depends on the external LLM  
+- `archive/` is not part of runtime  
 
 ---
 
-## СЛАЙД 12: ИСПОЛЬЗОВАННЫЕ ПРИМЕРЫ
+## Documentation files compared
 
-### Примеры курсов, которые можно создать
+| File | Language | Role |
+|------|----------|------|
+| `README.md` | Russian | Short practical guide |
+| `ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md` | Russian | Full report for committee / reviewers |
+| `DESCRIPTION.md` | English | Same facts for international readers |
 
-#### **Пример 1: "Python для начинающих"**
-
-- Модуль 1: Синтаксис и переменные
-- Модуль 2: Управление потоком (циклы, условия)
-- Модуль 3: Функции и модули
-- Модуль 4: Работа с файлами
-- Модуль 5: Обработка ошибок
-- **Время создания:** 2-3 минуты
-
-#### **Пример 2: "Введение в Pandas"**
-
-- Модуль 1: Основы DataFrame и Series
-- Модуль 2: Загрузка и сохранение данных
-- Модуль 3: Фильтрация и выборка данных
-- Модуль 4: Группировка и агрегация
-- Модуль 5: Визуализация данных
-- **Время создания:** 2-3 минуты
-
-#### **Пример 3: "REST API для начинающих"**
-
-- Модуль 1: Основы HTTP и REST
-- Модуль 2: Методы GET, POST, PUT, DELETE
-- Модуль 3: Статус коды и ошибки
-- Модуль 4: Аутентификация и авторизация
-- Модуль 5: Best practices
-- **Время создания:** 2-3 минуты
+The duplication exists for **audience and language**, not because the projects differ.
 
 ---
 
-## СЛАЙД 13: ВОЗМОЖНОСТИ РАСШИРЕНИЯ (ROADMAP)
-
-### Текущая версия (v1.0)
-
-- ✅ Генерация курсов по темам
-- ✅ Интерактивные уроки
-- ✅ Базовое тестирование
-- ✅ Отслеживание прогресса
-- ✅ Интеграция с Jupyter
-
-### Планы на расширение функциональности
-
-- **Видео-уроки** — интеграция с API для генерирования видео
-- **Лучшая аналитика** — детальный анализ прогресса студентов
-- **Gamification** — система баллов и достижений
-- **Групповое обучение** — коллаборативные проекты
-- **Export функции** — сохранение в PDF/HTML
-- **Поддержка других ИИ моделей** — Claude, Gemini и др.
-- **Multilingual** — полная поддержка 50+ языков
-
----
-
-## СЛАЙД 14: ВАРИАНТЫ ИСПОЛЬЗОВАНИЯ В РЕАЛЬНОЙ ЖИЗНИ
-
-### Сценарий 1: Преподаватель в школе
-
-**Ситуация:** Учитель информатики хочет создать курс по Python для своего класса
-
-**Без TeachAI:**
-
-- Создает материалы вручную (недели работы)
-- Пишет примеры и задания самостоятельно
-- Проверяет работы студентов (часы времени)
-
-**С TeachAI:**
-
-- Создает курс в TeachAI за 5 минут
-- Студенты учатся в своем темпе
-- Система автоматически проверяет ответы
-- **Результат:** Больше времени на помощь студентам
-
-### Сценарий 2: Self-paced обучение
-
-**Ситуация:** Разработчик хочет выучить новую технологию
-
-**Раньше:**
-
-- Ищет курсы на Coursera/Udemy (платно)
-- Проходит единый для всех курс
-- Может быть слишком сложно или просто
-
-**С TeachAI:**
-
-- Создает персональный курс за 5 минут
-- Выбирает свой уровень и стиль
-- Учится в Jupyter (его родной среде)
-- **Результат:** Экономия времени и денег
-
-### Сценарий 3: Группа обучается новому инструменту
-
-**Ситуация:** Команда должна изучить новый фреймворк
-
-**Подход:**
-
-- Один человек создает курс в TeachAI
-- Все члены команды проходят персонализированную версию
-- Система показывает, кто отстает
-- **Результат:** Быстрое и эффективное обучение всей команды
-
----
-
-## СЛАЙД 15: СРАВНЕНИЕ С АЛЬТЕРНАТИВАМИ
-
-### Как TeachAI отличается от других решений
-
-| Критерий | TeachAI | ChatGPT | Традиционный курс | Учебник |
-| --- | --- | --- | --- | --- |
-| **Автоматизированное создание** | ✅ Да | ⚠️ Ручной ввод | ❌ Нет | ❌ Нет |
-| **Структурированность** | ✅ Модули → уроки | ⚠️ Зависит от темы | ✅ Да | ✅ Да |
-| **Персонализация** | ✅ Полная | ⚠️ Частичная | ❌ Нет | ❌ Нет |
-| **Адаптивная оценка** | ✅ ИИ оценивает | ⚠️ Нет структуры | ❌ Человек | ❌ Нет |
-| **Jupyter интеграция** | ✅ Native | ❌ Нет | ❌ Отдельная | ❌ Нет |
-| **Примеры кода** | ✅ Генерированные | ✅ На запрос | ⚠️ Фиксированные | ⚠️ Фиксированные |
-| **Отслеживание прогресса** | ✅ Да | ❌ Нет | ✅ Да | ❌ Нет |
-| **Стоимость** | 💰 Бесплатно* | 💰 ChatGPT+ | 💰💰💰 Дорого | 💰 Купить |
-
-*При наличии OpenAI API ключа
-
----
-
-## СЛАЙД 16: МЕТРИКИ УСПЕХА
-
-### Как оценить, работает ли система хорошо?
-
-#### **Метрики использования**
-
-- Количество созданных курсов
-- Количество студентов, прошедших обучение
-- Среднее время прохождения курса
-- Количество повторных посещений
-
-#### **Метрики обучения**
-
-- Средняя оценка на тестах (% правильных ответов)
-- Улучшение оценки в ходе обучения
-- Процент студентов, завершивших курс
-- Качество объяснений ИИ (оценка студентами)
-
-#### **Метрики качества**
-
-- Отзывы студентов о курсе
-- Корректность сгенерированного контента
-- Отсутствие "галюцинаций" ИИ
-- Полезность примеров и задач
-
-#### **Технические метрики**
-
-- Время генерирования курса
-- Время ответа системы
-- Стабильность работы
-- Обработка ошибок
-
----
-
-## СЛАЙД 17: ЗАКЛЮЧЕНИЕ
-
-### Что такое TeachAI?
-
-**TeachAI** — это образовательная система, которая объединяет:
-
-- 🧠 **Искусственный интеллект** (OpenAI GPT) для генерирования контента
-- 📚 **Автоматизацию** создания структурированных курсов
-- 👨‍💻 **Интеграцию с Jupyter** для удобства разработчиков
-- 📊 **Персонализацию** под каждого студента
-- ✅ **Оценку** с мгновенной обратной связью
-
-### Основные преимущества
-
-- ✨ Быстрое создание курсов (за считанные минуты)
-- 🎯 Персонализированное обучение
-- 🔄 Автоматическая оценка и обратная связь
-- 📈 Отслеживание прогресса
-- 🚀 Масштабируемость без дополнительных затрат
-
-### Целевое использование
-
-- Самостоятельное обучение студентов
-- Подготовка преподавателями материалов
-- Корпоративное обучение
-- Изучение новых технологий
-
----
-
-## Информация для установки и запуска
-
-### Быстрый старт
-
-```bash
-git clone https://github.com/Ip-59/TeachAI.git
-cd TeachAI
-pip install -r requirements.txt
-jupyter notebook TeachAI.ipynb
-```
-
-### Нужно получить
-
-- OpenAI API key от <https://platform.openai.com/api-keys>
-- Сохранить в файл `.env` как `OPENAI_API_KEY=sk-...`
-
-### Поддерживаемые версии
-
-- Python 3.10+
-- Jupyter любой версии
-- Все платформы (Windows, macOS, Linux)
-
----
-
-**Версия документа:** 2.0 (исправленная с правильным Markdown форматированием)
-
-**Дата:** Март 2026
-
-**Язык:** Русский
-
-**Статус:** Учебный проект (non-commercial)
+*Description based on repository source analysis; not generated from legacy markdown docs.*

@@ -13,6 +13,7 @@ from contextlib import redirect_stdout
 from typing import Dict, List, Any, Optional, Tuple
 
 from content_utils import BaseContentGenerator
+from examples_code_fixes import sanitize_example_code
 from result_checker import ResultChecker, values_equal, stdout_outputs_equal
 
 
@@ -210,22 +211,78 @@ class ControlTasksGenerator(BaseContentGenerator):
         return candidates
 
     @classmethod
+    def format_expected_value_for_criterion(cls, value: Any) -> str:
+        """Форматирует ожидаемое значение переменной для показа студенту."""
+        if value is None:
+            return "None"
+        if cls._is_sklearn_estimator(value):
+            return f"обученная модель {type(value).__name__}"
+        if isinstance(value, str):
+            return repr(value)
+        if isinstance(value, (bool, int, float)):
+            return repr(value)
+        if isinstance(value, dict):
+            text = repr(value)
+            if len(text) <= 140:
+                return text
+            return f"словарь с ключами {list(value.keys())}"
+        if isinstance(value, (list, tuple)):
+            text = repr(value)
+            if len(text) <= 140:
+                return text
+            return f"{type(value).__name__} из {len(value)} элементов"
+        try:
+            import numpy as np
+
+            if isinstance(value, np.ndarray):
+                return cls.serialize_value_for_llm(value, max_items=8)
+        except Exception:
+            pass
+        text = repr(value)
+        if len(text) > 140:
+            return text[:140] + "..."
+        return text
+
+    @classmethod
     def build_validation_criteria(
-        cls, task_data: Dict[str, Any], check_variables: List[str]
+        cls,
+        task_data: Dict[str, Any],
+        check_variables: List[str],
+        expected_vars: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
-        """Формирует понятные критерии проверки для студента."""
+        """Формирует понятные критерии проверки с конкретными ожидаемыми значениями."""
         criteria: List[str] = []
+        expected_vars = expected_vars or {}
+
+        condition_rule = (task_data.get("condition_rule") or "").strip()
+        if condition_rule:
+            criteria.append(f"Условие: {condition_rule}")
+
         for var_name in check_variables:
-            criteria.append(
-                f"Переменная `{var_name}` должна содержать корректный результат вычислений."
-            )
+            if var_name in expected_vars:
+                expected_text = cls.format_expected_value_for_criterion(
+                    expected_vars[var_name]
+                )
+                criteria.append(
+                    f"Переменная `{var_name}` должна быть равна: {expected_text}"
+                )
+            else:
+                criteria.append(
+                    f"Переменная `{var_name}` должна быть создана и соответствовать "
+                    "шагам задания."
+                )
 
         output_format = (task_data.get("output_format") or "").strip()
         if output_format:
-            criteria.append(f"Если используете print — формат вывода: {output_format}")
+            criteria.append(f"Формат вывода print: {output_format}")
+
+        expected_output = (task_data.get("expected_output") or "").strip()
+        if expected_output and not output_format:
+            preview = expected_output if len(expected_output) <= 200 else expected_output[:200] + "..."
+            criteria.append(f"Ожидаемый вывод программы: {preview}")
 
         steps = task_data.get("student_steps") or []
-        if steps and not criteria:
+        if steps and not check_variables:
             criteria.extend(steps)
 
         if not criteria:
@@ -469,12 +526,14 @@ stdout:
         solution_code = materialized.get("solution_code", "")
 
         if validation_mode in {"structured", "llm"} and check_variables and solution_code:
-            is_correct, failure_reason = self.compare_structured_variables(
+            matched, reason = self.compare_structured_variables(
                 solution_code,
                 user_code,
                 task_code,
                 check_variables,
             )
+            is_correct = matched
+            failure_reason = reason or ""
         elif validation_mode in {"variable", "both"} and materialized.get("check_variable"):
             var_name = materialized["check_variable"]
             actual_var = local_vars.get(var_name)
@@ -493,7 +552,11 @@ stdout:
         else:
             is_correct = True
 
-        feedback = "Решение принято." if is_correct else failure_reason
+        feedback = (
+            "Решение принято."
+            if is_correct
+            else (failure_reason or "Решение не принято.")
+        )
         return is_correct, failure_reason, feedback
 
     def compare_structured_variables(
@@ -529,10 +592,10 @@ stdout:
     def materialize_validation_metadata(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Выполняет solution_code и вычисляет параметры проверки."""
         task_data["task_code"] = self.stabilize_sklearn_code(
-            (task_data.get("task_code") or "").strip()
+            sanitize_example_code((task_data.get("task_code") or "").strip())
         )
         solution_code = self.stabilize_sklearn_code(
-            (task_data.get("solution_code") or "").strip()
+            sanitize_example_code((task_data.get("solution_code") or "").strip())
         )
         task_data["solution_code"] = solution_code
 
@@ -560,15 +623,164 @@ stdout:
         if check_variables:
             task_data["check_variable"] = check_variables[-1]
             task_data["expected_variable_value"] = local_vars.get(check_variables[-1])
+            task_data["expected_variable_values"] = {
+                name: local_vars.get(name) for name in check_variables
+            }
         else:
             task_data.pop("check_variable", None)
             task_data.pop("expected_variable_value", None)
+            task_data.pop("expected_variable_values", None)
 
         task_data["validation_mode"] = validation_mode
         task_data["validation_criteria"] = self.build_validation_criteria(
-            task_data, check_variables
+            task_data,
+            check_variables,
+            expected_vars={
+                name: local_vars[name]
+                for name in check_variables
+                if name in local_vars
+            },
         )
         return task_data
+
+    def _determine_lesson_subject(
+        self,
+        course_context: Optional[Dict[str, Any]],
+        lesson_content: str,
+        lesson_data: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Определяет предметную область по текущему уроку (не по названию всего курса)."""
+        lesson_data = lesson_data or {}
+        lesson_title = lesson_data.get("title", "").lower()
+        lesson_description = lesson_data.get("description", "").lower()
+        topic_title = ""
+        if course_context and isinstance(course_context, dict):
+            topic_title = (course_context.get("topic_title") or "").lower()
+
+        keywords = lesson_data.get("keywords", [])
+        if isinstance(keywords, list):
+            keywords_str = " ".join(str(k) for k in keywords).lower()
+        else:
+            keywords_str = str(keywords or "").lower()
+
+        lesson_signals = " ".join(
+            [lesson_title, lesson_description, topic_title, keywords_str]
+        )
+
+        def _match_subject(text: str) -> Optional[str]:
+            text = text.lower()
+            ml_markers = (
+                "sklearn",
+                "scikit",
+                "tensorflow",
+                "keras",
+                "нейрон",
+                "классификац",
+                "регресс",
+                "машинн",  # машинное / машинного обучения
+                "machine learning",
+                "mnist",
+                "iris",
+                "библиотек",
+            )
+            data_markers = (
+                "pandas",
+                "numpy",
+                "matplotlib",
+                "dataframe",
+                "анализ данных",
+                "data analysis",
+                "визуализац",
+            )
+            web_markers = ("flask", "django", "fastapi", "веб", "web", "api", "сайт")
+            basics_markers = (
+                "основы python",
+                "синтаксис",
+                "переменн",
+                "цикл",
+                "список",
+                "словар",
+                "функци",
+                "условн",
+                "тип данных",
+            )
+
+            if any(m in text for m in ml_markers):
+                return "машинное обучение с Python"
+            if any(m in text for m in data_markers):
+                return "анализ данных с Python"
+            if any(m in text for m in web_markers):
+                return "веб-разработка на Python"
+            if any(m in text for m in basics_markers):
+                return "программирование на Python"
+            return None
+
+        subject = _match_subject(lesson_signals)
+        if subject:
+            return subject
+
+        subject = _match_subject(lesson_content or "")
+        if subject:
+            return subject
+
+        if course_context and isinstance(course_context, dict):
+            course_title = (course_context.get("course_title") or "").lower()
+            subject = _match_subject(course_title)
+            if subject:
+                return subject
+            if "финанс" in course_title:
+                return "программирование на Python для финансов"
+
+        return "программирование на Python"
+
+    @staticmethod
+    def _is_basics_shaped_task(task_data: Dict[str, Any]) -> bool:
+        """True, если задание по форме — «Основы Python» (age/status/арифметика)."""
+        combined = " ".join(
+            [
+                task_data.get("title") or "",
+                task_data.get("description") or "",
+                task_data.get("task_code") or "",
+                task_data.get("solution_code") or "",
+                " ".join(task_data.get("student_steps") or []),
+                task_data.get("condition_rule") or "",
+            ]
+        ).lower()
+        basics_signals = (
+            "совершеннолет",
+            "несовершеннолет",
+            "age = ",
+            "age=",
+            "status = ",
+            "вычислите a = 10",
+            "переменные и типы",
+            "тип данных",
+        )
+        ml_signals = (
+            "sklearn",
+            "scikit",
+            "tensorflow",
+            "keras",
+            "load_iris",
+            "logisticregression",
+            "mlpclassifier",
+            "fit(",
+            "predict(",
+            "train_test_split",
+            "pandas",
+            "dataframe",
+        )
+        if any(m in combined for m in ml_signals):
+            return False
+        return any(m in combined for m in basics_signals)
+
+    def _task_matches_subject(
+        self, task_data: Dict[str, Any], course_subject: str
+    ) -> bool:
+        """Проверяет, что задание соответствует предметной области урока."""
+        if "машинное обучение" in course_subject:
+            return not self._is_basics_shaped_task(task_data)
+        return True
 
     def generate_control_task(
         self,
@@ -578,15 +790,31 @@ stdout:
         course_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         try:
+            lesson_title = lesson_data.get("title", "")
+            content_for_prompt = self.prepare_lesson_text_for_analysis(
+                lesson_content,
+                course_context=course_context,
+                max_chars=6000,
+                lesson_title=lesson_title,
+            )
+            course_subject = self._determine_lesson_subject(
+                course_context, content_for_prompt, lesson_data
+            )
+
             prompt = self._build_control_task_prompt(
-                lesson_data, lesson_content, communication_style, course_context
+                lesson_data,
+                content_for_prompt,
+                communication_style,
+                course_context,
+                course_subject,
             )
             messages = [
                 {
                     "role": "system",
                     "content": (
-                        "Ты — опытный преподаватель Python и ML. "
-                        "Создавай однозначные контрольные задания. Ответ — только JSON."
+                        f"Ты — преподаватель {course_subject}. "
+                        "Создавай однозначные контрольные задания СТРОГО по материалу "
+                        f"урока «{lesson_title}». Ответ — только JSON."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -597,7 +825,32 @@ stdout:
                 max_tokens=2000,
                 response_format={"type": "json_object"},
             )
-            return self._parse_control_task_response(response, lesson_data)
+            task_data = self._parse_control_task_response(response, lesson_data)
+
+            if not self._task_matches_subject(task_data, course_subject):
+                self.logger.warning(
+                    "Контрольное задание не по теме урока (%s), повторная генерация",
+                    course_subject,
+                )
+                strict_prompt = (
+                    prompt
+                    + f"\n\nПОВТОР: предыдущий ответ был про «Основы Python», "
+                    f"а нужно задание по «{course_subject}» и уроку «{lesson_title}». "
+                    "Используй библиотеки и концепции из lesson_content (sklearn, load_iris и т.д.). "
+                    "ЗАПРЕЩЕНО: age, status, совершеннолетний, a=10+b."
+                )
+                response = self.make_api_request(
+                    messages=[
+                        messages[0],
+                        {"role": "user", "content": strict_prompt},
+                    ],
+                    temperature=0.2,
+                    max_tokens=2000,
+                    response_format={"type": "json_object"},
+                )
+                task_data = self._parse_control_task_response(response, lesson_data)
+
+            return task_data
         except Exception as e:
             self.logger.error("Ошибка при генерации контрольного задания: %s", e)
             return {
@@ -616,53 +869,109 @@ stdout:
         lesson_content: str,
         communication_style: str,
         course_context: Optional[Dict[str, Any]] = None,
+        course_subject: str = "программирование на Python",
     ) -> str:
         lesson_title = lesson_data.get("title", "")
         lesson_description = lesson_data.get("description", "")
 
+        if "машинное обучение" in course_subject:
+            subject_rules = """
+=== ПРАВИЛА ДЛЯ ML-УРОКА ===
+- Задание должно использовать sklearn / TensorFlow / Keras — то, что разбирается в уроке.
+- Предпочитай load_iris() вместо make_classification с малым n_features.
+- random_state=42 для всех генераторов данных и моделей.
+- Студент дописывает fit(), predict() или score() — не «age/status» из основ Python.
+- ЗАПРЕЩЕНО задания про переменные, if age >= 18, арифметику a=10+b без ML-библиотек.
+"""
+            example_block = """
+ПРИМЕР корректного ML-задания:
+- task_code: from sklearn.datasets import load_iris + train_test_split + данные + "# Ваш код здесь"
+- student_steps: «Обучите LogisticRegression на X_train/y_train», «Вычислите accuracy на X_test»
+- check_variables: ["model", "accuracy"] или ["accuracy"]
+"""
+        elif "анализ данных" in course_subject:
+            subject_rules = """
+=== ПРАВИЛА ДЛЯ АНАЛИЗА ДАННЫХ ===
+- Используй pandas/numpy/matplotlib из урока.
+- Данные задавай в task_code (словари, списки, DataFrame.from_dict) — без read_csv.
+"""
+            example_block = """
+ПРИМЕР: task_code создаёт DataFrame, студент считает mean/sum или строит простую агрегацию.
+"""
+        else:
+            subject_rules = ""
+            example_block = """
+ПРИМЕР корректного задания (переменные + условие):
+- task_code содержит: age = 17, name = "Анна"
+- student_steps: «Вычислите a = 10 + 5 и b = a * 2», «По правилу condition_rule создайте status»
+- condition_rule: «если age >= 18 → status = "совершеннолетний", иначе → status = "несовершеннолетний"»
+- check_variables: ["a", "b", "status"]
+"""
+
         return f"""
-Создай ОДНОЗНАЧНОЕ контрольное задание строго по lesson_content.
+Создай ОДНОЗНАЧНОЕ контрольное задание СТРОГО по lesson_content урока «{lesson_title}».
+Предметная область: {course_subject}. Не используй темы из других модулей курса.
 
 НАЗВАНИЕ УРОКА: {lesson_title}
 ОПИСАНИЕ УРОКА: {lesson_description}
 
 lesson_content:
 {lesson_content}
+{subject_rules}
 
 ГЛАВНОЕ ПРАВИЛО: студент должен понять задание с ОДНОГО прочтения и решить ЕДИНСТВЕННЫМ способом.
-- Каждый шаг — конкретное действие: «создайте», «обучите», «сохраните в переменную X», «выведите print(...)».
-- Не используй слова «и т.д.», «например», «подобным образом», «результаты предсказаний» без уточнения.
+
+=== ИСХОДНЫЕ ДАННЫЕ (task_code) ===
+- ВСЕ константы и входные данные (age, name, numbers, X, y, списки, словари) — ТОЛЬКО в task_code.
+- НЕ проси в description/student_steps «создайте age = 17» — данные уже в task_code.
+- В student_steps пиши: «используйте переменную age из task_code», «допишите код после # Ваш код здесь».
+- task_code: импорты + данные + комментарий "# Ваш код здесь".
+- Без fit(), predict(), print(), plt.show() в task_code.
+- ВСЕ генераторы случайных данных: random_state=42.
+
+=== УСЛОВИЯ (if/elif/else) ===
+Если задание включает условие — ОБЯЗАТЕЛЬНО явно укажи:
+1. Порог сравнения: «если age >= 18», «если score > 50» (конкретное число/знак).
+2. Значение результата для КАЖДОЙ ветки: «status = "совершеннолетний"» / «status = "несовершеннолетний"».
+3. age и другие данные для условия — уже заданы в task_code (не «в воздухе»).
+4. Поле condition_rule — одной строкой для студента, например:
+   «если age >= 18 → status = "совершеннолетний", иначе → status = "несовершеннолетний"».
+
+=== ШАГИ И ОПИСАНИЕ ===
+- Каждый шаг — конкретное действие: «вычислите a = 10 + 5», «создайте status по правилу выше».
+- Не используй «и т.д.», «например», «на ваше усмотрение», «подобным образом».
 - Если нужен print — укажи ТОЧНЫЕ подписи в output_format.
 - Имена переменных в задании и в solution_code должны совпадать.
+- check_variables — только переменные, которые создаёт/изменяет студент (результаты).
 
-task_code:
-- Только импорты, данные и комментарий "# Ваш код здесь".
-- Без fit(), predict(), print(), plt.show().
-- ВСЕ генераторы случайных данных: random_state=42 (make_classification, train_test_split, KMeans, RandomForestClassifier).
+=== solution_code ===
+- Полное решение = task_code + код студента (без дублирования starter-данных).
+- Должно выполняться без ошибок и давать однозначный результат.
 
-validation_mode:
-- "llm" — ВСЕГДА используй этот режим (проверка нейросетью по смыслу решения).
-- Укажи check_variables — переменные-результаты для контекста проверки.
+validation_mode: всегда "llm".
 
-check_variables:
-- Список имён переменных-результатов, которые создаёт студент (например: ["predictions", "centers"]).
-
-Если в lesson_content нет кода — is_needed: false.
+Если в lesson_content нет практики с кодом — is_needed: false.
 
 Формат JSON:
 {{
   "title": "...",
-  "description": "Задание:\\n1. ...\\n2. ...\\n3. ...",
-  "student_steps": ["...", "..."],
-  "task_code": "...\\n# Ваш код здесь",
-  "solution_code": "полное решение = task_code + код студента",
+  "description": "Краткое описание задания для студента",
+  "student_steps": [
+    "Шаг 1: ...",
+    "Шаг 2: ..."
+  ],
+  "condition_rule": "если age >= 18 → status = \"совершеннолетний\", иначе → \"несовершеннолетний\" (или \"\", если условий нет)",
+  "task_code": "age = 17\nname = \"Анна\"\n# Ваш код здесь",
+  "solution_code": "полное решение",
   "validation_mode": "llm",
-  "check_variables": ["var1", "var2"],
-  "output_format": "опционально: точный формат print, если validation_mode=stdout",
+  "check_variables": ["a", "b", "status"],
+  "output_format": "print('a:', a) print('status:', status) — если нужен вывод",
   "hints": ["..."],
   "is_needed": true,
   "skip_reason": ""
 }}
+
+{example_block}
 
 Верни только JSON.
 """
@@ -693,6 +1002,7 @@ check_variables:
             task_data.setdefault("check_variable", "")
             task_data.setdefault("output_format", "")
             task_data.setdefault("validation_criteria", [])
+            task_data.setdefault("condition_rule", "")
 
             if task_data.get("is_needed", True) and task_data.get("solution_code", "").strip():
                 task_data = self.materialize_validation_metadata(task_data)

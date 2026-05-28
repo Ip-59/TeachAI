@@ -7,6 +7,30 @@ import logging
 from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 
+from content_renderer import enhance_content, render_markdown_to_html
+
+_CODE_PLACEHOLDER_TAG = "TEACHAI_CODE_BLOCK"
+
+
+def code_block_placeholder(index: int) -> str:
+    """HTML-комментарий — markdown его не ломает (в отличие от __PLACEHOLDER__)."""
+    return f"<!--{_CODE_PLACEHOLDER_TAG}_{index}-->"
+
+
+def content_has_unresolved_code_placeholders(content: str) -> bool:
+    """True, если в HTML остались заглушки вместо блоков кода."""
+    if not content:
+        return False
+    if "<pre>" in content and "CODE_BLOCK_" not in content:
+        return False
+    return bool(
+        re.search(
+            rf"(?:<!--{_CODE_PLACEHOLDER_TAG}_\d+-->|<strong>CODE_BLOCK_\d+</strong>|__CODE_BLOCK_\d+__)",
+            content,
+            re.IGNORECASE,
+        )
+    )
+
 class ContentFormatterFinal:
     """Финальная версия обработчика форматирования контента."""
     
@@ -14,202 +38,8 @@ class ContentFormatterFinal:
         """Инициализация форматтера."""
         self.logger = logging.getLogger(__name__)
         
-        # CSS стили для красивого отображения
-        self.base_css = """
-        <style>
-        .lesson-content {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-            line-height: 1.6 !important;
-            color: #000000 !important;  /* ЧИСТО ЧЕРНЫЙ для максимального контраста */
-            max-width: 100% !important;
-            margin: 0 auto !important;
-            padding: 20px !important;
-            font-weight: 900 !important;  /* МАКСИМАЛЬНАЯ жирность основного текста */
-        }
-        
-        .lesson-content h1, .lesson-content h2, .lesson-content h3, .lesson-content h4 {
-            color: #000000 !important;  /* Заголовки максимально темные */
-            margin-top: 25px !important;
-            margin-bottom: 15px !important;
-            font-weight: 900 !important;  /* МАКСИМАЛЬНАЯ жирность */
-        }
-        
-        .lesson-content h1 { 
-            font-size: 2em !important; 
-            border-bottom: 2px solid #000000 !important; 
-            padding-bottom: 10px !important; 
-            color: #000000 !important; 
-            font-weight: 900 !important;
-        }
-        .lesson-content h2 { 
-            font-size: 1.5em !important; 
-            border-bottom: 1px solid #000000 !important; 
-            padding-bottom: 8px !important; 
-            color: #000000 !important; 
-            font-weight: 900 !important;
-        }
-        .lesson-content h3 { 
-            font-size: 1.3em !important; 
-            color: #000000 !important; 
-            font-weight: 900 !important;
-        }
-        .lesson-content h4 { 
-            font-size: 1.1em !important; 
-            color: #000000 !important; 
-            font-weight: 900 !important;
-        }
-        
-        .lesson-content p {
-            margin-bottom: 15px !important;
-            text-align: justify !important;
-            color: #000000 !important;  /* Максимально темный текст */
-            font-weight: 900 !important;  /* Максимальная жирность */
-        }
-        
-        .lesson-content ul, .lesson-content ol {
-            margin-bottom: 15px !important;
-            padding-left: 25px !important;
-        }
-        
-        .lesson-content li {
-            margin-bottom: 8px !important;
-            color: #000000 !important;  /* Максимально темный текст */
-            font-weight: 900 !important;  /* Максимальная жирность */
-        }
-        
-        .lesson-content strong, .lesson-content b {
-            color: #000000 !important;  /* Жирный текст максимально темный */
-            font-weight: 900 !important;  /* МАКСИМАЛЬНАЯ жирность */
-        }
-        
-        .lesson-content em, .lesson-content i {
-            color: #000000 !important;  /* Курсив тоже максимально темный */
-            font-style: italic !important;
-            font-weight: 900 !important;  /* Максимальная жирность */
-        }
-        
-        .lesson-content code {
-            background-color: #000000 !important;  /* ЧИСТО ЧЕРНЫЙ ФОН для максимального контраста */
-            color: #ffffff !important;  /* БЕЛЫЙ ТЕКСТ на черном фоне */
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            font-weight: 900 !important;  /* Максимальная жирность */
-            text-shadow: 0 0 2px rgba(255,255,255,0.8) !important;  /* Белая тень для лучшей видимости */
-            border: 2px solid #333333;  /* Темная рамка */
-        }
-        
-        .lesson-content pre {
-            background-color: #000000 !important;  /* ЧИСТО ЧЕРНЫЙ фон для максимального контраста */
-            color: #ffffff !important;  /* БЕЛЫЙ текст на черном фоне */
-            padding: 15px !important;
-            border-radius: 8px !important;
-            overflow-x: auto !important;
-            margin: 15px 0 !important;
-            border: 3px solid #ffffff !important;  /* БЕЛАЯ рамка для максимального контраста */
-        }
-        
-        .lesson-content pre code {
-            background-color: transparent !important;
-            color: #ffffff !important;  /* БЕЛЫЙ текст */
-            padding: 0 !important;
-            font-size: 1.2em !important;  /* Увеличенный размер для лучшей читаемости */
-            line-height: 1.6 !important;  /* Увеличенный межстрочный интервал */
-            font-weight: 900 !important;  /* МАКСИМАЛЬНАЯ жирность */
-            text-shadow: 0 0 5px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,1) !important;  /* Усиленная черная тень */
-        }
-        
-        /* Стили для комментариев в коде - максимальная контрастность */
-        .lesson-content pre code .comment,
-        .lesson-content pre code .hljs-comment {
-            color: #ffff00 !important;  /* ЯРКО-ЖЕЛТЫЙ для максимального контраста */
-            font-weight: 900 !important;  /* Максимальная жирность */
-            text-shadow: 0 0 3px rgba(0,0,0,1), 0 0 5px rgba(0,0,0,1) !important;  /* Усиленная черная тень */
-        }
-        
-        /* Стили для строк с комментариями (начинающихся с #) */
-        .lesson-content pre code:has(.comment),
-        .lesson-content pre code:has(.hljs-comment) {
-            color: #ffff00 !important;  /* ЯРКО-ЖЕЛТЫЙ для комментариев */
-        }
-        
-        .lesson-content blockquote {
-            border-left: 4px solid #000000 !important;  /* Черная рамка */
-            margin: 15px 0 !important;
-            padding: 10px 20px !important;
-            background-color: #ffffff !important;  /* Белый фон */
-            font-style: italic !important;
-            color: #000000 !important;  /* Черный текст */
-            font-weight: 900 !important;  /* Максимальная жирность */
-            border: 2px solid #000000 !important;  /* Черная рамка */
-        }
-        
-        /* ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ МАКСИМАЛЬНОГО КОНТРАСТА */
-        .lesson-content * {
-            color: #000000 !important;  /* ВСЕ элементы максимально темные */
-        }
-        
-        .lesson-content pre * {
-            color: #ffffff !important;  /* ВСЕ элементы в блоках кода - белые */
-        }
-        
-        .lesson-content code * {
-            color: #ffffff !important;  /* ВСЕ элементы в inline коде - белые */
-        }
-        
-        /* Принудительное применение стилей */
-        .lesson-content, .lesson-content * {
-            text-shadow: 0 0 1px rgba(0,0,0,0.5) !important;  /* Легкая тень для всех элементов */
-        }
-        
-        .lesson-content table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 15px 0;
-        }
-        
-        .lesson-content th, .lesson-content td {
-            border: 1px solid #bdc3c7;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        
-        .lesson-content th {
-            background-color: #3498db;
-            color: white;
-            font-weight: 600;
-        }
-        
-        .lesson-content tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        .lesson-content .highlight {
-            background-color: #fff3cd;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #ffc107;
-            margin: 15px 0;
-        }
-        
-        .lesson-content .warning {
-            background-color: #f8d7da;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #dc3545;
-            margin: 15px 0;
-        }
-        
-        .lesson-content .info {
-            background-color: #d1ecf1;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #17a2b8;
-            margin: 15px 0;
-        }
-        </style>
-        """
+        # Стили урока задаются в content_renderer.get_display_css() при показе
+        self.base_css = ""
     
     def format_lesson_content(self, raw_content: str, lesson_title: str = "") -> str:
         """
@@ -231,13 +61,16 @@ class ContentFormatterFinal:
             # Шаг 1: Извлекаем блоки кода и создаем плейсхолдеры
             content_with_placeholders, code_blocks = self._extract_code_blocks(cleaned_content)
             
-            # Шаг 2: Обрабатываем markdown разметку
-            processed_content = self._process_markdown_simple(content_with_placeholders)
+            # Шаг 2: Markdown → HTML (таблицы, списки, заголовки)
+            processed_content = render_markdown_to_html(content_with_placeholders)
             
             # Шаг 3: Восстанавливаем блоки кода
             final_content = self._restore_code_blocks(processed_content, code_blocks)
             
-            # Шаг 4: Очищаем финальный контент от лишних параграфов вокруг блоков кода
+            # Шаг 4: LaTeX и таблицы, которые LLM мог вставить после markdown
+            final_content = enhance_content(final_content)
+            
+            # Шаг 5: Очищаем финальный контент от лишних параграфов вокруг блоков кода
             final_content = self._clean_final_content(final_content)
             
             # Создаем финальный HTML
@@ -286,9 +119,8 @@ class ContentFormatterFinal:
                 # Сохраняем блок кода
                 code_blocks.append(html_block)
                 
-                # Возвращаем плейсхолдер
-                placeholder = f"__CODE_BLOCK_{len(code_blocks)-1}__"
-                return placeholder
+                # Возвращаем плейсхолдер (HTML-комментарий — безопасен для markdown)
+                return code_block_placeholder(len(code_blocks) - 1)
             
             # Заменяем блоки кода на плейсхолдеры
             content_with_placeholders = re.sub(code_block_pattern, save_code_block, content, flags=re.DOTALL)
@@ -427,14 +259,29 @@ class ContentFormatterFinal:
     def _restore_code_blocks(self, content: str, code_blocks: List[str]) -> str:
         """Восстанавливает блоки кода из плейсхолдеров."""
         try:
-            # Восстанавливаем блоки кода из плейсхолдеров
             for i, code_block in enumerate(code_blocks):
-                placeholder = f"__CODE_BLOCK_{i}__"
-                content = content.replace(placeholder, code_block)
-            
-            # Логируем для отладки
-            self.logger.debug(f"Восстановлено {len(code_blocks)} блоков кода")
-            
+                placeholders = (
+                    code_block_placeholder(i),
+                    f"__CODE_BLOCK_{i}__",
+                )
+                for placeholder in placeholders:
+                    content = content.replace(placeholder, code_block)
+
+                # Старый баг: markdown превращал __CODE_BLOCK_N__ в <strong>CODE_BLOCK_N</strong>
+                content = re.sub(
+                    rf"<p>\s*<strong>CODE_BLOCK_{i}</strong>\s*</p>",
+                    code_block,
+                    content,
+                    flags=re.IGNORECASE,
+                )
+                content = re.sub(
+                    rf"<strong>CODE_BLOCK_{i}</strong>",
+                    code_block,
+                    content,
+                    flags=re.IGNORECASE,
+                )
+
+            self.logger.debug("Восстановлено %s блоков кода", len(code_blocks))
             return content
             
         except Exception as e:

@@ -51,10 +51,6 @@ class LessonDisplay:
         try:
             # Создаем ключ кэша для текущего урока
             cache_key = f"{section_id}:{topic_id}:{lesson_id}"
-            
-            # ИСПРАВЛЕНО: Принудительно очищаем кэш для перегенерации с исправленным промптом
-            self.lesson_interface.state_manager.clear_specific_lesson_cache(cache_key)
-            self.logger.info(f"Кэш урока {cache_key} очищен для перегенерации")
 
             # Получаем данные о курсе и уроке из учебного плана
             course_plan = self.lesson_interface.state_manager.get_course_plan()
@@ -94,6 +90,9 @@ class LessonDisplay:
                 # Обновляем кэш в памяти для текущей сессии
                 self.lesson_interface.cached_lesson_content = lesson_content_data["content"]
                 self.lesson_interface.cached_lesson_title = lesson_content_data["title"]
+                self.lesson_interface.cached_lesson_raw_content = lesson_content_data.get(
+                    "raw_content"
+                )
                 self.lesson_interface.current_lesson_cache_key = cache_key
                 
             elif (
@@ -107,6 +106,10 @@ class LessonDisplay:
                     "title": self.lesson_interface.cached_lesson_title,
                     "content": self.lesson_interface.cached_lesson_content,
                 }
+                if self.lesson_interface.cached_lesson_raw_content:
+                    lesson_content_data["raw_content"] = (
+                        self.lesson_interface.cached_lesson_raw_content
+                    )
             else:
                 # Генерируем новое содержание урока
                 try:
@@ -126,13 +129,17 @@ class LessonDisplay:
                     # Кэшируем в памяти для текущей сессии
                     self.lesson_interface.cached_lesson_content = lesson_content_data["content"]
                     self.lesson_interface.cached_lesson_title = lesson_content_data["title"]
+                    self.lesson_interface.cached_lesson_raw_content = lesson_content_data.get(
+                        "raw_content"
+                    )
                     self.lesson_interface.current_lesson_cache_key = cache_key
 
                     # ИСПРАВЛЕНО: Сохраняем в постоянный кэш для повторного использования
                     self.lesson_interface.state_manager.save_lesson_content(
                         cache_key, 
                         lesson_content_data["title"], 
-                        lesson_content_data["content"]
+                        lesson_content_data["content"],
+                        raw_content=lesson_content_data.get("raw_content"),
                     )
 
                     self.logger.info("Урок успешно сгенерирован и сохранен в постоянный кэш")
@@ -148,7 +155,15 @@ class LessonDisplay:
             # Сохраняем данные для интерактивных функций
             self.lesson_interface.current_lesson_data = lesson_data
             self.lesson_interface.current_lesson_content = lesson_content_data["content"]
+            self.lesson_interface.current_lesson_raw_content = lesson_content_data.get(
+                "raw_content"
+            )
             self.lesson_interface.current_lesson_id = cache_key  # Полный ID урока
+            # Сбрасываем in-memory кэши интерактивных разделов — они только для этого урока
+            self.lesson_interface.current_lesson_concepts = None
+            self.lesson_interface.current_lesson_examples = None
+            self.lesson_interface.current_lesson_examples_key = None
+            self._reset_interactive_containers()
 
             # Проверяем, пройден ли тест для этого урока
             test_passed = self.lesson_interface.state_manager.is_test_passed(cache_key)
@@ -164,6 +179,8 @@ class LessonDisplay:
                 "user_profile": user_profile,
                 "course_plan": course_plan,
                 "test_passed": test_passed,  # Добавляем информацию о тесте
+                "lesson_content": lesson_content_data["content"],
+                "lesson_raw_content": lesson_content_data.get("raw_content"),
             }
 
             # Получаем ID курса безопасно
@@ -263,40 +280,69 @@ class LessonDisplay:
                 """
             )
 
-            # ИСПРАВЛЕНО: Безопасно форматируем код в тексте урока
-            try:
-                from code_formatter import code_formatter
-                formatted_content = code_formatter.format_code_in_text(lesson_content_data["content"])
-                self.logger.info("Код в тексте урока успешно отформатирован")
-            except Exception as e:
-                self.logger.warning(f"Ошибка форматирования кода (не критично): {e}")
-                formatted_content = lesson_content_data["content"]
-            
-            # ИСПРАВЛЕНО: Очищаем markdown метки кода (```html, ```python и т.д.)
-            try:
-                import re
-                # Убираем метки ```html, ```python, ``` и подобные
-                formatted_content = re.sub(r"```\w*\n?", "", formatted_content)
-                formatted_content = re.sub(r"```", "", formatted_content)
-                self.logger.info("Markdown метки кода успешно очищены")
-            except Exception as e:
-                self.logger.warning(f"Ошибка очистки markdown меток (не критично): {e}")
-            
-            # ИСПРАВЛЕНО: Очищаем HTML стили из текста урока
-            try:
-                import re
-                # Убираем все <style> блоки
-                formatted_content = re.sub(r'<style>.*?</style>', '', formatted_content, flags=re.DOTALL)
-                # Убираем все <div class="content-container"> и </div>
-                formatted_content = re.sub(r'<div class="content-container">', '', formatted_content)
-                formatted_content = re.sub(r'</div>', '', formatted_content)
-                # ИСПРАВЛЕНО: Убираем лишние ***
-                formatted_content = re.sub(r'\*\*\*', '', formatted_content)
-                self.logger.info("HTML стили и лишние *** успешно удалены из текста урока")
-            except Exception as e:
-                self.logger.warning(f"Ошибка очистки HTML стилей (не критично): {e}")
-            
+            lesson_body = lesson_content_data.get("content") or ""
+            raw_body = lesson_content_data.get("raw_content")
+
+            from content_formatter_final import (
+                ContentFormatterFinal,
+                content_has_unresolved_code_placeholders,
+            )
+
+            if content_has_unresolved_code_placeholders(lesson_body) and raw_body:
+                self.logger.warning(
+                    "В уроке заглушки CODE_BLOCK — переформатирование из raw_content"
+                )
+                lesson_body = ContentFormatterFinal().format_lesson_content(
+                    raw_body, lesson_content_data.get("title", "")
+                )
+                lesson_content_data["content"] = lesson_body
+
+            formatted_content = lesson_body
+            is_preformatted_html = formatted_content.strip().startswith(
+                '<div class="lesson-content">'
+            )
+
+            if not is_preformatted_html:
+                try:
+                    from code_formatter import code_formatter
+
+                    formatted_content = code_formatter.format_code_in_text(formatted_content)
+                except Exception as e:
+                    self.logger.warning(f"Ошибка форматирования кода (не критично): {e}")
+
+                try:
+                    import re
+
+                    formatted_content = re.sub(r"```\w*\n?", "", formatted_content)
+                    formatted_content = re.sub(r"```", "", formatted_content)
+                except Exception as e:
+                    self.logger.warning(f"Ошибка очистки markdown меток (не критично): {e}")
+
+                try:
+                    import re
+
+                    formatted_content = re.sub(
+                        r'<style>.*?</style>', '', formatted_content, flags=re.DOTALL
+                    )
+                    formatted_content = re.sub(
+                        r'<div class="content-container">', '', formatted_content
+                    )
+                    formatted_content = re.sub(r'\*\*\*', '', formatted_content)
+                except Exception as e:
+                    self.logger.warning(f"Ошибка очистки HTML (не критично): {e}")
+            else:
+                self.logger.info(
+                    "HTML lesson-content — пропуск очистки ``` и <style>"
+                )
+
             # ИСПРАВЛЕНО: Проверяем, является ли контент уже HTML
+            from content_renderer import (
+                enhance_content,
+                get_display_css,
+                render_markdown_to_html,
+                strip_embedded_styles,
+            )
+
             if formatted_content.strip().startswith('<div class="lesson-content">'):
                 # Контент уже отформатирован как HTML (от ContentFormatterFinal)
                 self.logger.info("Контент уже отформатирован как HTML, используем как есть")
@@ -304,103 +350,18 @@ class LessonDisplay:
             else:
                 # Контент в markdown формате, конвертируем в HTML
                 try:
-                    import markdown
-                    
-                    # ИСПРАВЛЕНО: Более умная обработка списков
-                    content = formatted_content
-                    
-                    # Обрабатываем только настоящие нумерованные списки (начинающиеся с новой строки)
-                    content = re.sub(r'(\n\s*\d+\.\s+)([^\n]+)', r'\n<li>\2</li>', content)
-                    content = re.sub(r'(<li>.*?</li>)+', lambda m: '<ol>' + m.group(0) + '</ol>', content, flags=re.DOTALL)
-                    
-                    # Обрабатываем маркированные списки (- )
-                    content = re.sub(r'(\n\s*-\s+)([^\n]+)', r'\n<li>\2</li>', content)
-                    content = re.sub(r'(<li>.*?</li>)+', lambda m: '<ul>' + m.group(0) + '</ul>', content, flags=re.DOTALL)
-                    
-                    # Конвертируем Markdown в HTML
-                    html_content = markdown.markdown(content, extensions=['fenced_code', 'codehilite'])
-                    
-                    # УБИРАЕМ ДУБЛИРУЮЩИЕ CSS СТИЛИ - используем стили из ContentFormatterFinal
-                    # Оборачиваем контент в div с классом lesson-content для применения стилей
+                    html_content = render_markdown_to_html(formatted_content)
                     html_content = '<div class="lesson-content">' + html_content + '</div>'
-                    
-                    self.logger.info("Markdown успешно конвертирован в HTML с правильной обработкой списков")
+                    self.logger.info("Markdown успешно конвертирован в HTML")
                 except Exception as e:
                     self.logger.warning(f"Ошибка конвертации Markdown (не критично): {e}")
-                    # Если markdown не работает, используем простую обработку
                     html_content = formatted_content.replace('\n', '<br>')
-            
-            # Создаем контейнер для содержания урока с МАКСИМАЛЬНО АГРЕССИВНЫМИ СТИЛЯМИ
-            # Добавляем дополнительные CSS стили для максимального контраста
-            additional_css = """
-            <style>
-            /* Улучшенные стили для контраста */
-            .lesson-content {
-                color: #1a365d !important;
-                font-weight: 400 !important;
-            }
-            
-            .lesson-content pre {
-                background-color: #f8f8f8 !important;
-                border: 1px solid #ddd !important;
-                color: #1a365d !important;
-                padding: 15px !important;
-                border-radius: 5px !important;
-                overflow-x: auto !important;
-            }
-            
-            .lesson-content code {
-                color: #1a365d !important;
-                font-weight: 700 !important;
-                background-color: #f0f0f0 !important;
-                padding: 2px 4px !important;
-                border-radius: 3px !important;
-                border: 1px solid #ccc !important;
-            }
-            
-            .lesson-content h1, .lesson-content h2, .lesson-content h3, .lesson-content h4 {
-                color: #1a365d !important;
-                font-weight: 600 !important;
-                border-bottom: 1px solid #ddd !important;
-            }
-            
-            .lesson-content p, .lesson-content li {
-                color: #1a365d !important;
-                font-weight: 400 !important;
-            }
-            
-            .lesson-content strong, .lesson-content b {
-                color: #1a365d !important;
-                font-weight: 600 !important;
-            }
-            
-            .lesson-content em, .lesson-content i {
-                color: #1a365d !important;
-                font-style: italic !important;
-                font-weight: 400 !important;
-            }
-            
-            .lesson-content blockquote {
-                border-left: 3px solid #ddd !important;
-                background-color: #f9f9f9 !important;
-                color: #1a365d !important;
-                font-style: italic !important;
-                padding: 10px 15px !important;
-                margin: 15px 0 !important;
-            }
-            
-            .lesson-content .comment {
-                color: #6b7280 !important;
-                font-style: italic !important;
-                background-color: #f3f4f6 !important;
-                padding: 1px 3px !important;
-                border-radius: 2px !important;
-            }
-            </style>
-            """
-            
-            # Добавляем CSS стили к HTML контенту
-            html_with_styles = additional_css + html_content
+
+            # LaTeX и markdown-таблицы внутри HTML (в т.ч. из кэша старых уроков)
+            html_content = enhance_content(html_content)
+            html_content = strip_embedded_styles(html_content)
+
+            html_with_styles = get_display_css() + html_content
             
             content_html = widgets.HTML(
                 value=html_with_styles,
@@ -534,6 +495,20 @@ class LessonDisplay:
                 self.lesson_interface,
             )
     
+    def _reset_interactive_containers(self):
+        """Скрывает и очищает контейнеры примеров/QA/объяснений при смене урока."""
+        li = self.lesson_interface
+        for name in (
+            "examples_container",
+            "qa_container",
+            "explain_container",
+            "control_tasks_container",
+        ):
+            container = getattr(li, name, None)
+            if container is not None:
+                container.layout.display = "none"
+                container.children = []
+
     def _show_course_completion(self):
         """
         Показывает экран завершения курса.

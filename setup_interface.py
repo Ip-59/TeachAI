@@ -9,6 +9,24 @@ import logging
 import time
 from interface_utils import InterfaceUtils, InterfaceState
 
+# Подписи полей формы знакомства: без фиксированной узкой колонки и обрезки
+_SETUP_FIELD_STYLE = {"description_width": "initial"}
+_SETUP_FIELD_LAYOUT = widgets.Layout(width="520px")
+_SETUP_FORM_CSS = widgets.HTML(
+    value="""
+<style>
+.teachai-setup-form .widget-label {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    max-width: none !important;
+    flex-shrink: 0 !important;
+    line-height: 1.35;
+}
+</style>
+"""
+)
+
 
 class SetupInterface:
     """Интерфейс для первоначальной настройки и выбора курса."""
@@ -49,7 +67,8 @@ class SetupInterface:
         name_widget = widgets.Text(
             description="Имя:",
             placeholder="Введите ваше имя",
-            layout=widgets.Layout(width="400px"),
+            style=_SETUP_FIELD_STYLE,
+            layout=_SETUP_FIELD_LAYOUT,
         )
 
         total_hours_widget = widgets.IntSlider(
@@ -59,7 +78,8 @@ class SetupInterface:
             step=1,
             description="Общее время (часов):",
             continuous_update=False,
-            layout=widgets.Layout(width="400px"),
+            style=_SETUP_FIELD_STYLE,
+            layout=_SETUP_FIELD_LAYOUT,
         )
 
         lesson_duration_widget = widgets.IntSlider(
@@ -69,7 +89,8 @@ class SetupInterface:
             step=5,
             description="Длительность урока (минут):",
             continuous_update=False,
-            layout=widgets.Layout(width="400px"),
+            style=_SETUP_FIELD_STYLE,
+            layout=_SETUP_FIELD_LAYOUT,
         )
 
         communication_style_widget = widgets.Dropdown(
@@ -81,7 +102,8 @@ class SetupInterface:
             ],
             value="friendly",
             description="Стиль общения:",
-            layout=widgets.Layout(width="400px"),
+            style=_SETUP_FIELD_STYLE,
+            layout=_SETUP_FIELD_LAYOUT,
         )
 
         # Создаем кнопку подтверждения
@@ -166,6 +188,7 @@ class SetupInterface:
         # Собираем все в один контейнер
         form = widgets.VBox(
             [
+                _SETUP_FORM_CSS,
                 header,
                 description,
                 widgets.VBox(
@@ -182,6 +205,7 @@ class SetupInterface:
             ],
             layout=widgets.Layout(gap="15px"),
         )
+        form.add_class("teachai-setup-form")
 
         return form
 
@@ -340,47 +364,12 @@ class SetupInterface:
 
                             clear_output(wait=True)
                             if section_id and topic_id and lesson_id:
-                                # ИСПРАВЛЕНО: Реальный переход к уроку
                                 display(
                                     self.utils.create_styled_message(
                                         "Переход к первому уроку...", "info"
                                     )
                                 )
-                            elif section_id is None and topic_id is None and lesson_id is None:
-                                # ИСПРАВЛЕНО: Курс завершен - показываем экран завершения
-                                display(
-                                    self.utils.create_styled_message(
-                                        "Курс завершен! Показываем экран завершения...", "info"
-                                    )
-                                )
-                                
-                                # Импортируем completion_interface и показываем экран завершения
-                                from completion_interface import CompletionInterface
-                                
-                                completion_interface = CompletionInterface(
-                                    self.state_manager,
-                                    self.system_logger,
-                                    self.content_generator,
-                                    self.assessment
-                                )
-                                
-                                clear_output(wait=True)
-                                completion_widget = completion_interface.show_course_completion()
-                                display(completion_widget)
-                                return
 
-                                # Добавляем задержку для лучшего UX
-                                time.sleep(0.5)
-
-                                print(
-                                    f"🔍 ОТЛАДКА в setup_interface: создаем LessonInterface"
-                                )
-                                print(f"🔍 self.assessment = {self.assessment}")
-                                print(
-                                    f"🔍 type(self.assessment) = {type(self.assessment)}"
-                                )
-
-                                # Импортируем lesson_interface и создаем урок
                                 from lesson_interface import LessonInterface
 
                                 lesson_ui = LessonInterface(
@@ -395,6 +384,32 @@ class SetupInterface:
                                     section_id, topic_id, lesson_id
                                 )
                                 display(lesson_widget)
+                            elif (
+                                section_id is None
+                                and topic_id is None
+                                and lesson_id is None
+                            ):
+                                display(
+                                    self.utils.create_styled_message(
+                                        "Курс завершен! Показываем экран завершения...",
+                                        "info",
+                                    )
+                                )
+
+                                from completion_interface import CompletionInterface
+
+                                completion_interface = CompletionInterface(
+                                    self.state_manager,
+                                    self.system_logger,
+                                    self.content_generator,
+                                    self.assessment,
+                                )
+
+                                clear_output(wait=True)
+                                completion_widget = (
+                                    completion_interface.show_course_completion()
+                                )
+                                display(completion_widget)
                             else:
                                 display(
                                     self.utils.create_styled_message(

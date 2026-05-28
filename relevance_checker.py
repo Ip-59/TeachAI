@@ -12,6 +12,31 @@ from content_utils import BaseContentGenerator
 class RelevanceChecker(BaseContentGenerator):
     """Проверщик релевантности вопросов к уроку."""
 
+    # Базовые темы Python — релевантны для уроков «Основы Python» и подобных,
+    # даже если конкретная генерация урока не упомянула термин явно.
+    _PYTHON_BASICS_STEMS = {
+        "функци": "функции",
+        "переменн": "переменные",
+        "тип": "типы данных",
+        "данн": "данные",
+        "спис": "списки",
+        "кортеж": "кортежи",
+        "словар": "словари",
+        "множеств": "множества",
+        "услов": "условия",
+        "цикл": "циклы",
+        "оператор": "операторы",
+        "синтакс": "синтаксис",
+        "строк": "строки",
+        "числ": "числа",
+        "def": "определение функций",
+        "return": "return",
+        "import": "импорт",
+        "class": "классы",
+        "метод": "методы",
+        "модул": "модули",
+    }
+
     def __init__(self, api_key):
         """
         Инициализация проверщика релевантности.
@@ -22,41 +47,85 @@ class RelevanceChecker(BaseContentGenerator):
         super().__init__(api_key)
         self.logger.info("RelevanceChecker инициализирован")
 
-    def check_question_relevance(self, user_question, lesson_content, lesson_data):
+    def check_question_relevance(
+        self,
+        user_question,
+        lesson_content,
+        lesson_data,
+        course_context=None,
+        lesson_raw_content=None,
+    ):
         """
         Проверяет релевантность вопроса пользователя к теме урока.
-        ИСПРАВЛЕНО: Использует только тему и описание урока, чтобы не перегружать контекст.
+
+        Решение строится по СОДЕРЖАНИЮ урока (а не только по title/description):
+        иначе вопрос про материал, упомянутый в теле, но отсутствующий в
+        метаданных, ошибочно помечается как нерелевантный. Перед запросом
+        срезается breadcrumb-шапка (названия курса/раздела/темы), чтобы LLM
+        не оценивал релевантность по общему контексту курса.
 
         Args:
-            user_question (str): Вопрос пользователя
-            lesson_content (str): Содержание урока (не используется в prompt'е)
-            lesson_data (dict): Метаданные урока
+            user_question (str): Вопрос пользователя.
+            lesson_content (str): HTML-содержание урока.
+            lesson_data (dict): Метаданные урока.
+            course_context (dict | None): Контекст курса для среза шапки.
+            lesson_raw_content (str | None): Сырой текст урока от LLM до
+                CSS/HTML-обёртки. Предпочтительный источник для анализа.
 
         Returns:
             dict: Результат проверки со следующими ключами:
                 - is_relevant (bool): Релевантен ли вопрос
                 - confidence (float): Уверенность в оценке (0-100)
                 - reason (str): Объяснение решения
-                - suggestions (list): Предложения альтернативных источников (если нерелевантен)
+                - suggestions (list): Предложения альтернативных источников
+                  (если нерелевантен)
 
         Raises:
-            Exception: Если не удалось выполнить проверку
+            Exception: Если не удалось выполнить проверку.
         """
         try:
-            # Получаем базовую информацию об уроке
             lesson_title = lesson_data.get("title", "Урок")
             lesson_description = lesson_data.get("description", "Нет описания")
             lesson_keywords = lesson_data.get("keywords", [])
 
-            # ИСПРАВЛЕНО: Не передаем весь контент урока в prompt, чтобы не перегружать контекст
-            # Используем только тему и описание урока для проверки релевантности
+            analysis_source = lesson_raw_content or lesson_content
+            headers = self.extract_lesson_headers(analysis_source)
+            content_for_check = self.prepare_lesson_text_for_analysis(
+                analysis_source,
+                course_context,
+                max_chars=6000,
+                lesson_title=lesson_title,
+            )
+            if headers:
+                outline = "; ".join(headers)
+                content_for_check = f"СТРУКТУРА УРОКА: {outline}\n\n{content_for_check}"
+
+            local_result = self._quick_local_relevance_check(
+                user_question, content_for_check, lesson_data
+            )
+            if local_result is not None:
+                self.logger.info(
+                    "Локальная проверка релевантности: %s",
+                    local_result["is_relevant"],
+                )
+                return local_result
+
+            topic_result = self._topic_based_relevance_check(
+                user_question, lesson_data
+            )
+            if topic_result is not None:
+                self.logger.info(
+                    "Тематическая проверка релевантности: %s",
+                    topic_result["is_relevant"],
+                )
+                return topic_result
 
             prompt = self._build_relevance_prompt(
                 user_question,
                 lesson_title,
                 lesson_description,
                 lesson_keywords,
-                "",  # Пустая строка вместо контента урока
+                content_for_check,
             )
 
             messages = [
@@ -83,11 +152,22 @@ class RelevanceChecker(BaseContentGenerator):
                     "user_question": user_question,
                     "lesson_title": lesson_title,
                     "lesson_description": lesson_description,
+                    "used_raw_content": bool(lesson_raw_content),
+                    "analysis_text_preview": content_for_check[:500],
                 },
             )
 
             relevance_data = json.loads(response_content)
             result = self._extract_relevance_from_response(relevance_data)
+
+            # LLM иногда отвергает базовые темы Python, не упомянутые
+            # в конкретной генерации. Перепроверяем тематически.
+            if not result["is_relevant"] and result.get("confidence", 100) <= 85:
+                topic_result = self._topic_based_relevance_check(
+                    user_question, lesson_data
+                )
+                if topic_result is not None:
+                    return topic_result
 
             self.logger.info(
                 f"Проверка релевантности завершена: {result['is_relevant']} (уверенность: {result['confidence']}%)"
@@ -179,7 +259,7 @@ class RelevanceChecker(BaseContentGenerator):
                 margin: 10px 0;
                 font-family: 'Courier New', monospace;
                 font-size: 14px;
-                line-height: 1.05;
+                line-height: 1.5;
                 border: 2px solid #dee2e6;
             }}
             .qa-answer pre code {{
@@ -284,36 +364,148 @@ class RelevanceChecker(BaseContentGenerator):
         </div>
         """
 
-    def _clean_html_for_analysis(self, content):
-        """
-        Очищает HTML теги для анализа содержания.
+    def _lesson_metadata_blob(self, lesson_data):
+        """Собирает метаданные урока в одну строку для поиска."""
+        if not isinstance(lesson_data, dict):
+            return ""
+        keywords = lesson_data.get("keywords", [])
+        if not isinstance(keywords, list):
+            keywords = [str(keywords)]
+        return " ".join(
+            [
+                str(lesson_data.get("title", "")),
+                str(lesson_data.get("description", "")),
+                " ".join(keywords),
+            ]
+        )
+
+    def _is_python_basics_lesson(self, lesson_data):
+        """True, если урок относится к основам Python."""
+        blob = self._lesson_metadata_blob(lesson_data).lower()
+        return any(
+            marker in blob
+            for marker in ("python", "питон", "основы python", "синтаксис")
+        )
+
+    def _term_in_text(self, term, text):
+        """Проверяет наличие термина с учётом словоформ."""
+        if not term or not text:
+            return False
+        term = term.lower()
+        text = text.lower()
+        if term in text:
+            return True
+        if len(term) >= 4:
+            stem = term[: max(4, len(term) - 2)]
+            if stem in text:
+                return True
+        return False
+
+    def _topic_based_relevance_check(self, user_question, lesson_data):
+        """Тематическая проверка для уроков по основам Python.
 
         Args:
-            content (str): Содержание с HTML
+            user_question (str): Вопрос студента.
+            lesson_data (dict): Метаданные урока.
 
         Returns:
-            str: Очищенное содержание
+            dict | None: Результат, если вопрос относится к базовым темам Python.
         """
-        clean_content = re.sub(r"<[^>]+>", " ", content)
-        clean_content = re.sub(r"\s+", " ", clean_content).strip()
-        return clean_content
+        if not user_question or not self._is_python_basics_lesson(lesson_data):
+            return None
+
+        question_lower = user_question.lower()
+        for stem, label in self._PYTHON_BASICS_STEMS.items():
+            if stem in question_lower:
+                return {
+                    "is_relevant": True,
+                    "confidence": 88,
+                    "reason": (
+                        f"Вопрос относится к базовой теме Python («{label}»), "
+                        f"которая изучается в уроке «{lesson_data.get('title', 'урок')}»."
+                    ),
+                    "suggestions": [],
+                }
+        return None
+
+    def _quick_local_relevance_check(self, user_question, lesson_text, lesson_data=None):
+        """Быстрая проверка: есть ли слова из вопроса в тексте урока.
+
+        Возвращает результат dict, если совпадение найдено.
+        None — если нужна проверка через LLM.
+
+        Args:
+            user_question (str): Вопрос студента.
+            lesson_text (str): Очищенный текст урока.
+            lesson_data (dict | None): Метаданные урока (title, keywords).
+
+        Returns:
+            dict | None: Результат проверки или None для делегирования LLM.
+        """
+        if not user_question:
+            return None
+
+        question_lower = user_question.lower()
+        search_parts = [lesson_text or ""]
+        if lesson_data:
+            search_parts.append(self._lesson_metadata_blob(lesson_data))
+        search_corpus = " ".join(search_parts).lower()
+        if not search_corpus.strip():
+            return None
+
+        stop_words = {
+            "что", "такое", "как", "почему", "зачем", "где", "когда", "кто",
+            "это", "ли", "в", "и", "на", "по", "для", "из", "от", "до", "не",
+            "а", "the", "is", "are", "what", "how", "why", "можно", "нужно",
+            "расскажи", "объясни", "покажи", "пример", "урок", "тема",
+        }
+
+        keywords = re.findall(r"[a-zа-яё0-9_]{3,}", question_lower)
+        keywords = [w for w in keywords if w not in stop_words]
+        if not keywords:
+            return None
+
+        for keyword in keywords:
+            if self._term_in_text(keyword, search_corpus):
+                return {
+                    "is_relevant": True,
+                    "confidence": 95,
+                    "reason": (
+                        f"Термин «{keyword}» связан с темой текущего урока."
+                    ),
+                    "suggestions": [],
+                }
+
+        return None
+
+    def _clean_html_for_analysis(self, content):
+        """Совместимая обёртка над общим хелпером BaseContentGenerator.
+
+        Оставлено, чтобы внешний код, который мог дёргать этот метод,
+        продолжал работать. Новая логика учитывает `<style>/<script>`
+        и комментарии.
+        """
+        return self.clean_lesson_html_for_analysis(content)
 
     def _build_relevance_prompt(
         self, user_question, lesson_title, lesson_description, lesson_keywords, content
     ):
         """
         Создает промпт для проверки релевантности.
-        ИСПРАВЛЕНО: Передаем только тему и описание урока, чтобы не перегружать контекст.
+
+        В промпт включается тело урока (без breadcrumb-шапки и тегов),
+        чтобы решение строилось по фактическому материалу, а не только
+        по метаданным урока.
 
         Args:
-            user_question (str): Вопрос пользователя
-            lesson_title (str): Название урока
-            lesson_description (str): Описание урока
-            lesson_keywords (list): Ключевые слова урока
-            content (str): Содержание урока (не используется в prompt'е)
+            user_question (str): Вопрос пользователя.
+            lesson_title (str): Название урока.
+            lesson_description (str): Описание урока.
+            lesson_keywords (list): Ключевые слова урока.
+            content (str): Очищенный текст урока (без HTML и шапки).
 
         Returns:
-            str: Промпт для API
+            str: Промпт для API.
         """
         keywords_str = (
             ", ".join(lesson_keywords)
@@ -322,39 +514,52 @@ class RelevanceChecker(BaseContentGenerator):
         )
 
         return f"""
-        Проанализируй, насколько вопрос студента релевантен (соответствует) теме урока:
+Проанализируй, насколько вопрос студента релевантен (соответствует) теме урока.
 
-        ИНФОРМАЦИЯ ОБ УРОКЕ:
-        Название урока: {lesson_title}
-        Описание урока: {lesson_description}
-        Ключевые слова: {keywords_str}
+ИНФОРМАЦИЯ ОБ УРОКЕ:
+Название урока: {lesson_title}
+Описание урока: {lesson_description}
+Ключевые слова: {keywords_str}
 
-        ВОПРОС СТУДЕНТА:
-        {user_question}
+ТЕКСТ УРОКА (главный источник для решения):
+{content}
 
-        ЗАДАЧА:
-        Определи, относится ли вопрос к теме урока. Вопрос считается релевантным, если:
-        1. Он касается понятий, терминов или тем, упомянутых в названии или описании урока
-        2. Он связан с практическим применением материала урока
-        3. Он просит уточнения или дополнительной информации по теме урока
-        4. Он касается примеров или случаев использования из области урока
+ВОПРОС СТУДЕНТА:
+{user_question}
 
-        Вопрос НЕ релевантен, если:
-        1. Он касается совершенно других тем или предметных областей
-        2. Он не связан с содержанием урока
-        3. Он касается общих вопросов жизни, не связанных с обучением
-        4. Он относится к техническим проблемам системы
+ЗАДАЧА:
+Определи, относится ли вопрос к теме урока. Опирайся в первую очередь на
+ТЕКСТ УРОКА: если понятие или термин из вопроса встречается/разбирается в
+тексте урока — вопрос РЕЛЕВАНТЕН, даже если этого нет в названии или
+описании.
 
-        ВЕРНИ РЕЗУЛЬТАТ В ФОРМАТЕ JSON:
-        {{
-            "is_relevant": true/false,
-            "confidence": число от 0 до 100,
-            "reason": "Подробное объяснение почему вопрос релевантен/нерелевантен",
-            "suggestions": ["Предложение 1", "Предложение 2", "Предложение 3"]
-        }}
+Вопрос считается релевантным, если:
+1. Понятие/термин из вопроса упоминается или разбирается в тексте урока.
+2. Вопрос касается практического применения материала урока.
+3. Вопрос просит уточнения или дополнительной информации по теме урока.
+4. Вопрос касается примеров или случаев использования из области урока.
 
-        Если вопрос нерелевантен, в поле suggestions укажи альтернативные источники информации (поисковики, специализированные ресурсы, форумы и т.д.).
-        """
+Вопрос НЕ релевантен, если:
+1. Он касается совершенно других тем или предметных областей,
+   не упомянутых ни в тексте урока, ни в его метаданных.
+2. Он касается общих вопросов жизни, не связанных с обучением.
+3. Он относится к техническим проблемам системы (а не к материалу).
+
+ВАЖНО: лучше склониться к «релевантен», если есть разумные основания
+(термин упомянут хотя бы кратко). Не отбрасывай вопрос только потому,
+что термин не вынесен в название или описание урока.
+
+ВЕРНИ РЕЗУЛЬТАТ В ФОРМАТЕ JSON:
+{{
+    "is_relevant": true/false,
+    "confidence": число от 0 до 100,
+    "reason": "Подробное объяснение почему вопрос релевантен/нерелевантен",
+    "suggestions": ["Предложение 1", "Предложение 2", "Предложение 3"]
+}}
+
+Если вопрос нерелевантен, в поле suggestions укажи альтернативные источники
+информации (поисковики, специализированные ресурсы, форумы и т.д.).
+"""
 
     def _extract_relevance_from_response(self, relevance_data):
         """

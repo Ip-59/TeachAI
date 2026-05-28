@@ -1,219 +1,148 @@
-# TeachAI - Интеллектуальная система обучения
+# TeachAI
 
-Система на основе OpenAI API для создания персонализированных учебных курсов с интерактивными уроками, примерами и тестами.
+Интерактивная система обучения программированию на Python в среде **Jupyter Notebook** с генерацией учебного контента через **OpenAI API**. Пользователь проходит персонализированный курс: план строится LLM, уроки и проверки знаний создаются по запросу, прогресс сохраняется локально.
 
-## 🎯 Основные возможности
+> **Полное описание проекта** (цели, архитектура, pipeline AI-учителя, модули): [ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md](ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md)  
+> **English version**: [DESCRIPTION.md](DESCRIPTION.md)
 
-- **Генерация персонализированных курсов** - автоматическое создание учебного плана на основе выбранной темы
-- **Интерактивные уроки** - контент, адаптированный к стилю общения пользователя
-- **Практические примеры** - автоматически генерируемые примеры кода и задания
-- **Контрольные задания** - тесты для проверки усвоения материала
-- **Отслеживание прогресса** - сохранение статуса обучения и оценок
-- **Поддержка Jupyter Notebook** - интерактивный интерфейс в окружении Jupyter
+---
 
-## 🚀 Быстрый старт
+## Назначение
+
+TeachAI реализует роль **AI-учителя**: ведёт обучение по выбранному курсу из каталога, генерирует текст уроков, отвечает на вопросы в рамках темы, предлагает примеры и углублённые объяснения, проводит тесты и практические контрольные задания с автоматической проверкой кода.
+
+Система **не** дообучает собственную модель и **не** использует внешнюю БД: состояние и кэш уроков хранятся в `data/state.json`, логи — в `logs/`.
+
+---
+
+## Быстрый старт
 
 ### Требования
 
-- Python 3.10+
-- Jupyter Notebook или JupyterLab
-- API ключ OpenAI
+- Python 3 (зависимости — в `requirements.txt`)
+- Jupyter / IPython kernel
+- Файл `.env` с ключом OpenAI и **обязательным** прокси (см. `config.py`)
 
 ### Установка
 
-1. Клонируйте репозиторий:
-```bash
-git clone https://github.com/your-username/TeachAI.git
-cd TeachAI
-```
-
-2. Создайте виртуальное окружение:
-```bash
-python -m venv venv_home
-source venv_home/Scripts/activate  # Windows
-# или
-source venv_home/bin/activate      # Linux/Mac
-```
-
-3. Установите зависимости:
 ```bash
 pip install -r requirements.txt
-```
-
-4. Создайте файл `.env`:
-```bash
-cp .env.sample .env
-```
-
-5. Добавьте ваш OpenAI API ключ в файл `.env`:
-```
-OPENAI_API_KEY=your_api_key_here
+cp .env.sample .env   # если образец создан ConfigManager
+# Заполните OPENAI_API_KEY и OPENAI_PROXY (или HTTPS_PROXY)
 ```
 
 ### Запуск
 
-Откройте Jupyter Notebook и выполните:
+**Рекомендуемый способ** — notebook `TeachAI.ipynb`:
 
 ```python
-from engine import TeachAIEngine
-
-# Создаем и запускаем систему
-engine = TeachAIEngine()
-interface_element = engine.start()
-
-if interface_element:
-    display(interface_element)
+from run_teachai import start_jupyter
+start_jupyter()
 ```
 
-Или используйте предготовленный ноутбук [TeachAI.ipynb](TeachAI.ipynb)
+**Альтернатива** — CLI:
 
-## 📋 Архитектура проекта
-
-### Основные компоненты
-
-- **[engine.py](engine.py)** - главный класс системы, координирует все компоненты
-- **[config.py](config.py)** - управление конфигурацией и переменными окружения
-- **[state_manager.py](state_manager.py)** - сохранение и загрузка состояния системы
-- **[content_generator.py](content_generator.py)** - фасад для генерации контента через OpenAI
-- **[interface.py](interface.py)** - создание интерактивного UI с ipywidgets
-- **[assessment.py](assessment.py)** - модуль проверки знаний и оценивания
-- **[startup_dashboard.py](startup_dashboard.py)** - дашборд статистики обучения
-
-### Специализированные генераторы
-
-- **[course_plan_generator.py](course_plan_generator.py)** - генерация плана курса
-- **[lesson_generator.py](lesson_generator.py)** - создание содержания уроков
-- **[examples_generator.py](examples_generator.py)** - генерация примеров кода
-- **[assessment_generator.py](assessment_generator.py)** - создание тестовых вопросов
-- **[qa_generator.py](qa_generator.py)** - генерация вопросов и ответов
-- **[concepts_generator.py](concepts_generator.py)** - выделение ключевых концепций
-- **[control_tasks_generator.py](control_tasks_generator.py)** - создание контрольных заданий
-
-### Менеджеры состояния
-
-- **[user_profile_manager.py](user_profile_manager.py)** - управление профилем пользователя
-- **[learning_progress_manager.py](learning_progress_manager.py)** - отслеживание прогресса обучения
-- **[course_data_manager.py](course_data_manager.py)** - управление данными курса
-
-### UI интерфейсы
-
-- **[setup_interface.py](setup_interface.py)** - интерфейс первоначальной настройки
-- **[lesson_interface.py](lesson_interface.py)** - отображение урока
-- **[assessment_interface.py](assessment_interface.py)** - интерфейс теста
-- **[completion_interface.py](completion_interface.py)** - экран завершения
-
-## 🔧 Конфигурация
-
-### Переменные окружения
-
-```env
-OPENAI_API_KEY=sk-...       # API ключ OpenAI (обязательный)
-LLM_MODEL=gpt-4o-mini       # Модель по умолчанию (gpt-4o — для сложных задач)
-OPENAI_PROXY=http://...     # Прокси (обязательный)
+```bash
+python run_teachai.py
 ```
 
-### Стили общения
-
-Система поддерживает несколько стилей общения:
-
-- **friendly** (по умолчанию) - дружелюбный, с простыми объяснениями
-- **formal** - формальный, академический стиль
-- **casual** - непринужденный, разговорный
-- **brief** - краткий, только ключевая информация
-
-## 📁 Структура файлов
-
-```
-TeachAI/
-├── engine.py                   # Главный класс системы
-├── config.py                   # Конфигурация
-├── state_manager.py            # Управление состоянием
-├── logger.py                   # Логирование
-│
-├── Генераторы контента:
-│   ├── content_generator.py    # Фасад для генерации контента
-│   ├── course_plan_generator.py
-│   ├── lesson_generator.py
-│   ├── examples_generator.py
-│   ├── assessment_generator.py
-│   └── ...
-│
-├── Интерфейсы:
-│   ├── interface.py            # Главный интерфейс
-│   ├── setup_interface.py
-│   ├── lesson_interface.py
-│   ├── assessment_interface.py
-│   └── ...
-│
-├── Менеджеры:
-│   ├── user_profile_manager.py
-│   ├── learning_progress_manager.py
-│   └── course_data_manager.py
-│
-├── Важные документы:
-│   ├── ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md   # Полное описание проекта
-│   ├── ОТВЕТ_КУРАТОРУ.md              # О подходе к разработке
-│   └── README.md                      # Этот файл
-│
-├── data/                       # Данные приложения (git ignored)
-├── logs/                       # Логи системы (git ignored)
-├── doc/                        # Отчеты разработки (git ignored)
-├── docs/                       # Техническая документация (git ignored)
-│
-├── requirements.txt            # Зависимости Python
-├── TeachAI.ipynb              # Основной notebook для запуска
-└── .gitignore                 # Исключения из git
-```
-
-## 💻 Зависимости
-
-Основные библиотеки:
-
-- `openai` - OpenAI Python API
-- `ipywidgets` - интерактивные виджеты для Jupyter
-- `python-dotenv` - управление переменными окружения
-- `jupyter` - Jupyter Notebook/Lab
-
-Полный список см. в [requirements.txt](requirements.txt)
-
-## 📚 Документация
-
-### Основная документация
-
-- **[ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md](ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md)** - подробное описание проекта, архитектуры и реализации (1000+ строк)
-- **[ОТВЕТ_КУРАТОРУ.md](ОТВЕТ_КУРАТОРУ.md)** - объяснение подхода к разработке и использования GPT без дообучения
-
-### Дополнительные материалы
-
-Папка `doc/` (не включена в репозиторий) содержит:
-- Отчеты о разработке
-- Логи сессий
-- История исправлений
-
-## 🔒 Безопасность
-
-- **Никогда** не коммитьте файл `.env` с API ключом
-- API ключи автоматически скрыты в логах (показывается только начало)
-- Используйте `.gitignore` для исключения чувствительных файлов
-
-## 📝 Лицензия
-
-[Добавьте информацию о лицензии]
-
-## 👤 Автор
-
-[Ваше имя/организация]
-
-## 🤝 Внесение вклада
-
-Приветствуются pull requests. Для крупных изменений сначала откройте issue для обсуждения.
-
-## 📞 Поддержка
-
-Для сообщения об ошибках и предложений используйте [Issues](https://github.com/your-username/TeachAI/issues)
+Точка входа: `run_teachai.py` → `TeachAIEngine` (`engine.py`).
 
 ---
 
-**Статус проекта:** Активная разработка
+## Каталог курсов
 
-**Последнее обновление:** 25 января 2026 г.
+Пять предметных направлений заданы в `courses.json`:
+
+| ID | Название |
+|----|----------|
+| `python-basics` | Основы Python |
+| `data-analysis` | Анализ данных с Python |
+| `machine-learning` | Введение в машинное обучение |
+| `web-development` | Веб-разработка на Python (Flask) |
+| `python-for-finance` | Python для финансов |
+
+Для курсов в `requirements.txt` указаны библиотеки (pandas, scikit-learn, TensorFlow, Flask, yfinance и др.) — они нужны для **выполнения** сгенерированных примеров и контрольных заданий, а не для работы ядра системы.
+
+---
+
+## Архитектура (кратко)
+
+```
+TeachAI.ipynb / run_teachai.py
+        │
+        ▼
+  TeachAIEngine (engine.py)
+        │
+        ├── ConfigManager (.env, директории logs/, data/)
+        ├── StateManager (data/state.json)
+        ├── ContentGenerator → специализированные генераторы (OpenAI)
+        ├── Assessment (тесты)
+        ├── Logger (logs/*.json, lesson_history.md)
+        ├── StartupDashboard (повторный запуск)
+        └── UserInterface (фасад)
+                ├── SetupInterface
+                ├── LessonInterface → Display / Navigation / Interaction
+                ├── AssessmentInterface
+                └── CompletionInterface
+```
+
+Подробные диаграммы и сценарии — в [ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md](ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md).
+
+---
+
+## Завершение урока (факты из кода)
+
+Урок считается **завершённым**, если (`learning_progress_manager.py`):
+
+1. Оценка теста **> 40%**, **и**
+2. Контрольное задание выполнено верно (`control_tasks` в state),
+
+**или** урок отмечен принудительно (`lesson_completion_status`).
+
+---
+
+## Структура репозитория
+
+| Путь | Назначение |
+|------|------------|
+| `engine.py` | Инициализация и запуск системы |
+| `interface.py`, `*_interface.py` | UI на `ipywidgets` |
+| `content_generator.py`, `*_generator.py` | Запросы к OpenAI |
+| `content_utils.py` | Базовый клиент API, стили, подготовка текста урока |
+| `content_formatter_final.py`, `content_renderer.py` | HTML/Markdown/LaTeX |
+| `state_manager.py`, `*_manager.py` | Состояние и прогресс |
+| `control_tasks_*.py`, `result_checker.py` | Практические задания |
+| `interactive_cell_*.py` | Виджет редактора кода |
+| `courses.json` | Статический каталог курсов |
+| `data/state.json` | Состояние пользователя (создаётся при работе) |
+| `logs/` | Журналы активности |
+| `debug_responses/` | Отладочные ответы LLM (при генерации) |
+| `archive/` | Устаревшие notebook и презентации (не входят в runtime) |
+
+---
+
+## Конфигурация
+
+| Переменная | Назначение |
+|------------|------------|
+| `OPENAI_API_KEY` | Ключ API (обязательно) |
+| `OPENAI_PROXY` / `HTTPS_PROXY` / `HTTP_PROXY` | Прокси (обязательно, `config.py`) |
+| `LLM_MODEL` | Модель чата (по умолчанию `gpt-4o-mini`, `content_utils.py`) |
+| `VALIDATION_MODEL` | Модель для валидации контрольных заданий (`control_tasks_generator.py`) |
+
+---
+
+## Различие файлов документации
+
+| Файл | Аудитория | Содержание |
+|------|-----------|------------|
+| **README.md** (этот файл) | Разработчик, преподаватель | Краткий обзор, установка, структура |
+| **ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md** | Комиссия, рецензент | Полный отчёт на русском по коду |
+| **DESCRIPTION.md** | Международная аудитория | Тот же отчёт на английском |
+
+---
+
+## Лицензия и авторство
+
+Уточняйте у владельца репозитория — в анализируемых `.py` файлах отдельная лицензия не зафиксирована.

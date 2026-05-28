@@ -58,15 +58,25 @@ class ExamplesGeneration(BaseContentGenerator):
                 else str(lesson_keywords)
             )
 
+            content_for_prompt = self.prepare_lesson_text_for_analysis(
+                lesson_content,
+                course_context=course_context,
+                max_chars=6000,
+                lesson_title=lesson_title,
+            )
+
             course_subject = self._determine_course_subject(
-                course_context, lesson_content, lesson_keywords
+                course_context,
+                content_for_prompt,
+                lesson_keywords,
+                lesson_data=lesson_data,
             )
 
             prompt = self._build_enhanced_examples_prompt(
                 lesson_title,
                 lesson_description,
                 keywords_str,
-                lesson_content,
+                content_for_prompt,
                 communication_style,
                 course_subject,
             )
@@ -146,74 +156,96 @@ class ExamplesGeneration(BaseContentGenerator):
         return examples
 
     def _determine_course_subject(
-        self, course_context, lesson_content, lesson_keywords
+        self, course_context, lesson_content, lesson_keywords, lesson_data=None
     ):
-        """
-        НОВОЕ: Определяет предметную область курса для обеспечения релевантности примеров.
+        """Определяет предметную область для примеров по текущему уроку.
 
-        Args:
-            course_context (dict): Контекст курса
-            lesson_content (str): Содержание урока
-            lesson_keywords (list): Ключевые слова урока
-
-        Returns:
-            str: Предметная область курса
+        Приоритет: метаданные урока → тело урока → название курса.
         """
-        # Если передан контекст курса
+        lesson_data = lesson_data or {}
+        lesson_title = lesson_data.get("title", "").lower()
+        lesson_description = lesson_data.get("description", "").lower()
+        topic_title = ""
+        if course_context and isinstance(course_context, dict):
+            topic_title = course_context.get("topic_title", "").lower()
+
+        keywords_str = ""
+        if isinstance(lesson_keywords, list):
+            keywords_str = " ".join(str(k) for k in lesson_keywords).lower()
+        elif lesson_keywords:
+            keywords_str = str(lesson_keywords).lower()
+
+        lesson_signals = " ".join(
+            [lesson_title, lesson_description, topic_title, keywords_str]
+        )
+
+        def _match_subject(text: str):
+            text = text.lower()
+            ml_markers = [
+                "sklearn",
+                "scikit",
+                "tensorflow",
+                "keras",
+                "нейрон",
+                "классификац",
+                "регресс",
+                "машинн",
+                "machine learning",
+                "mnist",
+                "iris",
+                "библиотек",
+            ]
+            data_markers = [
+                "pandas",
+                "numpy",
+                "matplotlib",
+                "dataframe",
+                "анализ данных",
+                "data analysis",
+                "визуализац",
+            ]
+            web_markers = ["flask", "django", "fastapi", "веб", "web", "api", "сайт"]
+            basics_markers = [
+                "основы python",
+                "синтаксис",
+                "переменн",
+                "цикл",
+                "список",
+                "словар",
+                "функци",
+                "условн",
+                "тип данных",
+                "print(",
+                "def ",
+            ]
+
+            if any(m in text for m in ml_markers):
+                return "машинное обучение с Python"
+            if any(m in text for m in data_markers):
+                return "анализ данных с Python"
+            if any(m in text for m in web_markers):
+                return "веб-разработка на Python"
+            if any(m in text for m in basics_markers):
+                return "программирование на Python"
+            return None
+
+        subject = _match_subject(lesson_signals)
+        if subject:
+            return subject
+
+        content_lower = (lesson_content or "").lower()
+        subject = _match_subject(content_lower)
+        if subject:
+            return subject
+
         if course_context and isinstance(course_context, dict):
             course_title = course_context.get("course_title", "").lower()
-            if "python" in course_title:
-                return "программирование на Python"
-            elif "анализ данных" in course_title or "data" in course_title:
-                return "анализ данных с Python"
-            elif (
-                "машинное обучение" in course_title
-                or "machine learning" in course_title
-            ):
-                return "машинное обучение с Python"
-            elif "веб" in course_title or "web" in course_title:
-                return "веб-разработка на Python"
-            elif "финанс" in course_title:
+            subject = _match_subject(course_title)
+            if subject:
+                return subject
+            if "финанс" in course_title:
                 return "программирование на Python для финансов"
 
-        # Анализируем содержание урока
-        content_lower = lesson_content.lower()
-        if any(
-            keyword in content_lower
-            for keyword in [
-                "python",
-                "def ",
-                "import ",
-                "print(",
-                "list",
-                "dict",
-                "for i in",
-            ]
-        ):
-            return "программирование на Python"
-        elif any(
-            keyword in content_lower
-            for keyword in ["pandas", "numpy", "matplotlib", "dataframe"]
-        ):
-            return "анализ данных с Python"
-        elif any(
-            keyword in content_lower
-            for keyword in ["sklearn", "tensorflow", "keras", "модель", "алгоритм"]
-        ):
-            return "машинное обучение с Python"
-        elif any(
-            keyword in content_lower
-            for keyword in ["flask", "django", "api", "веб", "сайт"]
-        ):
-            return "веб-разработка на Python"
-
-        # Анализируем ключевые слова
-        if isinstance(lesson_keywords, list):
-            keywords_str = " ".join(lesson_keywords).lower()
-            if "python" in keywords_str:
-                return "программирование на Python"
-
-        # По умолчанию
         return "программирование на Python"
 
     def _apply_visible_styles(self, examples, communication_style):
@@ -290,8 +322,9 @@ class ExamplesGeneration(BaseContentGenerator):
                 margin: 10px 0;
                 font-family: 'Courier New', monospace;
                 font-size: 14px;
-                line-height: 1.05;
+                line-height: 1.5;
                 border: 2px solid #dee2e6;
+                white-space: pre;
             }
             .examples-visible pre code {
                 background: none;
@@ -354,14 +387,16 @@ class ExamplesGeneration(BaseContentGenerator):
         )
 
         return f"""
-Создай РОВНО 3 практических примера на Python для урока по теме "{course_subject}".
+Создай РОВНО 3 практических примера на Python СТРОГО по материалу урока «{lesson_title}».
+Предметная область курса (контекст): {course_subject}.
+Примеры должны иллюстрировать ТОЛЬКО то, что разбирается в этом уроке, а не другие темы курса.
 
 Название урока: {lesson_title}
 Описание урока: {lesson_description}
 Ключевые слова: {keywords_str}
 
 Содержание урока:
-{lesson_content[:3000]}
+{lesson_content}
 
 Стиль пояснений: {style_description}
 
@@ -371,8 +406,10 @@ class ExamplesGeneration(BaseContentGenerator):
 3. Поле description — в настоящем времени: «Создаёт переменные…», «Суммирует список…».
 4. Код должен работать при запуске (без внешних файлов, без input()).
 5. Примеры должны иллюстрировать концепции ИМЕННО из lesson_content выше.
-6. Для ML-уроков: random_state=42, правильные импорты sklearn (from sklearn.datasets import ...).
-7. НЕ используй pd.read_csv(), open('file.txt') и другие внешние файлы.
+6. Для ML-уроков: random_state=42, импорты sklearn (from sklearn.datasets import load_iris).
+7. НЕ используй make_classification с n_features меньше 5 — лучше load_iris().
+8. Для TensorFlow/Keras — только простой Sequential; если сомневаешься, используй sklearn.neural_network.MLPClassifier.
+9. НЕ используй pd.read_csv(), open('file.txt') и другие внешние файлы.
 
 Формат ответа — ТОЛЬКО JSON:
 {{

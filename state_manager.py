@@ -320,14 +320,15 @@ class StateManager:
             self.logger.error(f"Ошибка при сохранении результата контрольного задания: {str(e)}")
 
 
-    def save_lesson_content(self, lesson_id, lesson_title, lesson_content):
+    def save_lesson_content(self, lesson_id, lesson_title, lesson_content, raw_content=None):
         """
         Сохраняет содержание урока в постоянное хранилище.
         
         Args:
             lesson_id (str): ID урока
             lesson_title (str): Заголовок урока
-            lesson_content (str): Содержание урока
+            lesson_content (str): Отформатированное HTML-содержание урока
+            raw_content (str, optional): Сырой текст урока от LLM до форматирования
             
         Returns:
             bool: True если сохранение прошло успешно, иначе False
@@ -337,12 +338,16 @@ class StateManager:
             if "lesson_content_cache" not in self.state:
                 self.state["lesson_content_cache"] = {}
             
-            # Сохраняем содержание урока
-            self.state["lesson_content_cache"][lesson_id] = {
+            cache_entry = {
                 "title": lesson_title,
                 "content": lesson_content,
-                "cached_at": datetime.now().isoformat()
+                "cached_at": datetime.now().isoformat(),
             }
+            if raw_content:
+                cache_entry["raw_content"] = raw_content
+
+            # Сохраняем содержание урока
+            self.state["lesson_content_cache"][lesson_id] = cache_entry
             
             # Сохраняем состояние
             success = self.save_state()
@@ -372,10 +377,13 @@ class StateManager:
             
             if cached_lesson:
                 self.logger.info(f"Найдено кэшированное содержание урока {lesson_id}")
-                return {
+                result = {
                     "title": cached_lesson["title"],
-                    "content": cached_lesson["content"]
+                    "content": cached_lesson["content"],
                 }
+                if cached_lesson.get("raw_content"):
+                    result["raw_content"] = cached_lesson["raw_content"]
+                return result
             else:
                 self.logger.debug(f"Кэшированное содержание урока {lesson_id} не найдено")
                 return None

@@ -273,17 +273,45 @@ class LessonNavigation:
                     from examples_generator import ExamplesGenerator
                     from examples_display import build_examples_widgets
 
-                    examples_generator = ExamplesGenerator(
-                        self.lesson_interface.content_generator.api_key
+                    lesson_id = self.lesson_interface.current_lesson_id
+                    lesson_title = (
+                        self.lesson_interface.current_lesson_data or {}
+                    ).get("title", "?")
+                    self.logger.info(
+                        f"Генерация примеров для урока {lesson_id} «{lesson_title}»"
                     )
-                    examples_data = examples_generator.generate_examples_data(
-                        lesson_data=self.lesson_interface.current_lesson_data,
-                        lesson_content=self.lesson_interface.current_lesson_content,
-                        communication_style=self.lesson_interface.current_course_info[
-                            "user_profile"
-                        ]["communication_style"],
-                        course_context=self.lesson_interface.current_course_info,
+
+                    examples_key = lesson_id
+                    cached = (
+                        self.lesson_interface.current_lesson_examples
+                        if self.lesson_interface.current_lesson_examples_key
+                        == examples_key
+                        else None
                     )
+
+                    if cached:
+                        self.logger.info(
+                            f"Используем кэшированные примеры для {examples_key}"
+                        )
+                        examples_data = cached
+                    else:
+                        examples_generator = ExamplesGenerator(
+                            self.lesson_interface.content_generator.api_key
+                        )
+                        lesson_content = (
+                            self.lesson_interface.current_lesson_raw_content
+                            or self.lesson_interface.current_lesson_content
+                        )
+                        examples_data = examples_generator.generate_examples_data(
+                            lesson_data=self.lesson_interface.current_lesson_data,
+                            lesson_content=lesson_content,
+                            communication_style=self.lesson_interface.current_course_info[
+                                "user_profile"
+                            ]["communication_style"],
+                            course_context=self.lesson_interface.current_course_info,
+                        )
+                        self.lesson_interface.current_lesson_examples = examples_data
+                        self.lesson_interface.current_lesson_examples_key = examples_key
 
                     widgets_to_display = build_examples_widgets(examples_data, cell_adapter)
 
@@ -344,7 +372,10 @@ class LessonNavigation:
                     task_interface = (
                         self.lesson_interface.control_tasks_interface.show_control_task(
                             lesson_data=self.lesson_interface.current_lesson_data,
-                            lesson_content=self.lesson_interface.current_lesson_content,
+                            lesson_content=(
+                                self.lesson_interface.current_lesson_raw_content
+                                or self.lesson_interface.current_lesson_content
+                            ),
                         )
                     )
 

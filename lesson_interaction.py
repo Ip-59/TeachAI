@@ -73,8 +73,10 @@ class LessonInteraction:
                         ]["communication_style"],
                     )
 
-                    # Создаем виджет с объяснением
-                    explanation_html = widgets.HTML(value=explanation)
+                    # Создаем виджет с объяснением (таблицы/LaTeX — на случай старого HTML)
+                    from content_renderer import enhance_content
+
+                    explanation_html = widgets.HTML(value=enhance_content(explanation))
 
                     # Кнопка закрытия
                     close_button = widgets.Button(
@@ -105,13 +107,25 @@ class LessonInteraction:
 
             def on_concepts_explanation_clicked(b):
                 try:
-                    # Генерируем ключевые понятия
-                    concepts = self.lesson_interface.content_generator.generate_concepts(
-                        lesson_content=self.lesson_interface.current_lesson_content,
-                        communication_style=self.lesson_interface.current_course_info[
-                            "user_profile"
-                        ]["communication_style"],
-                    )
+                    # Кэш в памяти: если понятия для этого урока уже извлекали —
+                    # не дёргаем LLM повторно (это и быстрее, и стабильнее
+                    # с точки зрения навигации «Назад/Вперёд»).
+                    cached = self.lesson_interface.current_lesson_concepts
+                    if cached:
+                        concepts = cached
+                    else:
+                        concepts = (
+                            self.lesson_interface.content_generator.generate_concepts(
+                                lesson_content=self.lesson_interface.current_lesson_content,
+                                communication_style=self.lesson_interface.current_course_info[
+                                    "user_profile"
+                                ]["communication_style"],
+                                lesson_data=self.lesson_interface.current_lesson_data,
+                                course_context=self.lesson_interface.current_course_info,
+                            )
+                        )
+                        # Сохраняем результат для последующих кликов
+                        self.lesson_interface.current_lesson_concepts = concepts
 
                     # Создаем список понятий
                     concepts_list = []
@@ -185,19 +199,55 @@ class LessonInteraction:
 
     def show_concept_explanation(self, concept):
         """
-        Показывает объяснение конкретного понятия.
+        Показывает подробное объяснение конкретного понятия.
+
+        Запрашивает у LLM развёрнутое объяснение с привязкой к материалу
+        текущего урока. Без этого пользователь видел только короткую
+        аннотацию (1-2 предложения) из списка понятий, что не является
+        "подробным объяснением".
 
         Args:
-            concept (dict): Данные о понятии
+            concept (dict): Данные о понятии (title, description) либо
+                (name, brief_description) — поддерживаются оба формата.
         """
         try:
-            # Создаем заголовок
-            title_html = widgets.HTML(value=f"<h3>🔑 {concept['title']}</h3>")
+            concept_title = concept.get("title") or concept.get("name") or "Понятие"
+            concept_brief = (
+                concept.get("description") or concept.get("brief_description") or ""
+            )
 
-            # Создаем описание понятия
-            description_html = widgets.HTML(value=f"<p>{concept['description']}</p>")
+            title_html = widgets.HTML(value=f"<h3>🔑 {concept_title}</h3>")
+            loading_html = widgets.HTML(
+                value="<p><strong>Генерация подробного объяснения понятия...</strong></p>"
+            )
+            # Показываем loader сразу, чтобы пользователь видел реакцию на клик
+            self.lesson_interface.explain_container.children = [title_html, loading_html]
 
-            # Кнопка "Назад к понятиям"
+            try:
+                explanation_html_value = (
+                    self.lesson_interface.content_generator.explain_concept(
+                        concept={
+                            "name": concept_title,
+                            "brief_description": concept_brief,
+                        },
+                        lesson_content=self.lesson_interface.current_lesson_content,
+                        communication_style=self.lesson_interface.current_course_info[
+                            "user_profile"
+                        ]["communication_style"],
+                    )
+                )
+                explanation_widget = widgets.HTML(value=explanation_html_value)
+            except Exception as exc:
+                self.logger.error(f"Ошибка при генерации объяснения понятия: {exc}")
+                explanation_widget = widgets.HTML(
+                    value=(
+                        "<p style='color:#721c24; background-color:#f8d7da; "
+                        "padding:10px; border-radius:5px;'>"
+                        f"Не удалось сгенерировать подробное объяснение: {exc}<br>"
+                        f"Краткое описание: {concept_brief}</p>"
+                    )
+                )
+
             back_button = widgets.Button(
                 description="← Назад к понятиям",
                 button_style="warning",
@@ -205,14 +255,25 @@ class LessonInteraction:
             )
 
             def on_back_clicked(b):
-                # Возвращаемся к списку понятий
+                # Возвращаемся к списку понятий — используем кэш, чтобы не
+                # тратить токены LLM и не выдавать студенту другой список
+                # понятий при каждом возврате.
                 try:
-                    concepts = self.lesson_interface.content_generator.generate_concepts(
-                        lesson_content=self.lesson_interface.current_lesson_content,
-                        communication_style=self.lesson_interface.current_course_info[
-                            "user_profile"
-                        ]["communication_style"],
-                    )
+                    cached = self.lesson_interface.current_lesson_concepts
+                    if cached:
+                        concepts = cached
+                    else:
+                        concepts = (
+                            self.lesson_interface.content_generator.generate_concepts(
+                                lesson_content=self.lesson_interface.current_lesson_content,
+                                communication_style=self.lesson_interface.current_course_info[
+                                    "user_profile"
+                                ]["communication_style"],
+                                lesson_data=self.lesson_interface.current_lesson_data,
+                                course_context=self.lesson_interface.current_course_info,
+                            )
+                        )
+                        self.lesson_interface.current_lesson_concepts = concepts
 
                     concepts_list = []
                     for concept_data in concepts:
@@ -267,9 +328,9 @@ class LessonInteraction:
 
             close_button.on_click(on_close_clicked)
 
-            # Создаем контейнер
+            # Создаём контейнер с подробным LLM-объяснением (а не с краткой аннотацией)
             concept_container = widgets.VBox(
-                [title_html, description_html, back_button, close_button],
+                [title_html, explanation_widget, back_button, close_button],
                 layout=widgets.Layout(
                     width="100%",
                     padding="20px",
@@ -360,11 +421,16 @@ class LessonInteraction:
 
                     self.logger.info(f"Счетчик вопросов обновлен: {questions_count}")
 
-                    # Проверяем релевантность вопроса
+                    # Проверяем релевантность вопроса.
+                    # Передаём course_context, чтобы из тела урока была срезана
+                    # breadcrumb-шапка и LLM учитывал именно материал урока
+                    # (а не название курса/раздела).
                     relevance_result = self.lesson_interface.content_generator.check_question_relevance(
                         question,
                         self.lesson_interface.current_lesson_content,
                         self.lesson_interface.current_lesson_data,
+                        course_context=self.lesson_interface.current_course_info,
+                        lesson_raw_content=self.lesson_interface.current_lesson_raw_content,
                     )
 
                     self.logger.info(f"Релевантность вопроса: {relevance_result}")
@@ -377,7 +443,7 @@ class LessonInteraction:
                                     border-radius: 8px; border: 1px solid #ffeaa7;'>
                             <h4>⚠️ Вопрос не связан с уроком</h4>
                             <p><strong>Ваш вопрос:</strong> {question}</p>
-                            <p><strong>Причина:</strong> {relevance_result.get('explanation', 'Вопрос не относится к теме урока')}</p>
+                            <p><strong>Причина:</strong> {relevance_result.get('reason', 'Вопрос не относится к теме урока')}</p>
                             <p><strong>Рекомендация:</strong> Задайте вопрос, связанный с содержанием урока.</p>
                         </div>
                         """

@@ -9,8 +9,7 @@ github-key.ssh.pub
 # Git
 .git/
 
-# Архивы и временные папки
-archive/
+# Временные папки синхронизации
 .tmp.drivedownload/
 .tmp.driveupload/
 

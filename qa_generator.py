@@ -181,7 +181,7 @@ class QAGenerator(BaseContentGenerator):
             margin: 10px 0;
             font-family: 'Courier New', monospace;
             font-size: 14px;
-            line-height: 1.05;
+            line-height: 1.5;
             border: 2px solid #dee2e6;
         }
         .qa-answer pre code {

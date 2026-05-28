@@ -107,8 +107,17 @@ class LessonUtils:
         try:
             lesson_interface.cached_lesson_content = None
             lesson_interface.cached_lesson_title = None
+            lesson_interface.cached_lesson_raw_content = None
             lesson_interface.current_lesson_cache_key = None
-            self.logger.info("Кэш урока очищен")
+            lesson_interface.current_lesson_data = None
+            lesson_interface.current_lesson_content = None
+            lesson_interface.current_lesson_raw_content = None
+            lesson_interface.current_lesson_id = None
+            lesson_interface.current_course_info = None
+            lesson_interface.current_lesson_concepts = None
+            lesson_interface.current_lesson_examples = None
+            lesson_interface.current_lesson_examples_key = None
+            self.logger.info("Кэш урока и сессионное состояние очищены")
         except Exception as e:
             self.logger.error(f"Ошибка при очистке кэша урока: {str(e)}")
 

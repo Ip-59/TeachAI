@@ -85,10 +85,18 @@ class LessonGenerator(BaseContentGenerator):
             )
 
             # ИСПРАВЛЕНО: Используем единый ContentFormatter для форматирования
-            formatted_content = self.content_formatter.format_lesson_content(lesson_content, lesson_title)
+            formatted_content = self.content_formatter.format_lesson_content(
+                lesson_content, lesson_title
+            )
 
-            # Создаем результат
-            result = {"title": lesson_title, "content": formatted_content}
+            # Сохраняем и сырой текст от LLM (до CSS/HTML-обёртки) — он нужен
+            # для проверки релевантности, ключевых понятий и QA, чтобы CSS
+            # форматтера не попадал в промпт вместо материала урока.
+            result = {
+                "title": lesson_title,
+                "content": formatted_content,
+                "raw_content": lesson_content,
+            }
 
             self.logger.info(f"Урок '{lesson_title}' успешно сгенерирован")
             return result

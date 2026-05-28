@@ -14,6 +14,7 @@ from typing import Any, Dict, List
 
 import ipywidgets as widgets
 
+from examples_code_fixes import sanitize_examples
 from examples_html_utils import is_stub_only_description, looks_like_python_code
 
 
@@ -90,6 +91,8 @@ def build_examples_widgets(
             )
         )
         return widgets_to_display
+
+    examples_data = sanitize_examples(examples_data)
 
     rendered_count = 0
     for index, example in enumerate(examples_data, start=1):

@@ -56,12 +56,24 @@ class LessonInterface:
         # Добавляем хранилище данных для интерактивных функций
         self.current_lesson_data = None
         self.current_lesson_content = None
+        # Сырой текст урока от LLM (без CSS/HTML-обёртки форматтера).
+        # Используется для проверки релевантности и извлечения понятий.
+        self.current_lesson_raw_content = None
         self.current_course_info = None
         self.current_lesson_id = None  # Для счетчика вопросов
+
+        # Кэш ключевых понятий текущего урока (in-memory).
+        # Сбрасывается в lesson_display при загрузке другого урока.
+        self.current_lesson_concepts = None
+
+        # Кэш примеров текущего урока (in-memory), ключ — current_lesson_id.
+        self.current_lesson_examples = None
+        self.current_lesson_examples_key = None
 
         # ИСПРАВЛЕНО: Добавлено кэширование содержания урока (проблема #89)
         self.cached_lesson_content = None
         self.cached_lesson_title = None
+        self.cached_lesson_raw_content = None
         self.current_lesson_cache_key = None  # Для идентификации текущего урока
 
         # ИСПРАВЛЕНО: Ссылки на контейнеры для правильного закрытия

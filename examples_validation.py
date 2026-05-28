@@ -5,12 +5,14 @@
 Никакого парсинга HTML — структура примеров проходит через систему как данные.
 """
 
+import ast
 import io
 import logging
 from contextlib import redirect_stdout
 from typing import Dict, List
 
 from content_utils import BaseContentGenerator
+from examples_code_fixes import sanitize_examples
 from examples_html_utils import (
     looks_like_python_code,
     normalize_examples_payload,
@@ -72,6 +74,23 @@ class ExamplesValidation(BaseContentGenerator):
             return False
         return True
 
+    def validate_examples_syntax(self, examples: List[Dict[str, str]]) -> bool:
+        """Проверяет синтаксис Python без выполнения (import sklearn/tf не нужен)."""
+        if not isinstance(examples, list) or len(examples) < self.MIN_EXAMPLES:
+            return False
+
+        for index, example in enumerate(examples[: self.MIN_EXAMPLES], start=1):
+            code = (example.get("code") or "").strip()
+            if not code:
+                self.logger.warning("Пример %s без кода (syntax check)", index)
+                return False
+            try:
+                ast.parse(code)
+            except SyntaxError as exc:
+                self.logger.warning("Пример %s — синтаксическая ошибка: %s", index, exc)
+                return False
+        return True
+
     def validate_examples_execute(self, examples: List[Dict[str, str]]) -> bool:
         """Пытается выполнить код каждого примера в изолированном окружении."""
         if not isinstance(examples, list) or len(examples) < self.MIN_EXAMPLES:
@@ -85,10 +104,30 @@ class ExamplesValidation(BaseContentGenerator):
             try:
                 with redirect_stdout(io.StringIO()):
                     exec(code, {})
+            except ModuleNotFoundError as exc:
+                self.logger.info(
+                    "Пример %s: модуль не установлен (%s) — это не повод для fallback",
+                    index,
+                    exc,
+                )
+                return False
+            except ImportError as exc:
+                self.logger.info(
+                    "Пример %s: ImportError (%s) — покажем код от LLM без exec",
+                    index,
+                    exc,
+                )
+                return False
             except Exception as exc:
                 self.logger.warning("Пример %s не выполняется: %s", index, exc)
                 return False
         return True
+
+    def _examples_usable(self, examples: List[Dict[str, str]]) -> bool:
+        """Примеры пригодны для показа: структура + синтаксис (exec опционален)."""
+        return self.validate_examples_quality(examples) and self.validate_examples_syntax(
+            examples
+        )
 
     def regenerate_with_strict_prompt(
         self,
@@ -145,17 +184,46 @@ class ExamplesValidation(BaseContentGenerator):
         validate_examples_payload(payload, min_examples=3)
         return normalize_examples_payload(payload).get("examples", [])
 
-    def _create_fallback_python_example(
-        self, lesson_title: str, lesson_content: str = ""
-    ) -> List[Dict[str, str]]:
-        """Готовые примеры по основам Python — последний рубеж, если LLM не справился."""
-        content_lower = (lesson_content or lesson_title).lower()
+    def _is_basics_python_lesson(
+        self, lesson_title: str, lesson_description: str, lesson_content: str
+    ) -> bool:
+        """True только для уроков про основы Python, не для ML/данных."""
+        combined = " ".join(
+            [lesson_title, lesson_description, lesson_content or ""]
+        ).lower()
+        ml_markers = (
+            "sklearn",
+            "scikit",
+            "tensorflow",
+            "keras",
+            "машинное обучение",
+            "нейрон",
+            "pandas",
+            "numpy",
+        )
+        if any(m in combined for m in ml_markers):
+            return False
+        basics_markers = (
+            "основы python",
+            "синтаксис",
+            "переменн",
+            "тип данных",
+            "типы данных",
+        )
+        return any(m in combined for m in basics_markers)
 
-        if any(word in content_lower for word in ("переменн", "тип", "python", "основ")):
+    def _create_fallback_python_example(
+        self,
+        lesson_title: str,
+        lesson_content: str = "",
+        lesson_description: str = "",
+    ) -> List[Dict[str, str]]:
+        """Готовые примеры — только если LLM полностью провалился."""
+        if self._is_basics_python_lesson(lesson_title, lesson_description, lesson_content):
             return [
                 {
                     "title": "Переменные и типы данных",
-                    "description": "Создаём переменные разных типов и выводим их значения.",
+                    "description": "Создаёт переменные разных типов и выводит их значения.",
                     "code": (
                         'name = "Игорь"\n'
                         "age = 25\n"
@@ -167,7 +235,7 @@ class ExamplesValidation(BaseContentGenerator):
                 },
                 {
                     "title": "Операторы и выражения",
-                    "description": "Складываем числа и сохраняем результат в переменную.",
+                    "description": "Складывает числа и сохраняет результат в переменную.",
                     "code": (
                         "a = 10\n"
                         "b = 5\n"
@@ -179,7 +247,7 @@ class ExamplesValidation(BaseContentGenerator):
                 },
                 {
                     "title": "Условия и циклы",
-                    "description": "Проверяем возраст и выводим числа циклом for.",
+                    "description": "Проверяет возраст и выводит числа циклом for.",
                     "code": (
                         "age = 18\n"
                         'status = "Взрослый" if age >= 18 else "Несовершеннолетний"\n'
@@ -190,12 +258,13 @@ class ExamplesValidation(BaseContentGenerator):
                 },
             ]
 
+        safe_title = lesson_title.replace('"', "'")
         return [
             {
                 "title": f"Пример 1: {lesson_title}",
-                "description": "Базовая демонстрация переменных и вывода.",
+                "description": f"Демонстрация концепции урока «{lesson_title}».",
                 "code": (
-                    f'topic = "{lesson_title}"\n'
+                    f'topic = "{safe_title}"\n'
                     "values = [1, 2, 3, 4, 5]\n"
                     "total = sum(values)\n"
                     'print("Тема:", topic)\n'
@@ -204,7 +273,7 @@ class ExamplesValidation(BaseContentGenerator):
             },
             {
                 "title": f"Пример 2: {lesson_title}",
-                "description": "Цикл for для обработки списка.",
+                "description": "Обрабатывает список данных циклом for.",
                 "code": (
                     "numbers = [2, 4, 6, 8]\n"
                     "squares = []\n"
@@ -215,7 +284,7 @@ class ExamplesValidation(BaseContentGenerator):
             },
             {
                 "title": f"Пример 3: {lesson_title}",
-                "description": "Функция для переиспользования логики.",
+                "description": "Выносит логику в функцию для переиспользования.",
                 "code": (
                     "def normalize(value, min_val, max_val):\n"
                     "    return (value - min_val) / (max_val - min_val)\n"
@@ -236,7 +305,18 @@ class ExamplesValidation(BaseContentGenerator):
         communication_style,
     ) -> List[Dict[str, str]]:
         """Проверяет качество, при необходимости перегенерирует, иначе — fallback."""
-        if self.validate_examples_quality(examples) and self.validate_examples_execute(examples):
+        if self._examples_usable(examples):
+            if self.validate_examples_execute(examples):
+                return self._finalize_examples(examples)
+            self.logger.warning(
+                "Примеры от LLM корректны, но не выполнились в среде "
+                "(sklearn/tensorflow могут быть не установлены) — санитизируем и показываем"
+            )
+            fixed = self._finalize_examples(examples)
+            if self.validate_examples_execute(fixed):
+                return fixed
+            if self._examples_usable(fixed):
+                return fixed
             return examples
 
         self.logger.warning("Примеры не прошли проверку качества, повторная генерация...")
@@ -249,10 +329,23 @@ class ExamplesValidation(BaseContentGenerator):
                 communication_style,
                 course_subject,
             )
-            if self.validate_examples_quality(regenerated) and self.validate_examples_execute(regenerated):
+            if self._examples_usable(regenerated):
+                finalized = self._finalize_examples(regenerated)
+                if self.validate_examples_execute(finalized):
+                    return finalized
+                if self._examples_usable(finalized):
+                    return finalized
                 return regenerated
         except Exception as exc:
             self.logger.warning("Повторная генерация упала: %s", exc)
 
         self.logger.error("Повторная генерация не дала рабочих примеров, используем fallback")
-        return self._create_fallback_python_example(lesson_title, lesson_content)
+        return sanitize_examples(
+            self._create_fallback_python_example(
+                lesson_title, lesson_content, lesson_description
+            )
+        )
+
+    def _finalize_examples(self, examples: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """Санитизация кода (sklearn/tf) перед показом пользователю."""
+        return sanitize_examples(examples)

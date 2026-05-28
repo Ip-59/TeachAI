@@ -43,7 +43,15 @@ class ExamplesGenerator:
             )
 
             course_subject = self.generation._determine_course_subject(
-                course_context, lesson_content, lesson_data.get("keywords", [])
+                course_context,
+                self.generation.prepare_lesson_text_for_analysis(
+                    lesson_content,
+                    course_context=course_context,
+                    max_chars=6000,
+                    lesson_title=lesson_data.get("title", "Урок"),
+                ),
+                lesson_data.get("keywords", []),
+                lesson_data=lesson_data,
             )
 
             lesson_title = lesson_data.get("title", "Урок")

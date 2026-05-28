@@ -98,8 +98,9 @@ class ContentUtils:
             overflow-x: auto;
             margin: 10px 0;
             font-size: 14px;
-            line-height: 1.05;
+            line-height: 1.5;
             border: 2px solid #333;
+            white-space: pre;
         }
         .content-container pre code {
             background: none;
@@ -329,61 +330,239 @@ class BaseContentGenerator:
         except Exception as e:
             self.logger.error(f"Ошибка при сохранении отладочного ответа: {str(e)}")
 
-    def clean_markdown_code_blocks(self, text):
-        """
-        Удаляет markdown метки для блоков кода из текста и очищает лишние отступы.
+    def clean_lesson_html_for_analysis(self, content):
+        """Готовит HTML урока для анализа LLM: чистит шум и теги.
+
+        Что удаляется ДО снятия тегов (важно):
+        - блоки ``<style>...</style>`` и ``<script>...</script>``
+          вместе с содержимым (иначе CSS-/JS-текст утекает в анализ как
+          «материал урока» и забивает контекст);
+        - HTML-комментарии ``<!-- ... -->``.
+
+        Затем снимаются теги и схлопываются пробельные последовательности.
 
         Args:
-            text (str): Исходный текст
+            content (str): Исходный HTML-фрагмент урока.
 
         Returns:
-            str: Очищенный текст
+            str: Чистый текст урока, пригодный для отправки в LLM.
+        """
+        if not content:
+            return ""
+        cleaned = re.sub(
+            r"<style\b[^>]*>[\s\S]*?</style>", " ", content, flags=re.IGNORECASE
+        )
+        cleaned = re.sub(
+            r"<script\b[^>]*>[\s\S]*?</script>", " ", cleaned, flags=re.IGNORECASE
+        )
+        cleaned = re.sub(r"<!--[\s\S]*?-->", " ", cleaned)
+        cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+        cleaned = re.sub(r"&[a-zA-Z]+;", " ", cleaned)
+        cleaned = re.sub(r"&#\d+;", " ", cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned
+
+    def extract_lesson_headers(self, content):
+        """Извлекает заголовки h1–h4 из HTML урока.
+
+        Args:
+            content (str): HTML-содержание урока.
+
+        Returns:
+            list[str]: Заголовки в порядке появления.
+        """
+        if not content:
+            return []
+        headers = re.findall(
+            r"<h[1-4][^>]*>\s*([\s\S]*?)\s*</h[1-4]>", content, flags=re.IGNORECASE
+        )
+        result = []
+        for header in headers:
+            text = re.sub(r"<[^>]+>", " ", header)
+            text = re.sub(r"\s+", " ", text).strip()
+            if text and text not in result:
+                result.append(text)
+        return result
+
+    def strip_plain_text_breadcrumb(
+        self, text, course_context=None, lesson_title=None
+    ):
+        """Срезает ведущие названия курса/раздела/темы/урока из plain text.
+
+        После ``clean_lesson_html_for_analysis`` breadcrumb часто остаётся
+        первым абзацem текста («Введение в ML Основы Python ...»).
+
+        Args:
+            text (str): Очищенный текст урока.
+            course_context (dict | None): Контекст курса.
+            lesson_title (str | None): Название урока.
+
+        Returns:
+            str: Текст без ведущих breadcrumb-фрагментов.
+        """
+        if not text:
+            return text
+
+        titles = []
+        if isinstance(course_context, dict):
+            for key in ("course_title", "section_title", "topic_title"):
+                title = (course_context.get(key) or "").strip()
+                if title:
+                    titles.append(title)
+        if lesson_title:
+            title = str(lesson_title).strip()
+            if title and title not in titles:
+                titles.append(title)
+
+        result = text.lstrip()
+        changed = True
+        while changed and result:
+            changed = False
+            for title in titles:
+                if result.lower().startswith(title.lower()):
+                    result = result[len(title) :].lstrip(" ,:;—.-")
+                    changed = True
+        return result.strip()
+
+    def prepare_lesson_text_for_analysis(
+        self, content, course_context=None, max_chars=6000, lesson_title=None
+    ):
+        """Готовит текст урока для LLM-анализа (релевантность, понятия, QA).
+
+        Последовательность: срез breadcrumb-шапки → удаление style/script →
+        снятие HTML-тегов → срез plain-text breadcrumb → ограничение длины.
+
+        Args:
+            content (str): HTML или markdown урока.
+            course_context (dict | None): Контекст курса для среза шапки.
+            max_chars (int): Максимальная длина возвращаемого текста.
+            lesson_title (str | None): Название урока для среза plain-text шапки.
+
+        Returns:
+            str: Чистый текст для промпта.
+        """
+        if not content:
+            return ""
+        stripped = self.strip_lesson_breadcrumb(content, course_context)
+        clean = self.clean_lesson_html_for_analysis(stripped)
+        clean = self.strip_plain_text_breadcrumb(
+            clean, course_context, lesson_title=lesson_title
+        )
+        if max_chars and len(clean) > max_chars:
+            return clean[:max_chars]
+        return clean
+
+    def strip_lesson_breadcrumb(self, content, course_context):
+        """Срезает ведущие <h1>/<h2>/<h3>/<h4> с названиями курса/раздела/темы.
+
+        LLM при генерации урока часто помещает в начало шапку с названиями
+        курса, раздела и темы. Такая шапка не относится к телу конкретного
+        урока, но при последующих запросах (генерация ключевых понятий,
+        проверка релевантности, QA и т.п.) она затеняет содержание урока
+        и сбивает LLM на общую тему курса.
+
+        Удаляются ровно те идущие подряд заголовки в начале документа,
+        текст которых совпадает (без учёта регистра и крайних пробелов)
+        с одним из значений ``course_title / section_title / topic_title``
+        в ``course_context``. Заголовки внутри тела урока не трогаются.
+
+        Args:
+            content (str): Исходный HTML урока.
+            course_context (dict | None): Контекст курса.
+
+        Returns:
+            str: HTML без ведущей breadcrumb-шапки.
+        """
+        if not content or not isinstance(course_context, dict):
+            return content
+
+        breadcrumb_titles = [
+            (course_context.get(key) or "").strip()
+            for key in ("course_title", "section_title", "topic_title")
+        ]
+        breadcrumb_titles = [t for t in breadcrumb_titles if t]
+        if not breadcrumb_titles:
+            return content
+
+        normalized_set = {t.lower() for t in breadcrumb_titles}
+
+        # «Шум» допустимый ПЕРЕД breadcrumb-заголовком — это типичная служебная
+        # обвязка от генератора урока: <style>, <script>, HTML-комментарии,
+        # пробелы и переносы строк. Заголовки идут уже после неё.
+        leading_noise_re = re.compile(
+            r"(?:<style\b[^>]*>[\s\S]*?</style>"
+            r"|<script\b[^>]*>[\s\S]*?</script>"
+            r"|<!--[\s\S]*?-->"
+            r"|\s+)+",
+            re.IGNORECASE,
+        )
+        header_re = re.compile(
+            r"<h[1-4][^>]*>\s*([\s\S]*?)\s*</h[1-4]>",
+            re.IGNORECASE,
+        )
+
+        stripped = content
+        while True:
+            noise = leading_noise_re.match(stripped)
+            offset = noise.end() if noise else 0
+            header = header_re.match(stripped, offset)
+            if not header:
+                break
+            header_text = re.sub(r"<[^>]+>", "", header.group(1)).strip().lower()
+            if header_text in normalized_set:
+                # Удаляем только сам заголовок, ведущий шум (style/script)
+                # оставляем как был — clean_lesson_html_for_analysis уберёт
+                # его дальше.
+                stripped = stripped[:header.start()] + stripped[header.end():]
+                continue
+            break
+
+        return stripped
+
+    def clean_markdown_code_blocks(self, text):
+        """
+        Удаляет markdown/код-fences вокруг ответа LLM.
+
+        Закрывает класс багов, когда LLM возвращает HTML-объяснение,
+        обёрнутое в ```html ... ``` (или '''html ... ''', ~~~html ... ~~~),
+        и пользователь видит эти метки прямо в выводе.
+
+        Отступы внутри <pre><code> НЕ трогает (раньше здесь был самописный
+        de-indent, который ломал тело циклов: `for x:\\n    body` → `for x:\\nbody`).
+        Если нужно снять общий отступ — используется textwrap.dedent,
+        который безопасен: ничего не трогает, если хоть одна строка
+        не имеет общего префикса.
+
+        Args:
+            text (str): Исходный текст.
+
+        Returns:
+            str: Текст без обёрток-fences.
         """
         try:
-            # Убираем метки ```html, ```python, ``` и подобные
-            text = re.sub(r"```\w*\n?", "", text)
+            import textwrap
+
+            # Снимаем все варианты блочных fences: ```lang, ```, '''lang, ''', ~~~lang, ~~~
+            text = re.sub(r"```\s*[A-Za-z0-9_+\-]*\s*\n?", "", text)
             text = re.sub(r"```", "", text)
+            text = re.sub(r"~~~\s*[A-Za-z0-9_+\-]*\s*\n?", "", text)
+            text = re.sub(r"~~~", "", text)
+            # '''html / ''' — только когда оборачивают блок (в начале строки),
+            # чтобы не трогать docstring-ы внутри примеров кода.
+            text = re.sub(r"(?m)^\s*'''\s*[A-Za-z0-9_+\-]*\s*\n", "", text)
+            text = re.sub(r"(?m)^\s*'''\s*$", "", text)
 
-            # НОВОЕ: Очищаем лишние отступы в блоках кода <pre><code>
-            code_pattern = r"<pre><code>(.*?)</code></pre>"
+            # Безопасный dedent внутри <pre><code>: снимает только общий
+            # лидирующий пробельный префикс. Если у хотя бы одной строки
+            # его нет — структура цикла/условия сохраняется как есть.
+            code_pattern = r"<pre><code>([\s\S]*?)</code></pre>"
 
-            def clean_code_block(match):
-                code_content = match.group(1)
+            def dedent_code_block(match):
+                code_content = match.group(1).strip("\n")
+                dedented = textwrap.dedent(code_content)
+                return f"<pre><code>{dedented}</code></pre>"
 
-                # Разбиваем на строки
-                lines = code_content.split("\n")
-
-                # Находим минимальный отступ среди строк С ОТСТУПАМИ (исключая строки без отступов)
-                min_indent = float("inf")
-                lines_with_indent = []
-
-                for line in lines:
-                    if line.strip():  # Пропускаем пустые строки
-                        indent = len(line) - len(line.lstrip())
-
-                        if indent > 0:  # Только строки с отступами
-                            lines_with_indent.append(indent)
-                            if indent < min_indent:
-                                min_indent = indent
-
-                # Если есть строки с отступами, убираем минимальный отступ
-                if min_indent > 0 and min_indent != float("inf"):
-                    cleaned_lines = []
-                    for line in lines:
-                        if line.strip():  # Для непустых строк
-                            if len(line) - len(line.lstrip()) > 0:  # Если есть отступ
-                                cleaned_line = line[min_indent:]
-                                cleaned_lines.append(cleaned_line)
-                            else:  # Если отступа нет, оставляем как есть
-                                cleaned_lines.append(line)
-                        else:  # Пустые строки оставляем как есть
-                            cleaned_lines.append("")
-                    code_content = "\n".join(cleaned_lines)
-
-                return f"<pre><code>{code_content}</code></pre>"
-
-            # Применяем очистку ко всем блокам кода
-            text = re.sub(code_pattern, clean_code_block, text, flags=re.DOTALL)
+            text = re.sub(code_pattern, dedent_code_block, text)
 
             return text
 

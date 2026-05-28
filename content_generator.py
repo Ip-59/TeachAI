@@ -332,29 +332,47 @@ class ContentGenerator:
             course, section, topic, lesson, lesson_content, communication_style
         )
 
-    def generate_concepts(self, lesson_content, communication_style="friendly"):
+    def generate_concepts(
+        self,
+        lesson_content,
+        communication_style="friendly",
+        lesson_data=None,
+        course_context=None,
+    ):
         """
         Генерирует ключевые понятия из урока для детального изучения.
 
         Args:
             lesson_content (str): Содержание урока
             communication_style (str): Стиль общения
+            lesson_data (dict, optional): Метаданные текущего урока
+                (title, description, keywords). Без них LLM получает только
+                сырое содержание и склонен возвращать понятия всего курса,
+                а не конкретного урока.
 
         Returns:
-            list: Список ключевых понятий с описаниями
+            list: Список ключевых понятий с описаниями (title/description).
 
         Raises:
             Exception: Если не удалось извлечь понятия
         """
-        # Создаем базовые данные урока для concepts_generator
-        lesson_data = {
-            "title": "Урок",
-            "description": "Содержание урока",
-            "keywords": [],
-        }
+        # Используем переданные метаданные урока. Если их нет — fallback
+        # на заглушку (только для обратной совместимости со старыми вызовами).
+        if not isinstance(lesson_data, dict) or not lesson_data:
+            lesson_data = {
+                "title": "Урок",
+                "description": "Содержание урока",
+                "keywords": [],
+            }
+            self.logger.warning(
+                "generate_concepts вызван без lesson_data — будет использована "
+                "заглушка, понятия могут не соответствовать конкретному уроку"
+            )
 
         # Получаем понятия из concepts_generator
-        concepts = self.concepts_gen.extract_key_concepts(lesson_content, lesson_data)
+        concepts = self.concepts_gen.extract_key_concepts(
+            lesson_content, lesson_data, course_context=course_context
+        )
 
         # Преобразуем формат данных: "name" -> "title", "brief_description" -> "description"
         formatted_concepts = []
@@ -371,12 +389,14 @@ class ContentGenerator:
     # НОВЫЕ МЕТОДЫ ДЛЯ ЛОГИЧЕСКОЙ МОДЕРНИЗАЦИИ
     # ========================================
 
-    def extract_key_concepts(self, lesson_content, lesson_data):
+    def extract_key_concepts(self, lesson_content, lesson_data, course_context=None):
         """
         НОВЫЙ: Извлекает ключевые понятия из урока для детального изучения.
 
         Args:
             lesson_content (str): Содержание урока
+            course_context (dict, optional): Контекст курса для очистки
+                breadcrumb-шапки из текста (см. concepts_generator).
             lesson_data (dict): Метаданные урока
 
         Returns:
@@ -385,7 +405,9 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось извлечь понятия
         """
-        return self.concepts_gen.extract_key_concepts(lesson_content, lesson_data)
+        return self.concepts_gen.extract_key_concepts(
+            lesson_content, lesson_data, course_context=course_context
+        )
 
     def explain_concept(self, concept, lesson_content, communication_style="friendly"):
         """
@@ -406,14 +428,25 @@ class ContentGenerator:
             concept, lesson_content, communication_style
         )
 
-    def check_question_relevance(self, user_question, lesson_content, lesson_data):
+    def check_question_relevance(
+        self,
+        user_question,
+        lesson_content,
+        lesson_data,
+        course_context=None,
+        lesson_raw_content=None,
+    ):
         """
         НОВЫЙ: Проверяет релевантность вопроса пользователя к содержанию урока.
 
         Args:
-            user_question (str): Вопрос пользователя
-            lesson_content (str): Содержание урока
-            lesson_data (dict): Метаданные урока
+            user_question (str): Вопрос пользователя.
+            lesson_content (str): Содержание урока.
+            lesson_data (dict): Метаданные урока.
+            course_context (dict | None): Контекст курса (course_title,
+                section_title, topic_title) для удаления breadcrumb-шапки
+                из текста перед анализом.
+            lesson_raw_content (str | None): Сырой текст урока до форматирования.
 
         Returns:
             dict: Результат проверки со следующими ключами:
@@ -423,10 +456,14 @@ class ContentGenerator:
                 - suggestions (list): Предложения альтернативных источников
 
         Raises:
-            Exception: Если не удалось выполнить проверку
+            Exception: Если не удалось выполнить проверку.
         """
         return self.relevance_checker.check_question_relevance(
-            user_question, lesson_content, lesson_data
+            user_question,
+            lesson_content,
+            lesson_data,
+            course_context=course_context,
+            lesson_raw_content=lesson_raw_content,
         )
 
     def generate_non_relevant_response(self, user_question, suggestions):
@@ -475,8 +512,15 @@ class ContentGenerator:
         Проверяет релевантность вопроса и возвращает стилизованный HTML-ответ (или нерелевантный с рекомендациями),
         добавляет напоминание после 3-го вопроса.
         """
+        # Собираем course_context из позиционных полей, чтобы LLM не учитывал
+        # breadcrumb-шапку с названиями курса/раздела/темы как тело урока.
+        course_context = {
+            "course_title": course,
+            "section_title": section,
+            "topic_title": topic,
+        }
         relevance_result = self.check_question_relevance(
-            user_question, lesson_content, lesson_data
+            user_question, lesson_content, lesson_data, course_context=course_context
         )
         if not relevance_result["is_relevant"]:
             answer_html = self.generate_non_relevant_response(

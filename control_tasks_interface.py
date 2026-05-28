@@ -103,11 +103,18 @@ class ControlTasksInterface:
             check_variables = [task_data["check_variable"]]
         validation_criteria = task_data.get("validation_criteria") or []
         output_format = (task_data.get("output_format") or "").strip()
+        condition_rule = (task_data.get("condition_rule") or "").strip()
 
         parts = [
             "<div style='background:#eef6ff;border:1px solid #b8daff;border-radius:8px;padding:16px;margin:12px 0;'>",
             "<h3 style='margin:0 0 10px 0;color:#004085;'>📋 Что нужно сделать</h3>",
         ]
+
+        if condition_rule:
+            parts.append(
+                f"<p style='margin:0 0 12px 0;line-height:1.6;'><strong>Условие:</strong> "
+                f"{html.escape(condition_rule)}</p>"
+            )
 
         if steps:
             parts.append("<ol style='margin:8px 0 12px 20px;line-height:1.6;'>")
