@@ -50,7 +50,7 @@ class CoursePlanGenerator(BaseContentGenerator):
                 {"role": "user", "content": prompt},
             ]
 
-            response_content = self.make_api_request(
+            response_content = self.make_api_request_with_retries(
                 messages=messages,
                 temperature=0.7,
                 max_tokens=4000,

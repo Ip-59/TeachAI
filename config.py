@@ -8,6 +8,105 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv, dotenv_values
 
+_PROXY_ENV_KEYS = (
+    "OPENAI_PROXY",
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "https_proxy",
+    "http_proxy",
+)
+
+_PROXY_ENV_KEYS_TO_CLEAR = _PROXY_ENV_KEYS + (
+    "ALL_PROXY",
+    "all_proxy",
+    "NO_PROXY",
+    "no_proxy",
+)
+
+
+def _read_proxy_url_from_env() -> str | None:
+    """Читает URL прокси из переменных окружения (без учёта режима подключения)."""
+    for key in _PROXY_ENV_KEYS:
+        value = (os.getenv(key) or "").strip()
+        if value and not value.startswith("${"):
+            return value
+    return None
+
+
+def get_openai_connection_mode() -> str:
+    """
+    Режим подключения TeachAI к OpenAI API.
+
+    По умолчанию ``direct``: приложение не использует HTTP-прокси
+    (доступ через VPN или сеть на уровне ОС). Режим ``proxy`` включается
+    только явно через ``OPENAI_CONNECTION_MODE=proxy`` или
+    ``OPENAI_USE_PROXY=true``.
+
+    Returns:
+        str: ``proxy`` — HTTP-прокси из .env; ``direct`` — без прокси в приложении.
+    """
+    raw = (os.getenv("OPENAI_CONNECTION_MODE") or "").strip().lower()
+    use_proxy = (os.getenv("OPENAI_USE_PROXY") or "").strip().lower()
+
+    if use_proxy in ("true", "1", "yes", "on"):
+        return "proxy"
+    if use_proxy in ("false", "0", "no", "off"):
+        return "direct"
+
+    if raw in ("proxy", "http_proxy"):
+        return "proxy"
+    if raw in ("direct", "vpn", "auto", "noproxy", "no_proxy", "none", ""):
+        return "direct"
+
+    logging.getLogger(__name__).warning(
+        "Неизвестный OPENAI_CONNECTION_MODE=%r — используем direct", raw
+    )
+    return "direct"
+
+
+def apply_openai_connection_environment() -> str:
+    """
+    Применяет режим подключения к текущему процессу Python.
+
+    В режиме ``direct`` удаляет переменные прокси из ``os.environ``, чтобы
+    httpx/OpenAI и другие библиотеки не подхватывали старые HTTP_PROXY
+    из shell или Cursor.
+
+    Returns:
+        str: Активный режим (``direct`` или ``proxy``).
+    """
+    mode = get_openai_connection_mode()
+    if mode == "direct":
+        for key in _PROXY_ENV_KEYS_TO_CLEAR:
+            os.environ.pop(key, None)
+        os.environ["OPENAI_CONNECTION_MODE"] = "direct"
+        os.environ["OPENAI_USE_PROXY"] = "false"
+    return mode
+
+
+def get_openai_proxy_url() -> str | None:
+    """
+    URL прокси для httpx/OpenAI с учётом ``OPENAI_CONNECTION_MODE``.
+
+    В режиме ``direct`` всегда ``None`` (игнорируются и OPENAI_PROXY, и системные
+    HTTP_PROXY), чтобы VPN работал на уровне системы без прокси в коде.
+    """
+    if get_openai_connection_mode() == "direct":
+        return None
+    return _read_proxy_url_from_env()
+
+
+def describe_openai_connection() -> str:
+    """Краткое описание режима подключения для логов и консоли."""
+    mode = get_openai_connection_mode()
+    if mode == "direct":
+        return "прямое подключение (без прокси в приложении; VPN/сеть на уровне ОС)"
+    proxy = _read_proxy_url_from_env()
+    if not proxy:
+        return "прокси (URL не задан — проверьте OPENAI_PROXY в .env)"
+    host = proxy.split("@")[-1] if "@" in proxy else proxy
+    return f"через прокси ({host})"
+
 
 class ConfigManager:
     """Менеджер конфигурации для работы с .env файлом и переменными окружения."""
@@ -46,6 +145,7 @@ class ConfigManager:
 
             # Загружаем .env файл
             load_dotenv(self.env_file)
+            apply_openai_connection_environment()
 
             # Проверяем наличие обязательных переменных
             required_vars = ["OPENAI_API_KEY"]
@@ -57,21 +157,17 @@ class ConfigManager:
                 )
                 return False
 
-            # Требуем прокси для обращений к OpenAI
-            proxy = (
-                os.getenv("OPENAI_PROXY")
-                or os.getenv("HTTPS_PROXY")
-                or os.getenv("HTTP_PROXY")
-                or os.getenv("https_proxy")
-                or os.getenv("http_proxy")
-            )
-            if not proxy:
+            mode = get_openai_connection_mode()
+            if mode == "proxy" and not _read_proxy_url_from_env():
                 self.logger.error(
-                    "Прокси не задан. Укажите OPENAI_PROXY или HTTPS_PROXY/HTTP_PROXY."
+                    "OPENAI_CONNECTION_MODE=proxy, но прокси не задан. "
+                    "Укажите OPENAI_PROXY (или HTTPS_PROXY) в .env."
                 )
                 return False
 
-            self.logger.info("Конфигурация успешно загружена")
+            self.logger.info(
+                "Конфигурация загружена (%s)", describe_openai_connection()
+            )
             return True
         except Exception as e:
             self.logger.error(f"Ошибка при загрузке конфигурации: {str(e)}")
@@ -113,8 +209,12 @@ class ConfigManager:
                 f.write("OPENAI_API_KEY=your_openai_api_key_here\n")
                 f.write("\n# Модель OpenAI (gpt-4o-mini — по умолчанию, gpt-4o — для сложных задач)\n")
                 f.write("LLM_MODEL=gpt-4o-mini\n")
-                f.write("\n# Прокси для доступа к OpenAI (обязательно)\n")
-                f.write("OPENAI_PROXY=http://user:pass@host:port\n")
+                f.write("\n# --- Режим подключения к OpenAI ---\n")
+                f.write("# direct / vpn / auto — без прокси в приложении (VPN на уровне ОС)\n")
+                f.write("# proxy — через HTTP-прокси из OPENAI_PROXY (сейчас не используем)\n")
+                f.write("OPENAI_CONNECTION_MODE=direct\n")
+                f.write("\n# Прокси (только при OPENAI_CONNECTION_MODE=proxy)\n")
+                f.write("# OPENAI_PROXY=http://user:pass@host:port\n")
 
             self.logger.info(f"Образец .env файла создан: {file_path}")
             return True

@@ -419,12 +419,17 @@ class SetupInterface:
                                 )
 
                         except Exception as e:
-                            self.logger.error(
-                                f"Ошибка при генерации учебного плана: {str(e)}"
+                            self.logger.debug(
+                                "Ошибка при генерации учебного плана: %s",
+                                e,
+                                exc_info=True,
                             )
                             display(
                                 self.utils.create_styled_message(
-                                    f"Ошибка при генерации учебного плана: {str(e)}",
+                                    self.utils.format_api_error(
+                                        e,
+                                        context="Не удалось создать учебный план",
+                                    ),
                                     "incorrect",
                                 )
                             )

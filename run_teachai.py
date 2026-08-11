@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Порядок важен: сначала базовые модули, затем зависящие от них.
 _RELOAD_ORDER: tuple[str, ...] = (
+    "config",
     "content_utils",
     "relevance_checker",
     "concepts_generator",
@@ -62,7 +63,12 @@ def start_jupyter(*, reload_modules: bool = False) -> Optional[Any]:
     """
     load_dotenv(override=True)
 
+    from config import apply_openai_connection_environment, describe_openai_connection
+
+    apply_openai_connection_environment()
+
     print("⏳ Запуск TeachAI...", flush=True)
+    print(f"🌐 OpenAI: {describe_openai_connection()}", flush=True)
 
     if reload_modules:
         reload_project_modules()

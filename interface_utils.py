@@ -24,11 +24,15 @@ class InterfaceStyles:
     """Класс с базовыми стилями для интерфейса."""
 
     # Базовые стили для сообщений и элементов
+    _TEXT_WRAP = (
+        "word-wrap:break-word;overflow-wrap:break-word;"
+        "white-space:normal;max-width:100%;box-sizing:border-box;"
+    )
     STYLES = {
-        "correct": "background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 5px 0;",
-        "incorrect": "background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 5px 0;",
-        "info": "background-color: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 5px; margin: 5px 0;",
-        "warning": "background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin: 5px 0;",
+        "correct": "background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 5px 0;" + _TEXT_WRAP,
+        "incorrect": "background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 5px 0;" + _TEXT_WRAP,
+        "info": "background-color: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 5px; margin: 5px 0;" + _TEXT_WRAP,
+        "warning": "background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin: 5px 0;" + _TEXT_WRAP,
         "header": "font-size: 24px; font-weight: bold; color: #495057; margin: 20px 0 10px 0;",
         "subheader": "font-size: 18px; font-weight: bold; color: #6c757d; margin: 15px 0 10px 0;",
         "button": "font-weight: bold;",
@@ -276,10 +280,49 @@ class InterfaceUtils:
         Returns:
             widgets.HTML: Виджет с сообщением
         """
+        import html
         import ipywidgets as widgets
 
         style = self.styles.get(style_type, self.styles["info"])
-        return widgets.HTML(value=f"<p style='{style}'>{message}</p>")
+        safe_message = html.escape(str(message))
+        return widgets.HTML(value=f"<p style='{style}'>{safe_message}</p>")
+
+    @staticmethod
+    def format_api_error(exc: Exception, context: str = "") -> str:
+        """Формирует понятное пользователю сообщение об ошибке API/сети."""
+        raw = str(exc).strip()
+        lower = raw.lower()
+        prefix = f"{context}. " if context else ""
+
+        if "прокси не задан" in lower or "connection_mode=proxy" in lower:
+            return (
+                f"{prefix}В .env задан режим proxy, но OPENAI_PROXY не указан. "
+                "Либо укажите прокси, либо установите OPENAI_CONNECTION_MODE=direct."
+            )
+        if any(
+            token in lower
+            for token in ("connection error", "connection", "connect", "network")
+        ):
+            return (
+                f"{prefix}Не удалось подключиться к OpenAI API. "
+                "Проверьте интернет, VPN или настройки прокси (OPENAI_PROXY в .env), "
+                "затем перезапустите kernel и повторите попытку."
+            )
+        if "timeout" in lower or "timed out" in lower:
+            return (
+                f"{prefix}Превышено время ожидания ответа API. "
+                "Попробуйте ещё раз через несколько секунд."
+            )
+        if any(token in lower for token in ("insufficient", "quota", "billing")):
+            return f"{prefix}Недостаточно средств или превышена квота OpenAI API."
+        if any(token in lower for token in ("authentication", "api key", "401")):
+            return (
+                f"{prefix}Неверный API-ключ OpenAI. "
+                "Проверьте OPENAI_API_KEY в .env."
+            )
+        if "не удалось сгенерировать учебный план" in lower:
+            return raw
+        return f"{prefix}{raw}" if prefix else raw
 
     def create_header(self, title, level="header"):
         """

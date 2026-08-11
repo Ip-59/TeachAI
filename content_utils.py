@@ -12,6 +12,8 @@ from datetime import datetime
 import httpx
 from openai import OpenAI
 
+from config import get_openai_proxy_url, get_openai_connection_mode
+
 
 def append_question_reminder(answer_html: str, questions_count: int) -> str:
     """
@@ -267,27 +269,30 @@ class BaseContentGenerator:
         self.debug_dir = debug_dir
         self.model = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
-        # Инициализация клиента OpenAI (с прокси из OPENAI_PROXY/HTTPS_PROXY/HTTP_PROXY)
+        # Клиент OpenAI: режим задаётся OPENAI_CONNECTION_MODE в .env
         self.http_client = None
         try:
-            proxy_url = (
-                os.getenv("OPENAI_PROXY")
-                or os.getenv("HTTPS_PROXY")
-                or os.getenv("HTTP_PROXY")
-                or ""
-            ).strip()
-            if not proxy_url or proxy_url.startswith("${"):
-                raise RuntimeError(
-                    "Прокси не задан. Укажите OPENAI_PROXY или HTTPS_PROXY/HTTP_PROXY."
+            connection_mode = get_openai_connection_mode()
+            proxy_url = get_openai_proxy_url()
+            client_kwargs = {"timeout": httpx.Timeout(120.0, connect=20.0)}
+            if proxy_url:
+                client_kwargs["proxy"] = proxy_url
+                self.http_client = httpx.Client(**client_kwargs)
+                self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
+                self.logger.info(
+                    "%s: режим proxy, модель %s",
+                    self.__class__.__name__,
+                    self.model,
                 )
-
-            self.http_client = httpx.Client(proxy=proxy_url)
-            self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
-            self.logger.info(
-                "%s инициализирован с прокси, модель: %s",
-                self.__class__.__name__,
-                self.model,
-            )
+            else:
+                self.http_client = httpx.Client(**client_kwargs)
+                self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
+                self.logger.info(
+                    "%s: режим %s (без прокси в приложении), модель %s",
+                    self.__class__.__name__,
+                    connection_mode,
+                    self.model,
+                )
         except Exception as e:
             self.logger.error(f"Ошибка при инициализации клиента OpenAI: {str(e)}")
             raise

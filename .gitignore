@@ -5,6 +5,7 @@ github-key.ssh
 github-key.ssh.pub
 *.env
 .env.*
+.env_прокси
 
 # Git
 .git/
