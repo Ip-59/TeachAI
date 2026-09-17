@@ -1,0 +1,60 @@
+SAVED: /media/ip-59/64GB/TeachAI/model_benchmark/results/lesson_benchmark_20260913_123645.json
+COST_SUMMARY: {"currency": "RUB", "sum_judge_cost_rub": 200.6603, "note": "avg_gen_cost_rub — стоимость генерации участника; sum_judge_cost_rub — накладные расходы эксперимента (судьи), не стоимость продакшена TeachAI."}
+[
+  {
+    "participant_id": "gpt-5.6-luna",
+    "model": "gpt-5.6-luna",
+    "label": "GPT-5.6 Luna (дешёвая современная OpenAI)",
+    "avg_total": 8.4,
+    "n_scores": 15,
+    "avg_gen_cost_rub": 0.878,
+    "sum_gen_cost_rub": 4.3901,
+    "avg_latency_sec": 83.694,
+    "score_per_ruble": 9.567
+  },
+  {
+    "participant_id": "gemini-3.5-flash",
+    "model": "gemini-3.5-flash",
+    "label": "Gemini 3.5 Flash",
+    "avg_total": 8.333,
+    "n_scores": 15,
+    "avg_gen_cost_rub": 6.5259,
+    "sum_gen_cost_rub": 32.6295,
+    "avg_latency_sec": 21.085,
+    "score_per_ruble": 1.277
+  },
+  {
+    "participant_id": "gpt-5.6-terra",
+    "model": "gpt-5.6-terra",
+    "label": "GPT-5.6 Terra (баланс OpenAI)",
+    "avg_total": 8.267,
+    "n_scores": 15,
+    "avg_gen_cost_rub": 8.7802,
+    "sum_gen_cost_rub": 43.9012,
+    "avg_latency_sec": 81.682,
+    "score_per_ruble": 0.942
+  },
+  {
+    "participant_id": "gpt-4o-mini",
+    "model": "gpt-4o-mini",
+    "label": "Текущая базовая (TI)",
+    "avg_total": 7.733,
+    "n_scores": 15,
+    "avg_gen_cost_rub": 0.5256,
+    "sum_gen_cost_rub": 2.6278,
+    "avg_latency_sec": 12.41,
+    "score_per_ruble": 14.715
+  },
+  {
+    "participant_id": "claude-5-sonnet",
+    "model": "claude-5-sonnet",
+    "label": "Claude Sonnet 5",
+    "avg_total": 7.667,
+    "n_scores": 15,
+    "avg_gen_cost_rub": 7.573,
+    "sum_gen_cost_rub": 37.8652,
+    "avg_latency_sec": 37.302,
+    "score_per_ruble": 1.012
+  }
+]
+EXIT:0

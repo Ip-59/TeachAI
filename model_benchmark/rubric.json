@@ -1,0 +1,50 @@
+{
+  "name": "Рубрика оценки урока TeachAI",
+  "scale": {
+    "min": 0,
+    "max": 2,
+    "meaning": {
+      "0": "плохо / мимо / непригодно",
+      "1": "приемлемо / частично",
+      "2": "хорошо / соответствует ожиданиям TI"
+    }
+  },
+  "criteria": [
+    {
+      "id": "topic_fit",
+      "name": "Соответствие теме",
+      "description": "Материал по заявленной теме урока, без ухода в сторону."
+    },
+    {
+      "id": "completeness",
+      "name": "Полнота раскрытия",
+      "description": "Ключевые понятия темы объяснены достаточно для самостоятельного изучения."
+    },
+    {
+      "id": "density",
+      "name": "Объём и плотность",
+      "description": "Не обрывок и не вода: материал насыщенный, но без лишней болтовни."
+    },
+    {
+      "id": "pedagogy",
+      "name": "Педагогичность",
+      "description": "Понятно ученику начального уровня: объяснения, примеры, логичный порядок."
+    },
+    {
+      "id": "task_fit",
+      "name": "Соответствие заданию",
+      "description": "Есть введение, концепции, примеры кода в markdown, частые ошибки, краткое заключение без прощаний; код на Python с нормальными переносами."
+    }
+  ],
+  "format_gate": {
+    "min_chars": 800,
+    "require_markdown_headings": true,
+    "require_python_code_block": true,
+    "forbid_html": false,
+    "on_fail": "format_fail"
+  },
+  "aggregation": {
+    "per_lesson": "sum of criteria (0-10)",
+    "per_model": "mean over lessons and judges"
+  }
+}

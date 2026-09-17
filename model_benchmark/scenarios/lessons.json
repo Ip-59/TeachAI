@@ -1,0 +1,34 @@
+{
+  "course_id": "python-basics",
+  "course_title": "Основы Python",
+  "section": "Основы языка",
+  "communication_style": "friendly",
+  "user_name": "Студент",
+  "lessons": [
+    {
+      "id": "lesson-variables",
+      "topic": "Переменные и типы данных",
+      "lesson": "Переменные, числа и строки"
+    },
+    {
+      "id": "lesson-conditions",
+      "topic": "Условные операторы",
+      "lesson": "if, elif, else на практике"
+    },
+    {
+      "id": "lesson-loops",
+      "topic": "Циклы",
+      "lesson": "Циклы for и while"
+    },
+    {
+      "id": "lesson-lists-dicts",
+      "topic": "Списки и словари",
+      "lesson": "Работа со списками и словарями"
+    },
+    {
+      "id": "lesson-functions",
+      "topic": "Функции",
+      "lesson": "Создание и вызов функций"
+    }
+  ]
+}

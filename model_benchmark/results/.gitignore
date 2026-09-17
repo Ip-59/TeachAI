@@ -1,0 +1,5 @@
+# JSON-отчёты прогонов: коммитим зафиксированные результаты этапа №5.
+*
+!.gitignore
+!lesson_benchmark_*.json
+!full_run.log

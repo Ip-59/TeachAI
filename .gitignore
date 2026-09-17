@@ -5,6 +5,7 @@ github-key.ssh
 github-key.ssh.pub
 *.env
 .env.*
+!.env.sample
 .env_прокси
 
 # Git
@@ -35,6 +36,10 @@ logs/
 data/
 *.json
 !courses.json
+!model_benchmark/config.json
+!model_benchmark/rubric.json
+!model_benchmark/scenarios/*.json
+!model_benchmark/results/lesson_benchmark_*.json
 
 # Byte-код Python
 __pycache__/
