@@ -21,7 +21,10 @@ github-key.ssh.pub
 .idea/
 *.swp
 *.swo
-.cursor/
+.cursor/*
+# Правила агента нужны на любом ПК — не игнорировать
+!.cursor/rules/
+!.cursor/rules/**
 .cursorrules
 
 # Папки разработки и отладки
@@ -96,3 +99,5 @@ replace.txt
 *.zip
 *.tar.gz
 *.rar
+# Локальные секреты (SSH-ключи и т.п.) — никогда не коммитить
+.secrets/
