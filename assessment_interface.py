@@ -11,6 +11,10 @@ from interface_utils import InterfaceUtils, InterfaceStyles, InterfaceState
 
 # Импортируем специализированный обработчик результатов
 from assessment_results_handler import AssessmentResultsHandler
+from assessment_questions_ui import (
+    build_compact_questions_interface,
+    collect_answers_from_widgets,
+)
 
 
 class AssessmentInterface:
@@ -204,24 +208,29 @@ class AssessmentInterface:
 
             # Обработчик кнопки завершения теста
             test_submitted = False  # Флаг для предотвращения повторной отправки
-            
+
             def on_submit_button_clicked(b):
                 nonlocal test_submitted
-                
-                # Проверяем, не был ли тест уже отправлен
+
                 if test_submitted:
                     return
-                
-                # Устанавливаем флаг и блокируем кнопку
-                test_submitted = True
+
+                # Снимок с RadioButtons: observe иногда не ловит первый выбор
+                answers = collect_answers_from_widgets(
+                    self.question_widgets,
+                    self.current_questions,
+                    self.current_answers,
+                )
+                self.current_answers = answers
+
                 submit_button.disabled = True
                 submit_button.description = "Обработка..."
-                
+
                 try:
-                    self.results_handler.handle_test_submission(
+                    completed = self.results_handler.handle_test_submission(
                         results_output,
                         self.current_questions,
-                        self.current_answers,
+                        answers,
                         course_plan,
                         course_title,
                         section_title,
@@ -232,19 +241,24 @@ class AssessmentInterface:
                         current_topic,
                         current_lesson,
                     )
+                    if completed:
+                        test_submitted = True
+                    else:
+                        # Не все ответы / ранняя проверка — кнопка снова доступна
+                        submit_button.disabled = False
+                        submit_button.description = "Завершить тест"
                 except Exception as e:
-                    # В случае ошибки разблокируем кнопку
                     test_submitted = False
                     submit_button.disabled = False
                     submit_button.description = "Завершить тест"
                     self.logger.error(f"Ошибка при обработке теста: {str(e)}")
                     with results_output:
-                        # ИСПРАВЛЕНО: Убираем прямой display() для избежания дублирования
-                        # Создаем виджет ошибки для отображения в контейнере
                         error_html = widgets.HTML(
-                                value=f"<p style='color: red;'>Ошибка при обработке теста: {str(e)}</p>"
+                            value=(
+                                f"<p style='color: red;'>"
+                                f"Ошибка при обработке теста: {str(e)}</p>"
+                            )
                         )
-                        # Очищаем и добавляем виджет в контейнер
                         clear_output(wait=True)
                         display(error_html)
 
@@ -281,7 +295,7 @@ class AssessmentInterface:
 
     def _create_compact_questions_interface(self, questions):
         """
-        Создает КОМПАКТНЫЙ интерфейс для вопросов с минимальными отступами.
+        Создает компактный интерфейс вопросов (делегирует в assessment_questions_ui).
 
         Args:
             questions (list): Список вопросов
@@ -289,74 +303,14 @@ class AssessmentInterface:
         Returns:
             widgets.VBox: Контейнер с вопросами
         """
-        questions_widgets = []
 
-        for i, question in enumerate(questions):
-            # Проверяем структуру вопроса
-            if not isinstance(question, dict):
-                self.logger.error(f"Вопрос {i+1} не является словарем: {question}")
-                continue
+        def on_answer_change(question_index, value):
+            self.current_answers[question_index] = value
 
-            if "text" not in question:
-                self.logger.error(f"Вопрос {i+1} не содержит поле 'text': {question}")
-                continue
-
-            # Компактный заголовок вопроса
-            question_title_widget = widgets.HTML(
-                value=f"<div style='font-size: 18px; font-weight: bold; color: #212529; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px solid #dee2e6; line-height: 1.3;'>Вопрос {i+1}: {question['text']}</div>",
-                layout=widgets.Layout(margin="0px"),
-            )
-
-            # Создаем RadioButtons с минимальными отступами
-            if "options" not in question or not isinstance(question["options"], list):
-                self.logger.error(
-                    f"Вопрос {i+1} не содержит корректные варианты ответов: {question}"
-                )
-                continue
-
-            options = question["options"]
-            radio_buttons = widgets.RadioButtons(
-                options=[(option, j + 1) for j, option in enumerate(options)],
-                description="",
-                disabled=False,
-                layout=widgets.Layout(
-                    margin="4px 10px", width="100%"  # Еще более уменьшенные отступы
-                ),
-                style={"description_width": "0px"},
-            )
-
-            # Создаем обработчик для каждого вопроса
-            def create_answer_handler(question_index):
-                def handle_answer_change(change):
-                    if change["type"] == "change" and change["name"] == "value":
-                        if change["new"] is not None:
-                            self.current_answers[question_index] = change["new"]
-
-                return handle_answer_change
-
-            # Привязываем обработчик
-            radio_buttons.observe(create_answer_handler(i), names="value")
-
-            # Сохраняем ссылку на RadioButtons для отладки
-            self.question_widgets[i] = radio_buttons
-
-            # Максимально компактная структура вопроса
-            question_container = widgets.VBox(
-                [question_title_widget, radio_buttons],
-                layout=widgets.Layout(
-                    border="2px solid #e9ecef",
-                    border_radius="8px",
-                    padding="8px",  # Уменьшенный padding
-                    margin="4px 0",  # Уменьшенный margin
-                    background_color="#ffffff",
-                ),
-            )
-
-            questions_widgets.append(question_container)
-
-        return widgets.VBox(
-            questions_widgets, layout=widgets.Layout(margin="0px", gap="2px")
+        container, self.question_widgets = build_compact_questions_interface(
+            questions, on_answer_change=on_answer_change
         )
+        return container
 
     def _get_element_titles(
         self, course_plan, current_section, current_topic, current_lesson

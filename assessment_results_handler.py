@@ -66,44 +66,49 @@ class AssessmentResultsHandler:
         current_section,
         current_topic,
         current_lesson,
-    ):
+    ) -> bool:
         """
         Обрабатывает отправку результатов теста.
+
+        Returns:
+            bool: True, если тест принят и результаты показаны;
+                False, если есть неотвеченные вопросы или сбой обработки
+                (кнопка Submit должна снова стать активной).
         """
         with results_output:
-            # ЕДИНСТВЕННАЯ ОЧИСТКА ВЫВОДА В НАЧАЛЕ
             clear_output(wait=True)
-            
-            # Проверяем, что на все вопросы даны ответы
+
             unanswered_questions = [
                 i + 1 for i, answer in enumerate(current_answers) if answer is None
             ]
             if unanswered_questions:
                 display(
                     widgets.HTML(
-                        value=f"<p style='color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 3px 0;'>Пожалуйста, ответьте на вопросы: {', '.join(map(str, unanswered_questions))} перед завершением теста.</p>"
+                        value=(
+                            "<p style='color: #856404; background-color: #fff3cd; "
+                            "padding: 10px; border-radius: 5px; margin: 3px 0;'>"
+                            "Пожалуйста, ответьте на вопросы: "
+                            f"{', '.join(map(str, unanswered_questions))} "
+                            "перед завершением теста.</p>"
+                        )
                     )
                 )
-                return
+                return False
 
             try:
-                # Расчет результатов
                 score, results, correct_answers = self.assessment.calculate_score(
                     current_questions, current_answers
                 )
 
-                # ИСПРАВЛЕНО: Урок НЕ завершается только на основе теста
-                # Тест только сохраняется как пройденный/не пройденный
                 lesson_id = f"{current_section}:{current_topic}:{current_lesson}"
-                is_test_passed = score > 40  # Тест считается пройденным при >40%
+                is_test_passed = score > 40
 
-                # ИСПРАВЛЕНО: Сохраняем результат теста с правильным статусом прохождения
-                self.state_manager.save_lesson_assessment(lesson_id, score, is_test_passed)
+                self.state_manager.save_lesson_assessment(
+                    lesson_id, score, is_test_passed
+                )
 
-                # Получаем ID курса
                 course_id = course_plan.get("id", current_course)
 
-                # Логируем результаты
                 self.assessment.log_assessment_results(
                     course=course_id,
                     section=current_section,
@@ -115,7 +120,6 @@ class AssessmentResultsHandler:
                     score=score,
                 )
 
-                # ИСПРАВЛЕНО: Отображаем результаты БЕЗ дополнительных очисток
                 self.display_enhanced_test_results(
                     score,
                     correct_answers,
@@ -127,14 +131,19 @@ class AssessmentResultsHandler:
                     is_test_passed,
                     lesson_id,
                 )
+                return True
 
             except Exception as e:
-                # В случае ошибки показываем сообщение об ошибке
                 display(
                     widgets.HTML(
-                        value=f"<p style='color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin: 3px 0;'>Ошибка при обработке результатов теста: {str(e)}</p>"
+                        value=(
+                            "<p style='color: #721c24; background-color: #f8d7da; "
+                            "padding: 10px; border-radius: 5px; margin: 3px 0;'>"
+                            f"Ошибка при обработке результатов теста: {str(e)}</p>"
+                        )
                     )
                 )
+                return False
 
     def display_enhanced_test_results(
         self,
