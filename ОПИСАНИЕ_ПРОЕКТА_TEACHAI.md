@@ -224,14 +224,14 @@ flowchart TB
    - `state["lesson_content_cache"]` (постоянный);
    - in-memory кэш `LessonInterface`;
    - иначе **`LessonGenerator.generate_lesson(...)`**:
-     - system: «опытный преподаватель Python»;
-     - user: промпт с курсом/разделом/темой/уроком, стилем, требованиями к markdown и блокам ```python;
+     - system: преподаватель, Markdown, код в ```lang языка темы;
+     - user: промпт с курсом/разделом/темой/уроком и стилем;
      - `make_api_request(temperature=0.7, max_tokens=3500)`;
      - `ContentFormatterFinal.format_lesson_content()` → HTML;
      - сохранение `content` + `raw_content` (сырой ответ LLM до CSS).
 4. `update_learning_progress()` — текущая позиция в курсе.
 5. `Logger.log_lesson()` — запись в `logs/lesson_history.md`.
-6. Сборка виджетов: HTML урока (`enhance_content` при необходимости), кнопки («Пройти тест», «Задать вопрос», «Объясни подробнее», «Приведи примеры», контрольное задание), навигация.
+6. Сборка виджетов: HTML через `student_content.render_student_content()`, кнопки («Пройти тест», «Задать вопрос», «Объясни подробнее», «Приведи примеры», контрольное задание), навигация.
 
 **Примечание из кода:** автоматическая вставка интерактивных ячеек через `cell_integration` в `lesson_display.py` **отключена** (`CELLS_INTEGRATION_AVAILABLE = False`). Контрольные задания показываются через `ControlTasksInterface`.
 
@@ -300,9 +300,10 @@ flowchart TB
 ### 5.2. Генерация и форматирование
 
 - **`content_utils.py`** — `BaseContentGenerator`, стили общения, API, подготовка текста.
-- **`lesson_generator.py`** — промпт урока, markdown, Python-примеры.
+- **`lesson_generator.py`** — промпт урока, Markdown, код языка темы (не Python по умолчанию).
 - **`course_plan_generator.py`** — JSON-план курса.
-- **`content_formatter_final.py`** — markdown/HTML урока, плейсхолдеры кода.
+- **`student_content.py`** — канон показа: Markdown/HTML → HTML для ipywidgets.
+- **`content_formatter_final.py`** — fences → `<pre>`, остальное через канон.
 - **`content_renderer.py`** — таблицы, LaTeX→MathML, `enhance_content`, `render_markdown_to_html`.
 - **`examples_*.py`** — генерация, валидация, санитизация кода (`examples_code_fixes.py`), отображение.
 - **`qa_generator.py`**, **`explanation_generator.py`**, **`concepts_generator.py`**, **`relevance_checker.py`**, **`assessment_generator.py`**.

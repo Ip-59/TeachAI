@@ -1,11 +1,10 @@
 """
 Модуль для генерации подробных объяснений материалов уроков.
 Отвечает за создание расширенных теоретических разборов и детальных пояснений концепций.
-ИСПРАВЛЕНО: компактные интервалы и контрастный код
 """
 
 from content_utils import BaseContentGenerator, ContentUtils
-from content_renderer import enhance_content, get_display_css
+from student_content import render_student_content
 
 
 class ExplanationGenerator(BaseContentGenerator):
@@ -84,11 +83,6 @@ class ExplanationGenerator(BaseContentGenerator):
                 },
             )
 
-            # Снимаем возможные markdown-обёртки ```html ... ```, '''html ... ''',
-            # ~~~html ... ~~~ — LLM иногда возвращает HTML, завёрнутый в код-fence.
-            explanation = self.clean_markdown_code_blocks(explanation)
-            explanation = enhance_content(explanation)
-
             styled_explanation = self._apply_compact_styles(
                 explanation, communication_style
             )
@@ -103,116 +97,14 @@ class ExplanationGenerator(BaseContentGenerator):
             raise Exception(f"Не удалось сгенерировать подробное объяснение: {str(e)}")
 
     def _apply_compact_styles(self, explanation, communication_style):
-        """
-        ИСПРАВЛЕНО: Применяет компактные CSS стили к объяснению.
-
-        Args:
-            explanation (str): Исходное объяснение
-            communication_style (str): Стиль общения
-
-        Returns:
-            str: Стилизованное объяснение
-        """
-        # Получаем префикс в зависимости от стиля общения
+        """Оборачивает объяснение в канон рендера (``.explanation-compact``)."""
         utils = ContentUtils()
         prefix = utils.get_style_prefix(communication_style, "explanation")
-
-        # ИСПРАВЛЕНО: Компактные CSS стили с контрастным кодом
-        compact_css = """
-        <style>
-        .explanation-compact {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 16px;
-            line-height: 1.4;
-            padding: 20px;
-            background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%);
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #007bff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .explanation-compact h1, .explanation-compact h2, .explanation-compact h3, .explanation-compact h4 {
-            color: #495057;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            line-height: 1.2;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 4px;
-        }
-        .explanation-compact h1 { font-size: 20px; }
-        .explanation-compact h2 { font-size: 18px; }
-        .explanation-compact h3 { font-size: 17px; }
-        .explanation-compact h4 { font-size: 16px; }
-        .explanation-compact p {
-            margin-bottom: 8px;
-            line-height: 1.3;
-            text-align: justify;
-        }
-        .explanation-compact ul, .explanation-compact ol {
-            margin-bottom: 10px;
-            padding-left: 25px;
-            line-height: 1.3;
-        }
-        .explanation-compact li {
-            margin-bottom: 4px;
-        }
-        .explanation-compact code {
-            background-color: #1a1a1a;
-            color: #00ff41;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid #333;
-        }
-        .explanation-compact pre {
-            background-color: #1a1a1a;
-            color: #00ff41;
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            border: 2px solid #333;
-            white-space: pre;
-        }
-        .explanation-compact pre code {
-            background: none;
-            color: inherit;
-            padding: 0;
-            font-size: inherit;
-        }
-        .explanation-compact .concept-block {
-            background-color: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 10px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .explanation-compact .highlight {
-            background-color: #fff3cd;
-            padding: 8px;
-            border-radius: 6px;
-            border-left: 3px solid #ffc107;
-            margin: 8px 0;
-        }
-        .explanation-compact strong {
-            color: #495057;
-            font-weight: 600;
-        }
-        .explanation-compact em {
-            color: #6c757d;
-            font-style: italic;
-        }
-        </style>
-        <div class="explanation-compact">
-        """
-
-        return f"{get_display_css()}{compact_css}{prefix}{explanation}</div>"
+        return render_student_content(
+            explanation,
+            wrapper="explanation-compact",
+            lead_html=prefix,
+        )
 
     def _build_explanation_prompt(
         self, course, section, topic, lesson_title, lesson_content, communication_style
@@ -244,38 +136,22 @@ class ExplanationGenerator(BaseContentGenerator):
         Урок: {lesson_title}
 
         СОДЕРЖАНИЕ УРОКА (ОСНОВА ДЛЯ ОБЪЯСНЕНИЯ):
-        {lesson_content[:2000]}  # Ограничиваем длину для запроса
+        {lesson_content[:2000]}
 
         Используй следующий стиль общения: {style_description}
 
-        🚨 КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
-        1. АНАЛИЗИРУЙ ТОЛЬКО содержание урока выше
-        2. НЕ ПРИДУМЫВАЙ информацию, которой нет в уроке
-        3. ФОКУСИРУЙСЯ на материале урока, а не на общих знаниях
-        4. Все примеры должны быть связаны с содержанием урока
+        Требования:
+        1. Анализируй только содержание урока выше.
+        2. Не придумывай факты, которых нет в уроке.
+        3. Все примеры связаны с содержанием урока.
 
-        Предоставь расширенное объяснение, включающее:
-        1. Глубокий разбор основных концепций ИЗ УРОКА
-        2. Больше примеров и иллюстраций НА ОСНОВЕ УРОКА
-        3. Практические сценарии применения ИЗ УРОКА
-        4. Дополнительную информацию по теме УРОКА
-        5. Ссылки на связанные концепции В УРОКЕ
+        Структура:
+        1. Глубокий разбор основных концепций из урока
+        2. Примеры и иллюстрации на основе урока
+        3. Практические сценарии из урока
+        4. Связанные концепции из урока
 
-        Используй HTML-форматирование для структурирования ответа с компактной структурой.
-
-        Структурируй ответ следующим образом:
-        - Используй <h3> для основных разделов объяснения
-        - Код помещай в <pre><code> блоки
-        - Важные концепции оборачивай в <div class="concept-block">
-        - Ключевые моменты выделяй в <div class="highlight">
-        - Используй <strong> для акцентов и <em> для пояснений
-
-        🚨 ФОРМАТ ВЫВОДА:
-        - Верни ТОЛЬКО чистый HTML без какой-либо markdown-обёртки.
-        - НЕ оборачивай ответ в ```html ... ```, ``` ... ```, '''html ... ''' или
-          ~~~html ... ~~~. Никаких кодовых ограждений вокруг всего ответа.
-        - Внутри <pre><code> также не используй ```; HTML-блоки <pre><code> уже
-          задают разметку кода.
-
-        ПЕРЕД ОТВЕТОМ ПРОВЕРЬ: все ли объяснения основаны на содержании урока выше?
+        Формат: Markdown (заголовки ## / ###, списки, **жирный**).
+        Код только внутри блоков ``` с языком темы. Не оборачивай весь ответ
+        в один fence. Не используй HTML.
         """

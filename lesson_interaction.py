@@ -73,10 +73,7 @@ class LessonInteraction:
                         ]["communication_style"],
                     )
 
-                    # Создаем виджет с объяснением (таблицы/LaTeX — на случай старого HTML)
-                    from content_renderer import enhance_content
-
-                    explanation_html = widgets.HTML(value=enhance_content(explanation))
+                    explanation_html = widgets.HTML(value=explanation)
 
                     # Кнопка закрытия
                     close_button = widgets.Button(
@@ -479,7 +476,6 @@ class LessonInteraction:
                         f"Ответ сгенерирован, длина: {len(answer)} символов"
                     )
 
-                    # Отображаем ответ
                     answer_area.value = answer
 
                     # Очищаем поле ввода

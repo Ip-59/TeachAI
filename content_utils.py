@@ -510,36 +510,15 @@ class BaseContentGenerator:
 
     def clean_markdown_code_blocks(self, text):
         """
-        Удаляет markdown/код-fences вокруг ответа LLM.
+        Снимает одну внешнюю обёртку ``` вокруг всего ответа.
 
-        Закрывает класс багов, когда LLM возвращает HTML-объяснение,
-        обёрнутое в ```html ... ``` (или '''html ... ''', ~~~html ... ~~~),
-        и пользователь видит эти метки прямо в выводе.
-
-        Отступы внутри <pre><code> НЕ трогает (раньше здесь был самописный
-        de-indent, который ломал тело циклов: `for x:\\n    body` → `for x:\\nbody`).
-        Если нужно снять общий отступ — используется textwrap.dedent,
-        который безопасен: ничего не трогает, если хоть одна строка
-        не имеет общего префикса.
-
-        Args:
-            text (str): Исходный текст.
-
-        Returns:
-            str: Текст без обёрток-fences.
+        Внутренние блоки кода не удаляет (раньше снимались все fences).
         """
         try:
-            import textwrap
+            from student_content import unwrap_outer_fence
 
-            # Снимаем все варианты блочных fences: ```lang, ```, '''lang, ''', ~~~lang, ~~~
-            text = re.sub(r"```\s*[A-Za-z0-9_+\-]*\s*\n?", "", text)
-            text = re.sub(r"```", "", text)
-            text = re.sub(r"~~~\s*[A-Za-z0-9_+\-]*\s*\n?", "", text)
-            text = re.sub(r"~~~", "", text)
-            # '''html / ''' — только когда оборачивают блок (в начале строки),
-            # чтобы не трогать docstring-ы внутри примеров кода.
-            text = re.sub(r"(?m)^\s*'''\s*[A-Za-z0-9_+\-]*\s*\n", "", text)
-            text = re.sub(r"(?m)^\s*'''\s*$", "", text)
+            text = unwrap_outer_fence(text)
+            import textwrap
 
             # Безопасный dedent внутри <pre><code>: снимает только общий
             # лидирующий пробельный префикс. Если у хотя бы одной строки

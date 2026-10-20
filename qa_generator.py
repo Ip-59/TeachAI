@@ -93,7 +93,6 @@ class QAGenerator(BaseContentGenerator):
                 },
             )
 
-            # ИСПРАВЛЕНО: Применяем красивое форматирование ответов
             styled_answer = self._apply_answer_styles(answer, communication_style)
 
             self.logger.info("Ответ на вопрос успешно сгенерирован")
@@ -106,112 +105,17 @@ class QAGenerator(BaseContentGenerator):
             raise Exception(f"Не удалось сгенерировать ответ на вопрос: {str(e)}")
 
     def _apply_answer_styles(self, answer, communication_style):
-        """
-        ИСПРАВЛЕНО: Применяет красивые CSS стили к ответу.
+        """Прогоняет ответ через канон рендера (``.qa-answer``)."""
+        from student_content import render_student_content
 
-        Args:
-            answer (str): Исходный ответ
-            communication_style (str): Стиль общения
-
-        Returns:
-            str: Стилизованный ответ
-        """
-        # Очищаем ответ от возможных приветствий
         cleaned_answer = self._remove_greetings(answer)
-
-        # Получаем префикс в зависимости от стиля общения
         utils = ContentUtils()
         prefix = utils.get_style_prefix(communication_style, "qa")
-
-        # ИСПРАВЛЕНО: Красивые CSS стили для ответов на вопросы
-        answer_css = """
-        <style>
-        .qa-answer {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 16px;
-            line-height: 1.4;
-            padding: 20px;
-            background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%);
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #007bff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .qa-answer h1, .qa-answer h2, .qa-answer h3, .qa-answer h4 {
-            color: #495057;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            line-height: 1.2;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 4px;
-        }
-        .qa-answer h1 { font-size: 20px; }
-        .qa-answer h2 { font-size: 18px; }
-        .qa-answer h3 { font-size: 17px; }
-        .qa-answer h4 { font-size: 16px; }
-        .qa-answer p {
-            margin-bottom: 8px;
-            line-height: 1.3;
-            text-align: justify;
-        }
-        .qa-answer ul, .qa-answer ol {
-            margin-bottom: 10px;
-            padding-left: 25px;
-            line-height: 1.3;
-        }
-        .qa-answer li {
-            margin-bottom: 4px;
-        }
-        .qa-answer code {
-            background-color: #f8f9fa;
-            color: #d63384;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid #dee2e6;
-        }
-        .qa-answer pre {
-            background-color: #f8f9fa;
-            color: #212529;
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            border: 2px solid #dee2e6;
-        }
-        .qa-answer pre code {
-            background: none;
-            color: inherit;
-            padding: 0;
-            font-size: inherit;
-            border: none;
-        }
-        .qa-answer .answer-block {
-            background-color: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 10px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .qa-answer strong {
-            color: #495057;
-            font-weight: 600;
-        }
-        .qa-answer em {
-            color: #6c757d;
-            font-style: italic;
-        }
-        </style>
-        <div class="qa-answer">
-        """
-
-        return f"{answer_css}{prefix}{cleaned_answer}</div>"
+        return render_student_content(
+            cleaned_answer,
+            wrapper="qa-answer",
+            lead_html=prefix,
+        )
 
     def _build_qa_prompt(
         self,
@@ -270,7 +174,8 @@ class QAGenerator(BaseContentGenerator):
         7. Добавляй практические советы и рекомендации
 
         Ответ должен быть профессиональным, структурированным и легко читаемым.
-        Используй HTML-форматирование для улучшения читаемости.
+        Формат: Markdown (заголовки, списки). Код только в блоках ```.
+        Не оборачивай весь ответ в один fence. Не используй HTML.
         """
 
     def _remove_greetings(self, answer):

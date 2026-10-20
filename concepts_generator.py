@@ -6,7 +6,7 @@
 import json
 import re
 from content_utils import BaseContentGenerator
-from content_renderer import enhance_content, get_display_css
+from student_content import render_student_content
 
 
 class ConceptsGenerator(BaseContentGenerator):
@@ -196,12 +196,6 @@ class ConceptsGenerator(BaseContentGenerator):
                 },
             )
 
-            # Снимаем возможные markdown-обёртки ```html ... ``` и лишний общий
-            # отступ внутри <pre><code> (LLM часто вкладывает блок кода в <li>
-            # и выдаёт код с лишними 8-12 пробелами слева у каждой строки).
-            explanation = self.clean_markdown_code_blocks(explanation)
-            explanation = enhance_content(explanation)
-
             styled_explanation = self._style_concept_explanation(
                 explanation, concept_name, communication_style
             )
@@ -339,8 +333,7 @@ class ConceptsGenerator(BaseContentGenerator):
 
 Стиль общения: {style_description}
 
-ОБЯЗАТЕЛЬНАЯ СТРУКТУРА ответа (используй HTML-разметку: <h4>, <p>,
-<ul>/<li>, <pre><code>):
+ОБЯЗАТЕЛЬНАЯ СТРУКТУРА ответа (Markdown: #### заголовки, списки, код в ```):
 
 1. <h4>Определение</h4>
    2-3 предложения, чёткое определение без воды.
@@ -352,7 +345,7 @@ class ConceptsGenerator(BaseContentGenerator):
    Если это процесс/алгоритм — этапы. Если это парадигма — компоненты.
 
 3. <h4>Синтаксис и создание</h4>
-   Минимум один блок <pre><code> с РАБОЧИМ Python-кодом, показывающим,
+   Минимум один блок кода ``` с рабочим примером на языке темы, показывающим,
    как создать/использовать. Несколько вариантов создания, если применимо
    (литерал, конструктор, comprehension и т.п.).
 
@@ -360,7 +353,7 @@ class ConceptsGenerator(BaseContentGenerator):
    Список 3–6 наиболее важных операций или методов с короткими примерами
    (индексация, срезы, append/pop/insert для списков; неизменяемость и
    распаковка для кортежей; и т.п. — выбирай релевантное для понятия).
-   Каждая операция — отдельная строка кода в <pre><code>.
+   Каждая операция — отдельная строка кода в блоке ```.
 
 5. <h4>Чем отличается от похожего</h4>
    Если есть близкое понятие (списки↔кортежи, list↔tuple↔set↔dict,
@@ -374,24 +367,19 @@ class ConceptsGenerator(BaseContentGenerator):
 
 7. <h4>Частые ошибки</h4>
    2-3 типичные ошибки начинающих и как их избегать. Где уместно —
-   короткие примеры некорректного и корректного кода в <pre><code>.
+   короткие примеры некорректного и корректного кода в блоках ```.
 
 ТРЕБОВАНИЯ К КАЧЕСТВУ:
 - НЕ ограничивайся повторением краткого описания — это считается провалом.
-- Минимум 2 блока <pre><code> с рабочим Python-кодом.
+- Минимум 2 блока кода на языке темы урока (не подставляй Python, если тема другая).
 - Никаких "В этом разделе мы рассмотрим...", "Сейчас разберёмся..." —
   сразу по существу.
 - Если в уроке есть конкретные примеры по этому понятию — обязательно
   упомяни и разверни их.
-- Не выдумывай несуществующие методы/синтаксис. Только реальный Python.
+- Не выдумывай несуществующие методы/синтаксис.
 
-🚨 ФОРМАТ ВЫВОДА:
-- Верни ТОЛЬКО чистый HTML, без markdown-обёрток.
-- НЕ оборачивай ответ в ```html ... ```, ``` ... ```, '''html ... ''' или ~~~.
-- Внутри <pre><code> код пиши БЕЗ лишнего общего отступа слева:
-  первая строка кода — БЕЗ ведущих пробелов, дальше Python-отступ 4 пробела
-  только для вложенных конструкций (тело for/while/if/def/class).
-  Не сдвигай весь блок вправо, даже если <pre><code> находится внутри <li>.
+Формат вывода: Markdown. Не оборачивай весь ответ в один fence.
+Код — только внутри ```lang. Не используй HTML.
 """
 
     def _extract_concepts_from_response(self, concepts_data):
@@ -420,111 +408,13 @@ class ConceptsGenerator(BaseContentGenerator):
     def _style_concept_explanation(
         self, explanation, concept_name, communication_style
     ):
-        """
-        Применяет стилизацию к объяснению понятия.
-
-        Args:
-            explanation (str): Исходное объяснение
-            concept_name (str): Название понятия
-            communication_style (str): Стиль общения
-
-        Returns:
-            str: Стилизованное объяснение
-        """
-        # Получаем префикс в зависимости от стиля общения
+        """Оборачивает объяснение понятия в канон рендера."""
         prefix = self._get_concept_prefix(concept_name, communication_style)
-
-        # Применяем CSS стили
-        styled_explanation = f"""
-        {get_display_css()}
-        <style>
-        .concept-explanation {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 16px;
-            line-height: 1.4;
-            padding: 20px;
-            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #ff9800;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-        .concept-explanation h1, .concept-explanation h2, .concept-explanation h3, .concept-explanation h4 {{
-            color: #e65100;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            line-height: 1.2;
-            border-bottom: 2px solid #ff9800;
-            padding-bottom: 4px;
-        }}
-        .concept-explanation h1 {{ font-size: 20px; }}
-        .concept-explanation h2 {{ font-size: 18px; }}
-        .concept-explanation h3 {{ font-size: 17px; }}
-        .concept-explanation h4 {{ font-size: 16px; }}
-        .concept-explanation p {{
-            margin-bottom: 8px;
-            line-height: 1.3;
-            text-align: justify;
-        }}
-        .concept-explanation ul, .concept-explanation ol {{
-            margin-bottom: 10px;
-            padding-left: 25px;
-            line-height: 1.3;
-        }}
-        .concept-explanation li {{
-            margin-bottom: 4px;
-        }}
-        .concept-explanation code {{
-            background-color: #1a1a1a;
-            color: #00ff41;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid #333;
-        }}
-        .concept-explanation pre {{
-            background-color: #1a1a1a;
-            color: #00ff41;
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            border: 2px solid #333;
-            white-space: pre;
-        }}
-        .concept-explanation pre code {{
-            background: none;
-            color: inherit;
-            padding: 0;
-            font-size: inherit;
-        }}
-        .concept-explanation .concept-highlight {{
-            background-color: #fff8e1;
-            padding: 10px;
-            border-radius: 6px;
-            border-left: 3px solid #ffc107;
-            margin: 10px 0;
-        }}
-        .concept-explanation strong {{
-            color: #e65100;
-            font-weight: 600;
-        }}
-        .concept-explanation em {{
-            color: #ff6f00;
-            font-style: italic;
-        }}
-        </style>
-        <div class="concept-explanation">
-            {prefix}{explanation}
-        </div>
-        """
-
-        return styled_explanation
+        return render_student_content(
+            explanation,
+            wrapper="concept-explanation",
+            lead_html=prefix,
+        )
 
     def _get_concept_prefix(self, concept_name, communication_style):
         """

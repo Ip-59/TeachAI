@@ -23,7 +23,7 @@ Evidence in code: `engine.py` (system coordination), `content_generator.py` (les
 | Course catalog or custom title | `courses.json`, `custom_course.py` |
 | Multi-course portfolio | `course_portfolio.py` — slots in `state["courses"]`, active mirrored at root |
 | LLM-built syllabus | `CoursePlanGenerator` → `state["course_plan"]` |
-| Lesson content | `LessonGenerator` + `ContentFormatterFinal` |
+| Lesson content | `LessonGenerator` + `student_content.render_student_content` |
 | In-lesson interaction (Q&A, examples, explanations, concepts) | `LessonInteraction`, specialized generators |
 | On-topic questions | `RelevanceChecker` |
 | Post-lesson quiz | `Assessment`, `AssessmentGenerator` |
@@ -107,7 +107,7 @@ Selected course from **`courses.json`** (5 courses).
 
 1. Cache key `section:topic:lesson`
 2. Use `lesson_content_cache` in state, in-memory cache, or call **`LessonGenerator`**
-3. LLM returns markdown → **`ContentFormatterFinal`** → HTML; store **`raw_content`**
+3. LLM returns markdown → **`student_content.render_student_content`** (formatter + tables/LaTeX) → HTML; store **`raw_content`**
 4. Update progress, log to `lesson_history.md`
 5. Render ipywidgets UI (lesson body, actions, navigation)
 

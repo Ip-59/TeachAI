@@ -6,7 +6,6 @@
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import logging
-import re
 from lesson_utils import LessonUtils
 
 # Импорт адаптера для интеграции ячеек (безопасно)
@@ -283,85 +282,17 @@ class LessonDisplay:
             lesson_body = lesson_content_data.get("content") or ""
             raw_body = lesson_content_data.get("raw_content")
 
-            from content_formatter_final import (
-                ContentFormatterFinal,
-                content_has_unresolved_code_placeholders,
-            )
+            from content_formatter_final import content_has_unresolved_code_placeholders
+            from student_content import render_student_content
 
+            source = lesson_body
             if content_has_unresolved_code_placeholders(lesson_body) and raw_body:
                 self.logger.warning(
-                    "В уроке заглушки CODE_BLOCK — переформатирование из raw_content"
+                    "В уроке заглушки CODE_BLOCK — рендер из raw_content"
                 )
-                lesson_body = ContentFormatterFinal().format_lesson_content(
-                    raw_body, lesson_content_data.get("title", "")
-                )
-                lesson_content_data["content"] = lesson_body
+                source = raw_body
 
-            formatted_content = lesson_body
-            is_preformatted_html = formatted_content.strip().startswith(
-                '<div class="lesson-content">'
-            )
-
-            if not is_preformatted_html:
-                try:
-                    from code_formatter import code_formatter
-
-                    formatted_content = code_formatter.format_code_in_text(formatted_content)
-                except Exception as e:
-                    self.logger.warning(f"Ошибка форматирования кода (не критично): {e}")
-
-                try:
-                    import re
-
-                    formatted_content = re.sub(r"```\w*\n?", "", formatted_content)
-                    formatted_content = re.sub(r"```", "", formatted_content)
-                except Exception as e:
-                    self.logger.warning(f"Ошибка очистки markdown меток (не критично): {e}")
-
-                try:
-                    import re
-
-                    formatted_content = re.sub(
-                        r'<style>.*?</style>', '', formatted_content, flags=re.DOTALL
-                    )
-                    formatted_content = re.sub(
-                        r'<div class="content-container">', '', formatted_content
-                    )
-                    formatted_content = re.sub(r'\*\*\*', '', formatted_content)
-                except Exception as e:
-                    self.logger.warning(f"Ошибка очистки HTML (не критично): {e}")
-            else:
-                self.logger.info(
-                    "HTML lesson-content — пропуск очистки ``` и <style>"
-                )
-
-            # ИСПРАВЛЕНО: Проверяем, является ли контент уже HTML
-            from content_renderer import (
-                enhance_content,
-                get_display_css,
-                render_markdown_to_html,
-                strip_embedded_styles,
-            )
-
-            if formatted_content.strip().startswith('<div class="lesson-content">'):
-                # Контент уже отформатирован как HTML (от ContentFormatterFinal)
-                self.logger.info("Контент уже отформатирован как HTML, используем как есть")
-                html_content = formatted_content
-            else:
-                # Контент в markdown формате, конвертируем в HTML
-                try:
-                    html_content = render_markdown_to_html(formatted_content)
-                    html_content = '<div class="lesson-content">' + html_content + '</div>'
-                    self.logger.info("Markdown успешно конвертирован в HTML")
-                except Exception as e:
-                    self.logger.warning(f"Ошибка конвертации Markdown (не критично): {e}")
-                    html_content = formatted_content.replace('\n', '<br>')
-
-            # LaTeX и markdown-таблицы внутри HTML (в т.ч. из кэша старых уроков)
-            html_content = enhance_content(html_content)
-            html_content = strip_embedded_styles(html_content)
-
-            html_with_styles = get_display_css() + html_content
+            html_with_styles = render_student_content(source)
             
             content_html = widgets.HTML(
                 value=html_with_styles,

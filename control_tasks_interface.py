@@ -122,10 +122,9 @@ class ControlTasksInterface:
                 parts.append(f"<li>{html.escape(str(step))}</li>")
             parts.append("</ol>")
         elif description:
-            parts.append(
-                f"<p style='margin:0 0 12px 0;line-height:1.6;white-space:pre-wrap;'>"
-                f"{html.escape(description)}</p>"
-            )
+            from student_content import render_student_content
+
+            parts.append(render_student_content(description, css=False))
         else:
             parts.append(
                 "<p style='margin:0;color:#856404;'>⚠️ Текст задания не сформирован. "
@@ -384,9 +383,12 @@ class ControlTasksInterface:
                 feedback = validation_result.get("feedback", "")
                 feedback_html = ""
                 if feedback:
+                    from student_content import render_student_content
+
                     feedback_html = (
-                        f"<p style='color: #155724; margin: 10px 0;'>"
-                        f"<strong>Комментарий:</strong> {feedback}</p>"
+                        "<div style='color: #155724; margin: 10px 0;'>"
+                        "<strong>Комментарий:</strong> "
+                        f"{render_student_content(str(feedback), css=False)}</div>"
                     )
                 success_html = widgets.HTML(
                     value="<div style='background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 15px; margin: 10px 0;'>"
@@ -423,9 +425,12 @@ class ControlTasksInterface:
                         f"<strong>Причина:</strong> {failure_reason}</p>"
                     )
                 if feedback and feedback != failure_reason:
+                    from student_content import render_student_content
+
                     error_details += (
-                        f"<p style='color: #721c24; margin: 10px 0;'>"
-                        f"<strong>Комментарий:</strong> {feedback}</p>"
+                        "<div style='color: #721c24; margin: 10px 0;'>"
+                        "<strong>Комментарий:</strong> "
+                        f"{render_student_content(str(feedback), css=False)}</div>"
                     )
 
                 expected_hint = ""

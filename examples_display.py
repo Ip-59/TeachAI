@@ -110,8 +110,10 @@ def build_examples_widgets(
             widgets.HTML(value=f"<h4>{html.escape(title)}</h4>")
         )
         if description and not is_stub_only_description(description):
+            from student_content import render_student_content
+
             widgets_to_display.append(
-                widgets.HTML(value=f"<p>{html.escape(description)}</p>")
+                widgets.HTML(value=render_student_content(description, css=False))
             )
         widgets_to_display.append(code_widget)
         rendered_count += 1
