@@ -27,6 +27,7 @@ _RELOAD_ORDER: tuple[str, ...] = (
     "lesson_generator",
     "lesson_display",
     "lesson_control_access",
+    "lesson_outline",
     "lesson_navigation",
     "lesson_interface",
     "lesson_interaction",

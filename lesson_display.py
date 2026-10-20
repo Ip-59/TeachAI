@@ -426,6 +426,11 @@ class LessonDisplay:
                     section_id, topic_id, lesson_id
                 )
             )
+            from lesson_outline import build_outline_widget
+
+            outline_widget = build_outline_widget(
+                self.lesson_interface, section_id, topic_id, lesson_id
+            )
 
             # ИСПРАВЛЕНО: Добавляем индикатор статуса урока после перезапуска
             lesson_full_id = f"{section_id}:{topic_id}:{lesson_id}"
@@ -487,6 +492,7 @@ class LessonDisplay:
             # Создаем основной контейнер урока
             lesson_children = [
                 header_html,
+                outline_widget,
                 content_html,
                 navigation_buttons,
                 self.lesson_interface.explain_container,
@@ -497,7 +503,7 @@ class LessonDisplay:
 
             # Добавляем индикатор статуса если он есть
             if status_html:
-                lesson_children.insert(2, status_html)  # Вставляем после content_html, но перед navigation_buttons
+                lesson_children.insert(3, status_html)
 
             lesson_container = widgets.VBox(
                 lesson_children, layout=widgets.Layout(width="100%", padding="20px")

@@ -282,6 +282,7 @@ flowchart TB
 
 - `True`, если **(оценка теста > 40% И контрольное задание верно)** ИЛИ `lesson_completion_status[lesson_id]`.
 - `CourseDataManager.get_next_lesson()` возвращает текущий незавершённый или следующий по плану.
+- Карта уроков (`lesson_outline.py`): переход к завершённым, текущему и следующему незавершённому.
 - `TeachAIEngine._check_current_lesson_status()` — логика возврата к незавершённому уроку при старте.
 - После прохождения всех уроков — `CompletionInterface.show_course_completion()`.
 
@@ -308,7 +309,7 @@ flowchart TB
 ### 5.3. Интерфейс
 
 - **`interface.py`**, **`interface_utils.py`** — фасад и стили.
-- **`setup_interface.py`**, **`lesson_interface.py`**, **`lesson_display.py`**, **`lesson_navigation.py`**, **`lesson_interaction.py`**, **`lesson_utils.py`**.
+- **`setup_interface.py`**, **`lesson_interface.py`**, **`lesson_display.py`**, **`lesson_outline.py`**, **`lesson_navigation.py`**, **`lesson_interaction.py`**, **`lesson_utils.py`**.
 - **`assessment_interface.py`**, **`assessment_results_handler.py`**, **`completion_interface.py`**.
 - **`control_tasks_interface.py`**, **`loading_indicators.py`** — UX при долгих запросах к API.
 
