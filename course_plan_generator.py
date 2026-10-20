@@ -205,6 +205,9 @@ class CoursePlanGenerator(BaseContentGenerator):
                     "description", "Описание курса"
                 )
 
+            if course_data.get("source"):
+                course_plan["source"] = course_data["source"]
+
             if "total_duration_minutes" not in course_plan:
                 course_plan["total_duration_minutes"] = total_study_hours * 60
 

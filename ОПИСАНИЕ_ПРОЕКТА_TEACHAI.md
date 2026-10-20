@@ -206,7 +206,7 @@ flowchart TB
 
 1. `SetupInterface.show_initial_setup()` — форма: имя, часы обучения (1–100), длительность урока (5–120 мин), стиль (`formal` | `friendly` | `casual` | `brief`).
 2. Сохранение в `state["user"]`, `reset_learning_and_course_data()`, `first_run = false`.
-3. `show_course_selection()` — список из `courses.json`.
+3. `show_course_selection()` — каталог `courses.json` **или** своё название (`course_selection_ui.py`).
 4. При подтверждении курса: `ContentGenerator.generate_course_plan(course_data, total_study_hours, lesson_duration_minutes)`:
    - промпт методиста → OpenAI с `response_format: json_object`;
    - валидация/нормализация `_validate_and_fix_course_plan`;
@@ -321,6 +321,7 @@ flowchart TB
 ### 5.5. Данные и прогресс
 
 - **`courses.json`** — статический каталог (5 курсов).
+- **`custom_course.py`**, **`course_selection_ui.py`** — каталог или своё название курса (`source: user`).
 - **`user_profile_manager.py`**, **`learning_progress_manager.py`**, **`course_data_manager.py`**.
 
 ---
