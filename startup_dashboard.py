@@ -45,7 +45,9 @@ class StartupDashboard:
             dashboard_content = self._create_dashboard_widget(dashboard_data)
 
             from llm_route import make_route_selector_widget
+            from course_portfolio_ui import build_portfolio_panel
 
+            self.portfolio_panel = build_portfolio_panel(self.state_manager)
             self.route_selector = make_route_selector_widget()
 
             # Создаем кнопку "Продолжить обучение"
@@ -65,7 +67,12 @@ class StartupDashboard:
             
             # Создаем контейнер с дашбордом и кнопкой
             dashboard_widget = widgets.VBox(
-                [dashboard_content, self.route_selector, continue_button],
+                [
+                    self.portfolio_panel.widget,
+                    dashboard_content,
+                    self.route_selector,
+                    continue_button,
+                ],
                 layout=widgets.Layout(
                     width='100%',
                     padding='20px',
@@ -164,6 +171,9 @@ class StartupDashboard:
         if hasattr(self, 'continue_button') and self.continue_button:
             self.continue_button.on_click(on_continue_click)
             self.logger.info("Обработчик кнопки 'Продолжить обучение' настроен")
+        panel = getattr(self, "portfolio_panel", None)
+        if panel is not None:
+            panel.attach(engine, display_callback)
         else:
             self.logger.warning("Кнопка 'Продолжить обучение' не найдена - обработчик не может быть настроен")
             # Пытаемся найти кнопку в атрибутах

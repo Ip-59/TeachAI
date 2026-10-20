@@ -165,16 +165,10 @@ class LessonUtils:
             )
 
             def go_back_to_courses(b):
-                # Очищаем кэш при возврате к выбору курса
                 self.clear_lesson_cache(lesson_interface)
+                from course_portfolio_ui import show_courses_home
 
-                # Возвращаемся к выбору курса
-                from interface import InterfaceState
-
-                lesson_interface.interface.current_state = (
-                    InterfaceState.COURSE_SELECTION
-                )
-                lesson_interface.interface.show_course_selection()
+                show_courses_home(lesson_interface)
 
             go_back_button.on_click(go_back_to_courses)
 

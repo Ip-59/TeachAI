@@ -36,6 +36,11 @@ class StateManager:
 
         # Загружаем состояние
         self.state = self._load_state()
+        from course_portfolio import migrate_state
+
+        if migrate_state(self.state):
+            self.logger.info("Состояние мигрировано к портфелю курсов")
+            self.save_state()
 
         # Инициализируем специализированные менеджеры
         self.user_profile = UserProfileManager(self)
@@ -129,6 +134,10 @@ class StateManager:
                 "total_duration_minutes": 0,
                 "sections": [],
             },
+            "active_course_id": "",
+            "courses": {},
+            "control_tasks": {},
+            "lesson_content_cache": {},
             "system": {
                 "first_run": True,
                 "last_access": datetime.now().isoformat(),
@@ -144,6 +153,9 @@ class StateManager:
             bool: True если сохранение прошло успешно, иначе False
         """
         try:
+            from course_portfolio import snapshot_active
+
+            snapshot_active(self.state)
             # Обновляем время последнего доступа
             self.state["system"]["last_access"] = datetime.now().isoformat()
 
@@ -171,6 +183,10 @@ class StateManager:
             defaults = self._create_default_state()
             self.state["learning"] = defaults["learning"]
             self.state["course_plan"] = defaults["course_plan"]
+            self.state["active_course_id"] = ""
+            self.state["courses"] = {}
+            self.state["control_tasks"] = {}
+            self.state["lesson_content_cache"] = {}
             self.state["system"]["first_run"] = True
             return self.save_state()
         except Exception as e:
@@ -289,6 +305,42 @@ class StateManager:
 
     def get_all_courses(self):
         return self.course_data.get_all_courses()
+
+    def list_user_courses(self):
+        from course_portfolio import list_user_courses
+
+        return list_user_courses(self.state)
+
+    def switch_course(self, course_id: str) -> bool:
+        from course_portfolio import switch_course
+
+        if not switch_course(self.state, course_id):
+            return False
+        return self.save_state()
+
+    def delete_user_course(self, course_id: str) -> bool:
+        from course_portfolio import delete_course
+
+        if not delete_course(self.state, course_id):
+            return False
+        return self.save_state()
+
+    def begin_new_course(self) -> None:
+        from course_portfolio import begin_new_course
+
+        begin_new_course(self.state)
+        self.save_state()
+
+    def has_user_course(self, course_id: str) -> bool:
+        from course_portfolio import has_course
+
+        return has_course(self.state, course_id)
+
+    def mark_active_course_completed(self) -> None:
+        from course_portfolio import mark_active_completed
+
+        mark_active_completed(self.state)
+        self.save_state()
 
     def get_next_lesson(self):
         return self.course_data.get_next_lesson()

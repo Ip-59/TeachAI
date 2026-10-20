@@ -29,7 +29,9 @@ class UserInterface:
     Все методы работают точно так же, как раньше!
     """
 
-    def __init__(self, state_manager, content_generator, assessment, system_logger):
+    def __init__(
+        self, state_manager, content_generator, assessment, system_logger, engine=None
+    ):
         """
         Инициализация интерфейса.
 
@@ -43,6 +45,7 @@ class UserInterface:
         self.content_generator = content_generator
         self.assessment = assessment
         self.system_logger = system_logger
+        self.engine = engine
         self.logger = logging.getLogger(__name__)
 
         # Текущее состояние интерфейса
@@ -66,16 +69,25 @@ class UserInterface:
             self.setup_interface = SetupInterface(
                 state_manager, content_generator, system_logger, assessment
             )
+            self.setup_interface.engine = engine
             self.lesson_interface = LessonInterface(
-                state_manager, content_generator, system_logger, assessment
+                state_manager,
+                content_generator,
+                system_logger,
+                assessment,
+                engine=engine,
             )
             self.lesson_interface.interface = self
             self.assessment_interface = AssessmentInterface(
                 state_manager, assessment, system_logger, None
             )
+            self.assessment_interface.engine = engine
+            if getattr(self.assessment_interface, "results_handler", None):
+                self.assessment_interface.results_handler.engine = engine
             self.completion_interface = CompletionInterface(
                 state_manager, system_logger, content_generator, assessment
             )
+            self.completion_interface.engine = engine
 
             self.logger.info("UserInterface (фасад) успешно инициализирован")
 

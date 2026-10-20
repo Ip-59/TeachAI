@@ -167,16 +167,10 @@ class LessonNavigation:
         """
 
         def on_back_button_clicked(b):
-            # ИСПРАВЛЕНО: Очищаем кэш при переходе к выбору курса
             self.utils.clear_lesson_cache(self.lesson_interface)
+            from course_portfolio_ui import show_courses_home
 
-            # Возвращаемся к выбору курса
-            from interface import InterfaceState
-
-            self.lesson_interface.interface.current_state = (
-                InterfaceState.COURSE_SELECTION
-            )
-            self.lesson_interface.interface.show_course_selection()
+            show_courses_home(self.lesson_interface)
 
         def on_test_button_clicked(b):
             from IPython.display import display
@@ -366,11 +360,8 @@ class LessonNavigation:
         """Обработчик для кнопки "Назад" (fallback)."""
         try:
             self.utils.clear_lesson_cache(self.lesson_interface)
-            from interface import InterfaceState
+            from course_portfolio_ui import show_courses_home
 
-            self.lesson_interface.interface.current_state = (
-                InterfaceState.COURSE_SELECTION
-            )
-            self.lesson_interface.interface.show_course_selection()
+            show_courses_home(self.lesson_interface)
         except Exception as e:
             self.logger.error(f"Ошибка при обработке кнопки 'Назад': {str(e)}")

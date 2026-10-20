@@ -34,6 +34,14 @@ class CourseDataManager:
         try:
             self.state_manager.state["course_plan"] = course_plan
 
+            from course_portfolio import bind_new_plan
+
+            bind_new_plan(
+                self.state_manager.state,
+                course_plan,
+                source=course_plan.get("source") or "catalog",
+            )
+
             course_title = course_plan.get("title", "Неизвестный курс")
             self.logger.info(f"Учебный план для курса '{course_title}' сохранен")
 

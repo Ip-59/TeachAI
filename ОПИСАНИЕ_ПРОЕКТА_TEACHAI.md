@@ -22,7 +22,8 @@
 | Задача | Реализация |
 |--------|------------|
 | Профиль обучающегося | `SetupInterface`, `UserProfileManager` — имя, часы обучения, длительность урока, стиль общения |
-| Выбор курса из каталога | `courses.json`, `CourseDataManager.get_all_courses()` |
+| Выбор курса из каталога или своё название | `courses.json`, `custom_course.py`, `course_selection_ui.py` |
+| Портфель нескольких курсов | `course_portfolio.py` — слоты в `state["courses"]`, зеркало активного в корне |
 | Построение учебного плана под время пользователя | `CoursePlanGenerator.generate_course_plan()` → сохранение в `state["course_plan"]` |
 | Генерация содержания урока | `LessonGenerator` + `ContentFormatterFinal` |
 | Интерактив на уроке: вопросы, примеры, объяснения, понятия | `LessonInteraction`, `QAGenerator`, `ExamplesGenerator`, `ExplanationGenerator`, `ConceptsGenerator` |
@@ -206,8 +207,8 @@ flowchart TB
 
 1. `SetupInterface.show_initial_setup()` — форма: имя, часы обучения (1–100), длительность урока (5–120 мин), стиль (`formal` | `friendly` | `casual` | `brief`).
 2. Сохранение в `state["user"]`, `reset_learning_and_course_data()`, `first_run = false`.
-3. `show_course_selection()` — каталог `courses.json` **или** своё название (`course_selection_ui.py`).
-4. При подтверждении курса: `ContentGenerator.generate_course_plan(course_data, total_study_hours, lesson_duration_minutes)`:
+3. `show_course_selection()` — каталог `courses.json` **или** своё название (`course_selection_ui.py`). Если курс уже есть в портфеле — продолжение без повторной генерации плана.
+4. При подтверждении **нового** курса: `begin_new_course()` сохраняет предыдущий слот; `ContentGenerator.generate_course_plan(course_data, total_study_hours, lesson_duration_minutes)`:
    - промпт методиста → OpenAI с `response_format: json_object`;
    - валидация/нормализация `_validate_and_fix_course_plan`;
    - `save_course_plan()` в state.
@@ -323,6 +324,7 @@ flowchart TB
 
 - **`courses.json`** — статический каталог (5 курсов).
 - **`custom_course.py`**, **`course_selection_ui.py`** — каталог или своё название курса (`source: user`).
+- **`course_portfolio.py`**, **`course_portfolio_ui.py`** — несколько курсов в `state.json` (старт нового без wipe, переключение, удаление).
 - **`user_profile_manager.py`**, **`learning_progress_manager.py`**, **`course_data_manager.py`**.
 
 ---

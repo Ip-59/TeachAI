@@ -69,6 +69,9 @@ class CompletionInterface:
             course_title = self._get_course_title(course_plan, learning_progress)
             course_id = self._get_course_id(course_plan, learning_progress)
 
+            if hasattr(self.state_manager, "mark_active_course_completed"):
+                self.state_manager.mark_active_course_completed()
+
             # Создаем интерфейс завершения курса
             completion_header = self.utils.create_header("Поздравляем! Курс завершен!")
             completion_description = widgets.HTML(
@@ -88,29 +91,20 @@ class CompletionInterface:
             # Рекомендации по дальнейшему обучению
             recommendations_widget = self._create_recommendations_widget(course_id)
 
-            # Кнопка для возвращения к выбору курса
+            # Кнопка для возвращения к портфелю курсов
             back_button = widgets.Button(
-                description="Выбрать другой курс",
+                description="К моим курсам",
                 button_style="primary",
-                tooltip="Вернуться к выбору курса",
+                tooltip="Вернуться к списку курсов",
                 icon="list",
                 layout=widgets.Layout(width="200px", height="40px"),
             )
 
-            # Функция обработки нажатия кнопки
             def on_back_button_clicked(b):
-                clear_output(wait=True)
-                from setup_interface import SetupInterface
+                from course_portfolio_ui import show_courses_home
 
-                setup_ui = SetupInterface(
-                    self.state_manager,
-                    self.content_generator,
-                    self.system_logger,
-                    self.assessment,
-                )
-                display(setup_ui.show_course_selection())
+                show_courses_home(self)
 
-            # Привязываем функцию к кнопке
             back_button.on_click(on_back_button_clicked)
 
             # Собираем все в один контейнер
@@ -334,20 +328,13 @@ class CompletionInterface:
         )
 
         back_to_courses_button = widgets.Button(
-            description="Вернуться к выбору курса", button_style="primary", icon="list"
+            description="К моим курсам", button_style="primary", icon="list"
         )
 
         def go_back_to_courses(b):
-            clear_output(wait=True)
-            from setup_interface import SetupInterface
+            from course_portfolio_ui import show_courses_home
 
-            setup_ui = SetupInterface(
-                self.state_manager,
-                self.content_generator,
-                self.system_logger,
-                self.assessment,
-            )
-            display(setup_ui.show_course_selection())
+            show_courses_home(self)
 
         back_to_courses_button.on_click(go_back_to_courses)
 

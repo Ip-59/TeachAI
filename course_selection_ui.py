@@ -28,7 +28,8 @@ def build_course_selection(setup) -> widgets.VBox:
         description = widgets.HTML(
             value=(
                 "<p>Можно выбрать курс из списка или ввести своё название — "
-                "план будет сгенерирован под эту тему.</p>"
+                "план будет сгенерирован под эту тему. Текущий курс не удаляется: "
+                "его можно снова открыть с дашборда.</p>"
             )
         )
 
@@ -82,12 +83,23 @@ def build_course_selection(setup) -> widgets.VBox:
                 "</div>"
             )
 
+        def _refresh_start_label() -> None:
+            from course_portfolio import has_course
+
+            catalog_id = course_dropdown.value
+            if source_radio.value == "catalog" and has_course(
+                setup.state_manager.state, catalog_id
+            ):
+                start_button.description = "Продолжить этот курс"
+            else:
+                start_button.description = "Начать курс"
+
         def on_course_change(change):
             course = next((c for c in courses if c["id"] == change["new"]), None)
             if course:
                 course_description.value = _catalog_html(course)
+            _refresh_start_label()
 
-        course_dropdown.observe(on_course_change, names="value")
         if courses:
             course_description.value = _catalog_html(courses[0])
 
@@ -95,8 +107,7 @@ def build_course_selection(setup) -> widgets.VBox:
             custom = change["new"] == "custom"
             custom_box.layout.display = "flex" if custom else "none"
             catalog_box.layout.display = "none" if custom else "flex"
-
-        source_radio.observe(on_source_change, names="value")
+            _refresh_start_label()
 
         user_profile = setup.state_manager.get_user_profile()
         settings_widget = setup._create_settings_display(user_profile)
@@ -106,7 +117,7 @@ def build_course_selection(setup) -> widgets.VBox:
             button_style="success",
             tooltip="Начать выбранный или свой курс",
             icon="play",
-            layout=widgets.Layout(width="200px", height="40px"),
+            layout=widgets.Layout(width="260px", height="40px"),
         )
         output = widgets.Output()
 
@@ -122,6 +133,9 @@ def build_course_selection(setup) -> widgets.VBox:
                 _start_course(setup, course, user_profile)
 
         start_button.on_click(on_start_button_clicked)
+        course_dropdown.observe(on_course_change, names="value")
+        source_radio.observe(on_source_change, names="value")
+        _refresh_start_label()
 
         return widgets.VBox(
             [
@@ -174,8 +188,84 @@ def _resolve_course(
     return course
 
 
+def _open_lesson_after_plan(setup, _course: dict) -> None:
+    """Переход к текущему/первому уроку или экрану завершения."""
+    section_id, topic_id, lesson_id, _lesson_data = (
+        setup.state_manager.get_next_lesson()
+    )
+    time.sleep(1)
+    clear_output(wait=True)
+
+    engine = getattr(setup, "engine", None)
+    if section_id and topic_id and lesson_id:
+        display(
+            setup.utils.create_styled_message("Переход к уроку...", "info")
+        )
+        from lesson_interface import LessonInterface
+
+        lesson_ui = LessonInterface(
+            setup.state_manager,
+            setup.content_generator,
+            setup.system_logger,
+            setup.assessment,
+            engine=engine,
+        )
+        if engine is not None and getattr(engine, "interface", None):
+            lesson_ui.interface = engine.interface
+        clear_output(wait=True)
+        display(lesson_ui.show_lesson(section_id, topic_id, lesson_id))
+        return
+
+    if section_id is None and topic_id is None and lesson_id is None:
+        display(
+            setup.utils.create_styled_message(
+                "Курс завершен! Показываем экран завершения...",
+                "info",
+            )
+        )
+        from completion_interface import CompletionInterface
+
+        completion_interface = CompletionInterface(
+            setup.state_manager,
+            setup.system_logger,
+            setup.content_generator,
+            setup.assessment,
+        )
+        completion_interface.engine = engine
+        clear_output(wait=True)
+        display(completion_interface.show_course_completion())
+        return
+
+    display(
+        setup.utils.create_styled_message(
+            "Ошибка: не удалось найти первый урок в плане курса.",
+            "incorrect",
+        )
+    )
+
+
+def _resume_course(setup, course: dict) -> None:
+    from course_portfolio import switch_course
+
+    switch_course(setup.state_manager.state, course["id"])
+    setup.state_manager.save_state()
+    display(
+        setup.utils.create_styled_message(
+            f"Продолжаем курс «{course['title']}» (прогресс сохранён).",
+            "info",
+        )
+    )
+    _open_lesson_after_plan(setup, course)
+
+
 def _start_course(setup, course: dict, user_profile: dict) -> None:
     try:
+        from course_portfolio import begin_new_course, has_course
+
+        if has_course(setup.state_manager.state, course["id"]):
+            _resume_course(setup, course)
+            return
+
         display(
             setup.utils.create_styled_message(
                 f"Создание персонализированного учебного плана для курса "
@@ -191,6 +281,7 @@ def _start_course(setup, course: dict, user_profile: dict) -> None:
         if course.get("source"):
             course_plan["source"] = course["source"]
 
+        begin_new_course(setup.state_manager.state)
         success = setup.state_manager.save_course_plan(course_plan)
         setup.state_manager.update_learning_progress(course=course["id"])
         setup.system_logger.log_activity(
@@ -221,50 +312,7 @@ def _start_course(setup, course: dict, user_profile: dict) -> None:
                 )
             )
 
-        section_id, topic_id, lesson_id, lesson_data = (
-            setup.state_manager.get_next_lesson()
-        )
-        time.sleep(1)
-        clear_output(wait=True)
-
-        if section_id and topic_id and lesson_id:
-            display(
-                setup.utils.create_styled_message("Переход к первому уроку...", "info")
-            )
-            from lesson_interface import LessonInterface
-
-            lesson_ui = LessonInterface(
-                setup.state_manager,
-                setup.content_generator,
-                setup.system_logger,
-                setup.assessment,
-            )
-            clear_output(wait=True)
-            display(lesson_ui.show_lesson(section_id, topic_id, lesson_id))
-        elif section_id is None and topic_id is None and lesson_id is None:
-            display(
-                setup.utils.create_styled_message(
-                    "Курс завершен! Показываем экран завершения...",
-                    "info",
-                )
-            )
-            from completion_interface import CompletionInterface
-
-            completion_interface = CompletionInterface(
-                setup.state_manager,
-                setup.system_logger,
-                setup.content_generator,
-                setup.assessment,
-            )
-            clear_output(wait=True)
-            display(completion_interface.show_course_completion())
-        else:
-            display(
-                setup.utils.create_styled_message(
-                    "Ошибка: не удалось найти первый урок в плане курса.",
-                    "incorrect",
-                )
-            )
+        _open_lesson_after_plan(setup, course)
     except Exception as e:
         logger.debug("Ошибка при генерации учебного плана: %s", e, exc_info=True)
         display(

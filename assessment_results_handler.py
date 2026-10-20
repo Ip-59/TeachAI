@@ -319,6 +319,7 @@ class AssessmentResultsHandler:
                     self.content_generator,
                     self.system_logger,
                     self.assessment,
+                    engine=getattr(self, "engine", None),
                 )
                 
                 # Создаем виджет урока
@@ -354,6 +355,7 @@ class AssessmentResultsHandler:
                         self.content_generator,
                         self.system_logger,
                         self.assessment,
+                        engine=getattr(self, "engine", None),
                     )
                     
                     # Создаем виджет урока
@@ -373,6 +375,7 @@ class AssessmentResultsHandler:
                         self.content_generator,
                         self.assessment,
                     )
+                    completion_ui.engine = getattr(self, "engine", None)
                     display(completion_ui.show_course_completion())
 
             repeat_lesson_button.on_click(on_repeat_lesson_clicked)

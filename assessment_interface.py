@@ -373,6 +373,7 @@ class AssessmentInterface:
                 self.content_generator,
                 self.system_logger,
                 self.assessment,
+                engine=getattr(self, "engine", None),
             )
             # ИСПРАВЛЕНО: Убираем прямой display() для избежания дублирования
             # Создаем виджет урока для отображения

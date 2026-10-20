@@ -20,7 +20,8 @@ Evidence in code: `engine.py` (system coordination), `content_generator.py` (les
 | Goal | Implementation |
 |------|----------------|
 | Learner profile | `SetupInterface`, `UserProfileManager` |
-| Course catalog | `courses.json`, `CourseDataManager` |
+| Course catalog or custom title | `courses.json`, `custom_course.py` |
+| Multi-course portfolio | `course_portfolio.py` — slots in `state["courses"]`, active mirrored at root |
 | LLM-built syllabus | `CoursePlanGenerator` → `state["course_plan"]` |
 | Lesson content | `LessonGenerator` + `ContentFormatterFinal` |
 | In-lesson interaction (Q&A, examples, explanations, concepts) | `LessonInteraction`, specialized generators |

@@ -158,7 +158,8 @@ class TeachAIEngine:
                 self.state_manager,
                 self.content_generator,
                 self.assessment,
-                self.system_logger
+                self.system_logger,
+                engine=self,
             )
             
             # Инициализируем дашборд для улучшения UX
