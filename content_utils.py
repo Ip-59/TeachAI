@@ -9,10 +9,8 @@ import json
 import re
 import logging
 from datetime import datetime
-import httpx
-from openai import OpenAI
 
-from config import get_openai_proxy_url, get_openai_connection_mode
+from llm_route import chat_extra_body, create_openai_client, describe_llm_route
 
 
 def append_question_reminder(answer_html: str, questions_count: int) -> str:
@@ -268,36 +266,22 @@ class BaseContentGenerator:
         self.api_key = api_key
         self.debug_dir = debug_dir
         self.model = os.getenv("LLM_MODEL", "gpt-4o-mini")
+        self.llm_meta: dict = {}
 
-        # Клиент OpenAI: режим задаётся OPENAI_CONNECTION_MODE в .env
-        self.http_client = None
         try:
-            connection_mode = get_openai_connection_mode()
-            proxy_url = get_openai_proxy_url()
-            client_kwargs = {"timeout": httpx.Timeout(120.0, connect=20.0)}
-            if proxy_url:
-                client_kwargs["proxy"] = proxy_url
-                self.http_client = httpx.Client(**client_kwargs)
-                self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
-                self.logger.info(
-                    "%s: режим proxy, модель %s",
-                    self.__class__.__name__,
-                    self.model,
-                )
-            else:
-                self.http_client = httpx.Client(**client_kwargs)
-                self.client = OpenAI(api_key=self.api_key, http_client=self.http_client)
-                self.logger.info(
-                    "%s: режим %s (без прокси в приложении), модель %s",
-                    self.__class__.__name__,
-                    connection_mode,
-                    self.model,
-                )
+            self.client, self.http_client, self.llm_meta = create_openai_client(
+                self.api_key
+            )
+            self.logger.info(
+                "%s: %s, модель %s",
+                self.__class__.__name__,
+                describe_llm_route(),
+                self.model,
+            )
         except Exception as e:
-            self.logger.error(f"Ошибка при инициализации клиента OpenAI: {str(e)}")
+            self.logger.error(f"Ошибка при инициализации LLM-клиента: {str(e)}")
             raise
 
-        # Создаем директорию для отладочных файлов
         os.makedirs(self.debug_dir, exist_ok=True)
 
     def save_debug_response(
@@ -612,11 +596,15 @@ class BaseContentGenerator:
             if response_format:
                 kwargs["response_format"] = response_format
 
+            extra = chat_extra_body(getattr(self, "llm_meta", None))
+            if extra:
+                kwargs["extra_body"] = extra
+
             response = self.client.chat.completions.create(**kwargs)
             return response.choices[0].message.content
 
         except Exception as e:
-            self.logger.error(f"Ошибка при запросе к OpenAI API: {str(e)}")
+            self.logger.error(f"Ошибка при запросе к LLM API: {str(e)}")
             raise
 
     def make_api_request_with_retries(

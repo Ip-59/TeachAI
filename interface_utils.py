@@ -297,16 +297,27 @@ class InterfaceUtils:
         if "прокси не задан" in lower or "connection_mode=proxy" in lower:
             return (
                 f"{prefix}В .env задан режим proxy, но OPENAI_PROXY не указан. "
-                "Либо укажите прокси, либо установите OPENAI_CONNECTION_MODE=direct."
+                "Либо укажите прокси, либо OPENAI_API_ROUTE=direct / gptunnel."
+            )
+        if "unsupported_country" in lower or "request_forbidden" in lower:
+            return (
+                f"{prefix}OpenAI отклонил запрос по региону (403). "
+                "На стартовом экране выберите маршрут «Через шлюз GPTunnel» "
+                "и убедитесь, что GPTUNNEL_API_KEY задан в .env."
+            )
+        if "gptunnel_api_key" in lower:
+            return (
+                f"{prefix}Нет GPTUNNEL_API_KEY в .env. "
+                "Добавьте ключ шлюза или переключите маршрут на прямой OpenAI."
             )
         if any(
             token in lower
             for token in ("connection error", "connection", "connect", "network")
         ):
             return (
-                f"{prefix}Не удалось подключиться к OpenAI API. "
-                "Проверьте интернет, VPN или настройки прокси (OPENAI_PROXY в .env), "
-                "затем перезапустите kernel и повторите попытку."
+                f"{prefix}Не удалось подключиться к LLM API. "
+                "Проверьте интернет, маршрут (direct/GPTunnel) или OPENAI_PROXY, "
+                "затем перезапустите kernel."
             )
         if "timeout" in lower or "timed out" in lower:
             return (

@@ -1,6 +1,9 @@
 """
 Модуль для работы с конфигурационными файлами и переменными окружения.
 Отвечает за загрузку API ключей и основных настроек системы.
+
+Маршрут LLM (direct / gptunnel / proxy) — в ``llm_route.py``;
+здесь тонкие обёртки для обратной совместимости.
 """
 
 import os
@@ -8,104 +11,58 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv, dotenv_values
 
-_PROXY_ENV_KEYS = (
-    "OPENAI_PROXY",
-    "HTTPS_PROXY",
-    "HTTP_PROXY",
-    "https_proxy",
-    "http_proxy",
-)
-
-_PROXY_ENV_KEYS_TO_CLEAR = _PROXY_ENV_KEYS + (
-    "ALL_PROXY",
-    "all_proxy",
-    "NO_PROXY",
-    "no_proxy",
+from llm_route import (
+    apply_saved_route_preference,
+    describe_llm_route,
+    get_llm_api_key,
+    get_llm_route,
+    set_llm_route,
+    validate_llm_credentials,
 )
 
 
-def _read_proxy_url_from_env() -> str | None:
-    """Читает URL прокси из переменных окружения (без учёта режима подключения)."""
-    for key in _PROXY_ENV_KEYS:
+def get_openai_connection_mode() -> str:
+    """
+    Совместимость: сеть/транспорт.
+
+    Returns:
+        ``direct`` | ``proxy`` | ``gptunnel`` (см. ``get_llm_route``).
+    """
+    return get_llm_route()
+
+
+def apply_openai_connection_environment() -> str:
+    """
+    Применяет маршрут LLM к процессу (preference + очистка прокси).
+
+    Returns:
+        Активный маршрут (``direct`` / ``gptunnel`` / ``proxy``).
+    """
+    route = apply_saved_route_preference()
+    # Нормализуем env через set_llm_route без лишней записи на диск
+    return set_llm_route(route, persist=False)
+
+
+def get_openai_proxy_url() -> str | None:
+    """URL HTTP-прокси только в маршруте ``proxy``."""
+    if get_llm_route() != "proxy":
+        return None
+    for key in (
+        "OPENAI_PROXY",
+        "HTTPS_PROXY",
+        "HTTP_PROXY",
+        "https_proxy",
+        "http_proxy",
+    ):
         value = (os.getenv(key) or "").strip()
         if value and not value.startswith("${"):
             return value
     return None
 
 
-def get_openai_connection_mode() -> str:
-    """
-    Режим подключения TeachAI к OpenAI API.
-
-    По умолчанию ``direct``: приложение не использует HTTP-прокси
-    (доступ через VPN или сеть на уровне ОС). Режим ``proxy`` включается
-    только явно через ``OPENAI_CONNECTION_MODE=proxy`` или
-    ``OPENAI_USE_PROXY=true``.
-
-    Returns:
-        str: ``proxy`` — HTTP-прокси из .env; ``direct`` — без прокси в приложении.
-    """
-    raw = (os.getenv("OPENAI_CONNECTION_MODE") or "").strip().lower()
-    use_proxy = (os.getenv("OPENAI_USE_PROXY") or "").strip().lower()
-
-    if use_proxy in ("true", "1", "yes", "on"):
-        return "proxy"
-    if use_proxy in ("false", "0", "no", "off"):
-        return "direct"
-
-    if raw in ("proxy", "http_proxy"):
-        return "proxy"
-    if raw in ("direct", "vpn", "auto", "noproxy", "no_proxy", "none", ""):
-        return "direct"
-
-    logging.getLogger(__name__).warning(
-        "Неизвестный OPENAI_CONNECTION_MODE=%r — используем direct", raw
-    )
-    return "direct"
-
-
-def apply_openai_connection_environment() -> str:
-    """
-    Применяет режим подключения к текущему процессу Python.
-
-    В режиме ``direct`` удаляет переменные прокси из ``os.environ``, чтобы
-    httpx/OpenAI и другие библиотеки не подхватывали старые HTTP_PROXY
-    из shell или Cursor.
-
-    Returns:
-        str: Активный режим (``direct`` или ``proxy``).
-    """
-    mode = get_openai_connection_mode()
-    if mode == "direct":
-        for key in _PROXY_ENV_KEYS_TO_CLEAR:
-            os.environ.pop(key, None)
-        os.environ["OPENAI_CONNECTION_MODE"] = "direct"
-        os.environ["OPENAI_USE_PROXY"] = "false"
-    return mode
-
-
-def get_openai_proxy_url() -> str | None:
-    """
-    URL прокси для httpx/OpenAI с учётом ``OPENAI_CONNECTION_MODE``.
-
-    В режиме ``direct`` всегда ``None`` (игнорируются и OPENAI_PROXY, и системные
-    HTTP_PROXY), чтобы VPN работал на уровне системы без прокси в коде.
-    """
-    if get_openai_connection_mode() == "direct":
-        return None
-    return _read_proxy_url_from_env()
-
-
 def describe_openai_connection() -> str:
-    """Краткое описание режима подключения для логов и консоли."""
-    mode = get_openai_connection_mode()
-    if mode == "direct":
-        return "прямое подключение (без прокси в приложении; VPN/сеть на уровне ОС)"
-    proxy = _read_proxy_url_from_env()
-    if not proxy:
-        return "прокси (URL не задан — проверьте OPENAI_PROXY в .env)"
-    host = proxy.split("@")[-1] if "@" in proxy else proxy
-    return f"через прокси ({host})"
+    """Краткое описание маршрута LLM для логов и консоли."""
+    return describe_llm_route()
 
 
 class ConfigManager:
@@ -147,22 +104,9 @@ class ConfigManager:
             load_dotenv(self.env_file)
             apply_openai_connection_environment()
 
-            # Проверяем наличие обязательных переменных
-            required_vars = ["OPENAI_API_KEY"]
-            missing_vars = [var for var in required_vars if not os.getenv(var)]
-
-            if missing_vars:
-                self.logger.error(
-                    f"Отсутствуют обязательные переменные: {', '.join(missing_vars)}"
-                )
-                return False
-
-            mode = get_openai_connection_mode()
-            if mode == "proxy" and not _read_proxy_url_from_env():
-                self.logger.error(
-                    "OPENAI_CONNECTION_MODE=proxy, но прокси не задан. "
-                    "Укажите OPENAI_PROXY (или HTTPS_PROXY) в .env."
-                )
+            ok, err = validate_llm_credentials()
+            if not ok:
+                self.logger.error(err)
                 return False
 
             self.logger.info(
@@ -175,20 +119,20 @@ class ConfigManager:
 
     def get_api_key(self):
         """
-        Получает API ключ OpenAI.
+        Получает API ключ для активного маршрута (OpenAI или GPTunnel).
 
         Returns:
             str: API ключ или None, если ключ не найден
         """
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = get_llm_api_key()
         if not api_key:
-            self.logger.error("API ключ OpenAI не найден")
             return None
 
-        # Валидация ключа по формату (базовая, не проверяем актуальность)
-        valid_prefixes = ("sk-", "sk-proj-", "org-")
-        if not api_key.startswith(valid_prefixes):
-            self.logger.warning("API ключ имеет неправильный формат")
+        route = get_llm_route()
+        if route != "gptunnel":
+            valid_prefixes = ("sk-", "sk-proj-", "org-")
+            if not api_key.startswith(valid_prefixes):
+                self.logger.warning("API ключ OpenAI имеет необычный формат")
 
         return api_key
 
@@ -205,15 +149,15 @@ class ConfigManager:
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write("# Конфигурационный файл для TeachAI\n\n")
-                f.write("# API ключ OpenAI\n")
+                f.write("# API ключ OpenAI (маршрут direct / proxy)\n")
                 f.write("OPENAI_API_KEY=your_openai_api_key_here\n")
-                f.write("\n# Модель OpenAI (gpt-4o-mini — по умолчанию, gpt-4o — для сложных задач)\n")
+                f.write("\n# Модель (gpt-4o-mini — по умолчанию)\n")
                 f.write("LLM_MODEL=gpt-4o-mini\n")
-                f.write("\n# --- Режим подключения к OpenAI ---\n")
-                f.write("# direct / vpn / auto — без прокси в приложении (VPN на уровне ОС)\n")
-                f.write("# proxy — через HTTP-прокси из OPENAI_PROXY (сейчас не используем)\n")
-                f.write("OPENAI_CONNECTION_MODE=direct\n")
-                f.write("\n# Прокси (только при OPENAI_CONNECTION_MODE=proxy)\n")
+                f.write("\n# Маршрут API: direct | gptunnel | proxy\n")
+                f.write("OPENAI_API_ROUTE=gptunnel\n")
+                f.write("GPTUNNEL_API_KEY=your_gptunnel_api_key_here\n")
+                f.write("# GPTUNNEL_BASE_URL=https://gptunnel.ru/v1\n")
+                f.write("\n# HTTP-прокси только при OPENAI_API_ROUTE=proxy\n")
                 f.write("# OPENAI_PROXY=http://user:pass@host:port\n")
 
             self.logger.info(f"Образец .env файла создан: {file_path}")

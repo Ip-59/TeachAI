@@ -43,7 +43,11 @@ class StartupDashboard:
             
             # Создаем виджеты для отображения
             dashboard_content = self._create_dashboard_widget(dashboard_data)
-            
+
+            from llm_route import make_route_selector_widget
+
+            self.route_selector = make_route_selector_widget()
+
             # Создаем кнопку "Продолжить обучение"
             continue_button = widgets.Button(
                 description="🎯 Продолжить обучение",
@@ -61,7 +65,7 @@ class StartupDashboard:
             
             # Создаем контейнер с дашбордом и кнопкой
             dashboard_widget = widgets.VBox(
-                [dashboard_content, continue_button],
+                [dashboard_content, self.route_selector, continue_button],
                 layout=widgets.Layout(
                     width='100%',
                     padding='20px',
@@ -94,6 +98,19 @@ class StartupDashboard:
 
                 clear_output(wait=False)
 
+                # Маршрут LLM до создания клиентов (direct / gptunnel)
+                try:
+                    from llm_route import describe_llm_route, set_llm_route
+
+                    route_radio = getattr(
+                        getattr(self, "route_selector", None), "route_radio", None
+                    )
+                    if route_radio is not None and route_radio.value:
+                        set_llm_route(route_radio.value, persist=True)
+                    self.logger.info("Маршрут LLM: %s", describe_llm_route())
+                except Exception as route_exc:
+                    self.logger.warning("Не удалось применить маршрут LLM: %s", route_exc)
+
                 # Ленивая инициализация: тяжёлые компоненты поднимаем здесь,
                 # а не при старте ячейки — иначе kernel «висит» без вывода.
                 if not engine.is_ready:
@@ -106,7 +123,8 @@ class StartupDashboard:
                     if not engine.initialize():
                         error_widget = self._create_error_widget(
                             "Не удалось инициализировать систему. "
-                            "Проверьте .env и API-ключ."
+                            "Проверьте .env: для GPTunnel нужен GPTUNNEL_API_KEY, "
+                            "для прямого OpenAI — OPENAI_API_KEY."
                         )
                         if display_callback:
                             display_callback(error_widget)

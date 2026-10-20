@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Порядок важен: сначала базовые модули, затем зависящие от них.
 _RELOAD_ORDER: tuple[str, ...] = (
+    "llm_route",
     "config",
     "content_utils",
     "relevance_checker",
@@ -27,6 +28,7 @@ _RELOAD_ORDER: tuple[str, ...] = (
     "lesson_display",
     "lesson_interface",
     "lesson_interaction",
+    "startup_dashboard",
     "state_manager",
     "engine",
     "interface",
