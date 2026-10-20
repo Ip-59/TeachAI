@@ -505,19 +505,24 @@ class ControlTasksInterface:
                 
                 # ИСПРАВЛЕНО: Если контрольное задание выполнено правильно И тест пройден - урок завершен
                 if is_correct:
-                    # Проверяем, пройден ли тест
-                    if self.lesson_interface.state_manager.is_test_passed(lesson_id):
-                        # Урок полностью завершен: тест пройден + контрольное задание выполнено
-                        self.lesson_interface.state_manager.save_lesson_assessment(
-                            lesson_id, 
-                            self.lesson_interface.state_manager.get_lesson_score(lesson_id), 
-                            True  # Теперь урок действительно завершен
+                    sm = self.lesson_interface.state_manager
+                    if sm.can_open_control_tasks(lesson_id):
+                        sm.save_lesson_assessment(
+                            lesson_id,
+                            sm.get_lesson_score(lesson_id),
+                            True,
                         )
-                        # ДОБАВЛЕНО: всегда выставляем флаг завершённости
-                        self.lesson_interface.state_manager.mark_lesson_complete_manually(lesson_id)
-                        self.logger.info(f"Урок {lesson_id} полностью завершен: тест пройден + контрольное задание выполнено")
+                        sm.mark_lesson_complete_manually(lesson_id)
+                        self.logger.info(
+                            "Урок %s завершён: КЗ верно, тест пройден или обойдён",
+                            lesson_id,
+                        )
                     else:
-                        self.logger.info(f"Контрольное задание выполнено, но тест не пройден для урока {lesson_id}")
+                        self.logger.info(
+                            "Контрольное задание выполнено, но нет теста/bypass "
+                            "для урока %s",
+                            lesson_id,
+                        )
                 else:
                     self.logger.info(f"Контрольное задание НЕ выполнено для урока {lesson_id}")
                     

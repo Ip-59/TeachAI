@@ -429,27 +429,32 @@ class LessonDisplay:
 
             # ИСПРАВЛЕНО: Добавляем индикатор статуса урока после перезапуска
             lesson_full_id = f"{section_id}:{topic_id}:{lesson_id}"
-            test_passed = self.lesson_interface.state_manager.is_test_passed(lesson_full_id)
-            
-            if test_passed:
+            sm = self.lesson_interface.state_manager
+            test_passed = sm.is_test_passed(lesson_full_id)
+            test_bypassed = sm.is_test_bypassed(lesson_full_id)
+
+            if test_passed or test_bypassed:
                 # Если тест пройден, показываем статус и напоминание о контрольных заданиях
                 control_task_completed = self.lesson_interface.state_manager.is_control_task_completed(lesson_full_id)
                 
                 if control_task_completed:
-                    # Урок полностью завершен
+                    gate_text = (
+                        "Тест пройден"
+                        if test_passed
+                        else "Переход к практике без теста подтверждён"
+                    )
                     status_html = widgets.HTML(
                         value=f"""
                         <div style='background-color: #d4edda; color: #155724; padding: 12px; 
                                     border-radius: 8px; margin: 10px 0; border: 1px solid #c3e6cb;'>
                             <h4 style='margin: 0 0 8px 0; font-size: 16px;'>✅ Урок завершен</h4>
                             <p style='margin: 0; font-size: 14px;'>
-                                Тест пройден, контрольное задание выполнено. Урок полностью завершен!
+                                {gate_text}, контрольное задание выполнено. Урок полностью завершен!
                             </p>
                         </div>
                         """
                     )
-                else:
-                    # Тест пройден, но контрольное задание не выполнено
+                elif test_passed:
                     status_html = widgets.HTML(
                         value=f"""
                         <div style='background-color: #fff3cd; color: #856404; padding: 12px; 
@@ -458,6 +463,19 @@ class LessonDisplay:
                             <p style='margin: 0; font-size: 14px;'>
                                 Тест успешно пройден! Теперь доступны контрольные задания. 
                                 Нажмите кнопку <strong>"🛠️ Контрольные задания"</strong> ниже для завершения урока.
+                            </p>
+                        </div>
+                        """
+                    )
+                else:
+                    status_html = widgets.HTML(
+                        value="""
+                        <div style='background-color: #e2e3e5; color: #383d41; padding: 12px; 
+                                    border-radius: 8px; margin: 10px 0; border: 1px solid #d6d8db;'>
+                            <h4 style='margin: 0 0 8px 0; font-size: 16px;'>🛠️ Практика без теста</h4>
+                            <p style='margin: 0; font-size: 14px;'>
+                                Вход в контрольное задание без прохождения теста подтверждён.
+                                Оценка теста не ставится.
                             </p>
                         </div>
                         """

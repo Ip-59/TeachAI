@@ -127,9 +127,9 @@ class LearningProgressManager:
     def is_lesson_completed(self, lesson_id):
         """
         Проверяет, завершен ли урок.
-        ИСПРАВЛЕНО: Урок считается завершенным если:
-        1. Пройден И тест И контрольное задание ИЛИ
-        2. Урок отмечен как завершенный принудительно (для пропуска контрольных заданий)
+        Урок завершён, если:
+        1. Контрольное задание верно И (тест >40% ИЛИ подтверждён bypass входа) ИЛИ
+        2. Урок отмечен как завершённый принудительно.
 
         Args:
             lesson_id (str): ID урока
@@ -144,22 +144,24 @@ class LearningProgressManager:
                 self.logger.debug(f"Урок {lesson_id} отмечен как завершенный принудительно")
                 return True
             
-            # Проверяем, есть ли результат теста
             lesson_scores = self.state_manager.state["learning"].get("lesson_scores", {})
             test_score = lesson_scores.get(lesson_id, 0)
-            is_test_passed = test_score > 40  # Тест считается пройденным при >40%
-            
-            # Проверяем, выполнено ли контрольное задание
+            is_test_passed = test_score > 40
+            is_test_bypassed = self.is_test_bypassed(lesson_id)
+
             control_tasks = self.state_manager.state.get("control_tasks", {})
             control_task_result = control_tasks.get(lesson_id, {})
             is_control_task_completed = control_task_result.get("is_correct", False)
-            
-            # Урок завершен только если И тест пройден И контрольное задание выполнено
-            is_completed = is_test_passed and is_control_task_completed
+
+            # Bypass снимает только входной порог теста, не отменяет КЗ
+            is_completed = (
+                is_test_passed or is_test_bypassed
+            ) and is_control_task_completed
             
             self.logger.debug(
                 f"Проверка завершенности урока {lesson_id}: "
                 f"тест={is_test_passed} ({test_score}%), "
+                f"bypass={is_test_bypassed}, "
                 f"контрольное задание={is_control_task_completed}, "
                 f"завершен={is_completed}"
             )
@@ -217,6 +219,53 @@ class LearningProgressManager:
         except Exception as e:
             self.logger.error(f"Ошибка при проверке теста для урока {lesson_id}: {str(e)}")
             return False
+
+    def _bypass_map(self) -> dict:
+        learning = self.state_manager.state.setdefault("learning", {})
+        bypass = learning.get("control_task_bypass")
+        if not isinstance(bypass, dict):
+            bypass = {}
+            learning["control_task_bypass"] = bypass
+        return bypass
+
+    def mark_test_bypassed(self, lesson_id: str) -> bool:
+        """
+        Фиксирует педагогический обход теста для входа в контрольное задание.
+
+        Не завершает урок (это не ``mark_lesson_complete_manually``).
+
+        Args:
+            lesson_id: Полный ID урока ``section:topic:lesson``.
+
+        Returns:
+            True при успешном сохранении.
+        """
+        try:
+            self._bypass_map()[lesson_id] = True
+            self.logger.info(
+                "Тест по уроку %s обойдён для входа в контрольное задание",
+                lesson_id,
+            )
+            return self.state_manager.save_state()
+        except Exception as e:
+            self.logger.error(
+                "Ошибка при записи bypass теста для %s: %s", lesson_id, e
+            )
+            return False
+
+    def is_test_bypassed(self, lesson_id: str) -> bool:
+        """True, если ученик подтвердил переход к КЗ без теста."""
+        try:
+            return bool(self._bypass_map().get(lesson_id, False))
+        except Exception as e:
+            self.logger.error(
+                "Ошибка при чтении bypass теста для %s: %s", lesson_id, e
+            )
+            return False
+
+    def can_open_control_tasks(self, lesson_id: str) -> bool:
+        """Вход в КЗ разрешён после теста или после подтверждённого bypass."""
+        return self.is_test_passed(lesson_id) or self.is_test_bypassed(lesson_id)
 
     def is_control_task_completed(self, lesson_id):
         """

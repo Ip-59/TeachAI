@@ -115,6 +115,7 @@ class StateManager:
                 "lesson_scores": {},
                 "lesson_attempts": {},
                 "lesson_completion_status": {},
+                "control_task_bypass": {},
                 "questions_count": {},
                 "average_score": 0,
                 "total_assessments": 0,
@@ -236,6 +237,15 @@ class StateManager:
 
     def is_test_passed(self, lesson_id):
         return self.learning_progress.is_test_passed(lesson_id)
+
+    def mark_test_bypassed(self, lesson_id):
+        return self.learning_progress.mark_test_bypassed(lesson_id)
+
+    def is_test_bypassed(self, lesson_id):
+        return self.learning_progress.is_test_bypassed(lesson_id)
+
+    def can_open_control_tasks(self, lesson_id):
+        return self.learning_progress.can_open_control_tasks(lesson_id)
 
     def is_control_task_completed(self, lesson_id):
         return self.learning_progress.is_control_task_completed(lesson_id)
