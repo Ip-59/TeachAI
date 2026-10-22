@@ -62,6 +62,8 @@ class ControlTaskAccess:
 
     def open_control_task(self) -> None:
         """Генерирует и показывает контрольное задание в контейнере урока."""
+        from loading_indicators import make_wait_banner
+
         li = self.lesson_interface
         li._hide_other_containers()
         container = li.control_tasks_container
@@ -69,18 +71,33 @@ class ControlTaskAccess:
             self.logger.error("control_tasks_container не найден")
             return
 
+        lesson_data, lesson_content = self._resolve_current_lesson_payload()
+        lesson_title = (lesson_data or {}).get("title") or (
+            (li.current_course_info or {}).get("lesson_title") or "?"
+        )
+        self.logger.info(
+            "Открытие КЗ для урока «%s» (id=%s)",
+            lesson_title,
+            getattr(li, "current_lesson_id", None),
+        )
+
         container.layout.display = "block"
         container.children = [
-            widgets.HTML(value="<p><strong>Генерация контрольного задания...</strong></p>")
+            make_wait_banner(
+                f"💻 Создаю контрольное задание по уроку «{lesson_title}»…"
+            )
         ]
 
         close_button = self._close_button()
         try:
+            if not lesson_data or not (lesson_content or "").strip():
+                raise ValueError(
+                    "Нет данных текущего урока для генерации КЗ. "
+                    "Откройте урок заново с оглавления."
+                )
             task_interface = li.control_tasks_interface.show_control_task(
-                lesson_data=li.current_lesson_data,
-                lesson_content=(
-                    li.current_lesson_raw_content or li.current_lesson_content
-                ),
+                lesson_data=lesson_data,
+                lesson_content=lesson_content,
             )
             children = [task_interface] if task_interface else []
             children.append(close_button)
@@ -96,6 +113,48 @@ class ControlTaskAccess:
                 ),
                 close_button,
             ]
+
+    def _resolve_current_lesson_payload(self) -> tuple[dict | None, str]:
+        """Актуальные lesson_data + текст урока (не чужой урок из stale state)."""
+        li = self.lesson_interface
+        info = getattr(li, "current_course_info", None) or {}
+        section_id = info.get("section_id")
+        topic_id = info.get("topic_id")
+        lesson_id = info.get("lesson_id")
+
+        lesson_data = None
+        if section_id and topic_id and lesson_id:
+            try:
+                lesson_data = li.state_manager.get_lesson_data(
+                    section_id, topic_id, lesson_id
+                )
+            except Exception as exc:
+                self.logger.warning("get_lesson_data не удался: %s", exc)
+
+        if not lesson_data:
+            lesson_data = getattr(li, "current_lesson_data", None)
+
+        # Всегда предпочитаем текст, привязанный к текущему экрану урока.
+        lesson_content = (
+            info.get("lesson_raw_content")
+            or getattr(li, "current_lesson_raw_content", None)
+            or info.get("lesson_content")
+            or getattr(li, "current_lesson_content", None)
+            or ""
+        )
+        if isinstance(lesson_data, dict) and lesson_data.get("title"):
+            # Синхронизируем title с планом, если в памяти устарел другой урок
+            expected = str(info.get("lesson_title") or "").strip()
+            actual = str(lesson_data.get("title") or "").strip()
+            if expected and actual and expected.lower() != actual.lower():
+                self.logger.warning(
+                    "Расхождение названий урока: info=%r data=%r — берём план",
+                    expected,
+                    actual,
+                )
+                lesson_data = dict(lesson_data)
+                lesson_data["title"] = expected
+        return lesson_data, str(lesson_content)
 
     def _show_bypass_confirmation(self, lesson_id: str) -> None:
         li = self.lesson_interface

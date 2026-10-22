@@ -184,80 +184,17 @@ class ExamplesValidation(BaseContentGenerator):
         validate_examples_payload(payload, min_examples=3)
         return normalize_examples_payload(payload).get("examples", [])
 
-    def _is_basics_python_lesson(
-        self, lesson_title: str, lesson_description: str, lesson_content: str
-    ) -> bool:
-        """True только для уроков про основы Python, не для ML/данных."""
-        combined = " ".join(
-            [lesson_title, lesson_description, lesson_content or ""]
-        ).lower()
-        ml_markers = (
-            "sklearn",
-            "scikit",
-            "tensorflow",
-            "keras",
-            "машинное обучение",
-            "нейрон",
-            "pandas",
-            "numpy",
-        )
-        if any(m in combined for m in ml_markers):
-            return False
-        basics_markers = (
-            "основы python",
-            "синтаксис",
-            "переменн",
-            "тип данных",
-            "типы данных",
-        )
-        return any(m in combined for m in basics_markers)
-
     def _create_fallback_python_example(
         self,
         lesson_title: str,
         lesson_content: str = "",
         lesson_description: str = "",
     ) -> List[Dict[str, str]]:
-        """Готовые примеры — только если LLM полностью провалился."""
-        if self._is_basics_python_lesson(lesson_title, lesson_description, lesson_content):
-            return [
-                {
-                    "title": "Переменные и типы данных",
-                    "description": "Создаёт переменные разных типов и выводит их значения.",
-                    "code": (
-                        'name = "Игорь"\n'
-                        "age = 25\n"
-                        "height = 1.75\n"
-                        "is_student = True\n"
-                        "print(name, age, height, is_student)\n"
-                        "print(type(name), type(age), type(height), type(is_student))"
-                    ),
-                },
-                {
-                    "title": "Операторы и выражения",
-                    "description": "Складывает числа и сохраняет результат в переменную.",
-                    "code": (
-                        "a = 10\n"
-                        "b = 5\n"
-                        "sum_result = a + b\n"
-                        "product = a * b\n"
-                        'print("sum:", sum_result)\n'
-                        'print("product:", product)'
-                    ),
-                },
-                {
-                    "title": "Условия и циклы",
-                    "description": "Проверяет возраст и выводит числа циклом for.",
-                    "code": (
-                        "age = 18\n"
-                        'status = "Взрослый" if age >= 18 else "Несовершеннолетний"\n'
-                        "print(status)\n"
-                        "for i in range(5):\n"
-                        "    print(i)"
-                    ),
-                },
-            ]
+        """Аварийные примеры, если LLM полностью провалился.
 
+        Без keyword-угадывания темы: нейтральный код с названием урока в строке.
+        """
+        del lesson_content, lesson_description
         safe_title = lesson_title.replace('"', "'")
         return [
             {

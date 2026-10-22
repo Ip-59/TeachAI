@@ -60,7 +60,10 @@ class SetupInterface:
             widgets.VBox: Виджет с формой настройки
         """
         # Создаем заголовок
-        header = self.utils.create_header("Настройка профиля TeachAI")
+        from project_identity import PROJECT_NAME, scope_banner_html
+
+        header = self.utils.create_header(f"Настройка профиля {PROJECT_NAME}")
+        scope_banner = widgets.HTML(value=scope_banner_html())
         description = widgets.HTML(value="<p>Пожалуйста, заполните следующие поля:</p>")
 
         # Создаем форму с полями ввода
@@ -190,6 +193,7 @@ class SetupInterface:
             [
                 _SETUP_FORM_CSS,
                 header,
+                scope_banner,
                 description,
                 widgets.VBox(
                     [

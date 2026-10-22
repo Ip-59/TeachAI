@@ -45,12 +45,12 @@ class AssessmentGenerator(BaseContentGenerator):
         try:
             lesson_title = str(lesson) if lesson is not None else "Урок"
 
-            # Очищаем HTML теги для лучшего анализа содержания
-            clean_content = self._clean_html_for_analysis(lesson_content)
+            from learning_prompt_context import FULL_LESSON_MAX_CHARS
 
-            # Ограничиваем длину, но берем больше текста для более точных вопросов
-            content_for_questions = (
-                clean_content[:4000] if len(clean_content) > 4000 else clean_content
+            content_for_questions = self.prepare_lesson_text_for_analysis(
+                lesson_content,
+                max_chars=FULL_LESSON_MAX_CHARS,
+                lesson_title=lesson_title,
             )
 
             prompt = self._build_assessment_prompt(
@@ -257,6 +257,11 @@ class AssessmentGenerator(BaseContentGenerator):
         Returns:
             str: Промпт для API
         """
+        from learning_prompt_context import (
+            lesson_context_block,
+            practice_runtime_rules_ru,
+        )
+
         return f"""
         На основе СТРОГО следующего урока создай РОВНО {num_questions} вопросов для проверки знаний НА РУССКОМ ЯЗЫКЕ:
 
@@ -265,8 +270,8 @@ class AssessmentGenerator(BaseContentGenerator):
         Тема: {topic}
         Урок: {lesson_title}
 
-        ПОЛНОЕ содержание урока:
-        {content_for_questions}
+        {practice_runtime_rules_ru()}
+        {lesson_context_block(content_for_questions)}
 
         КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
         1. ВСЕ вопросы и варианты ответов должны быть ОБЯЗАТЕЛЬНО на русском языке!

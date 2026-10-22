@@ -589,8 +589,21 @@ stdout:
                 return False, f"Неверное значение переменной `{var_name}`"
         return True, None
 
+    @staticmethod
+    def _sanitize_task_starter(task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Убирает готовое решение из task_code (оставляет маркер в конце)."""
+        from control_task_quality import ensure_starter_without_solution
+
+        if not isinstance(task_data, dict):
+            return task_data
+        raw = task_data.get("task_code") or ""
+        cleaned = ensure_starter_without_solution(raw)
+        task_data["task_code"] = cleaned
+        return task_data
+
     def materialize_validation_metadata(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Выполняет solution_code и вычисляет параметры проверки."""
+        task_data = self._sanitize_task_starter(task_data)
         task_data["task_code"] = self.stabilize_sklearn_code(
             sanitize_example_code((task_data.get("task_code") or "").strip())
         )
@@ -649,138 +662,35 @@ stdout:
         lesson_content: str,
         lesson_data: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """Определяет предметную область по текущему уроку (не по названию всего курса)."""
+        """Предметная область урока — только запросом к LLM (без keyword-списков)."""
+        from control_task_llm_judge import classify_lesson_subject
+
         lesson_data = lesson_data or {}
-        lesson_title = lesson_data.get("title", "").lower()
-        lesson_description = lesson_data.get("description", "").lower()
-        topic_title = ""
-        if course_context and isinstance(course_context, dict):
-            topic_title = (course_context.get("topic_title") or "").lower()
-
-        keywords = lesson_data.get("keywords", [])
-        if isinstance(keywords, list):
-            keywords_str = " ".join(str(k) for k in keywords).lower()
-        else:
-            keywords_str = str(keywords or "").lower()
-
-        lesson_signals = " ".join(
-            [lesson_title, lesson_description, topic_title, keywords_str]
+        return classify_lesson_subject(
+            self,
+            lesson_title=str(lesson_data.get("title") or ""),
+            lesson_content=lesson_content or "",
+            course_context=course_context,
         )
-
-        def _match_subject(text: str) -> Optional[str]:
-            text = text.lower()
-            ml_markers = (
-                "sklearn",
-                "scikit",
-                "tensorflow",
-                "keras",
-                "нейрон",
-                "классификац",
-                "регресс",
-                "машинн",  # машинное / машинного обучения
-                "machine learning",
-                "mnist",
-                "iris",
-                "библиотек",
-            )
-            data_markers = (
-                "pandas",
-                "numpy",
-                "matplotlib",
-                "dataframe",
-                "анализ данных",
-                "data analysis",
-                "визуализац",
-            )
-            web_markers = ("flask", "django", "fastapi", "веб", "web", "api", "сайт")
-            basics_markers = (
-                "основы python",
-                "синтаксис",
-                "переменн",
-                "цикл",
-                "список",
-                "словар",
-                "функци",
-                "условн",
-                "тип данных",
-            )
-
-            if any(m in text for m in ml_markers):
-                return "машинное обучение с Python"
-            if any(m in text for m in data_markers):
-                return "анализ данных с Python"
-            if any(m in text for m in web_markers):
-                return "веб-разработка на Python"
-            if any(m in text for m in basics_markers):
-                return "программирование на Python"
-            return None
-
-        subject = _match_subject(lesson_signals)
-        if subject:
-            return subject
-
-        subject = _match_subject(lesson_content or "")
-        if subject:
-            return subject
-
-        if course_context and isinstance(course_context, dict):
-            course_title = (course_context.get("course_title") or "").lower()
-            subject = _match_subject(course_title)
-            if subject:
-                return subject
-            if "финанс" in course_title:
-                return "программирование на Python для финансов"
-
-        return "программирование на Python"
-
-    @staticmethod
-    def _is_basics_shaped_task(task_data: Dict[str, Any]) -> bool:
-        """True, если задание по форме — «Основы Python» (age/status/арифметика)."""
-        combined = " ".join(
-            [
-                task_data.get("title") or "",
-                task_data.get("description") or "",
-                task_data.get("task_code") or "",
-                task_data.get("solution_code") or "",
-                " ".join(task_data.get("student_steps") or []),
-                task_data.get("condition_rule") or "",
-            ]
-        ).lower()
-        basics_signals = (
-            "совершеннолет",
-            "несовершеннолет",
-            "age = ",
-            "age=",
-            "status = ",
-            "вычислите a = 10",
-            "переменные и типы",
-            "тип данных",
-        )
-        ml_signals = (
-            "sklearn",
-            "scikit",
-            "tensorflow",
-            "keras",
-            "load_iris",
-            "logisticregression",
-            "mlpclassifier",
-            "fit(",
-            "predict(",
-            "train_test_split",
-            "pandas",
-            "dataframe",
-        )
-        if any(m in combined for m in ml_signals):
-            return False
-        return any(m in combined for m in basics_signals)
 
     def _task_matches_subject(
-        self, task_data: Dict[str, Any], course_subject: str
+        self,
+        task_data: Dict[str, Any],
+        course_subject: str,
+        *,
+        lesson_title: str = "",
+        lesson_content: str = "",
     ) -> bool:
-        """Проверяет, что задание соответствует предметной области урока."""
-        if "машинное обучение" in course_subject:
-            return not self._is_basics_shaped_task(task_data)
-        return True
+        """Относится ли КЗ к уроку — только запросом к LLM."""
+        from control_task_llm_judge import task_matches_lesson
+
+        return task_matches_lesson(
+            self,
+            task=task_data,
+            lesson_title=lesson_title,
+            lesson_content=lesson_content,
+            lesson_subject=course_subject,
+        )
 
     def generate_control_task(
         self,
@@ -791,14 +701,26 @@ stdout:
     ) -> Dict[str, Any]:
         try:
             lesson_title = lesson_data.get("title", "")
+            from control_task_quality import (
+                anti_copy_rules_ru,
+                task_code_contains_ready_solution,
+            )
+            from learning_prompt_context import FULL_LESSON_MAX_CHARS
+
             content_for_prompt = self.prepare_lesson_text_for_analysis(
                 lesson_content,
                 course_context=course_context,
-                max_chars=6000,
+                max_chars=FULL_LESSON_MAX_CHARS,
                 lesson_title=lesson_title,
             )
             course_subject = self._determine_lesson_subject(
                 course_context, content_for_prompt, lesson_data
+            )
+            self.logger.info(
+                "КЗ: генерация для урока «%s» (id=%s, chars=%s)",
+                lesson_title,
+                lesson_data.get("id"),
+                len(content_for_prompt or ""),
             )
 
             prompt = self._build_control_task_prompt(
@@ -808,15 +730,18 @@ stdout:
                 course_context,
                 course_subject,
             )
+            system_content = (
+                f"Ты — преподаватель {course_subject} в системе TeachAI. "
+                "Создавай однозначные контрольные задания СТРОГО по полному "
+                f"тексту ТЕКУЩЕГО урока «{lesson_title}». "
+                "Не подменяй тему заданием из другого урока "
+                "(в частности не делай «проверку установки Python», "
+                "если текущий урок о другом). "
+                "Ученик выполняет задание ТОЛЬКО кодом Python в Jupyter "
+                "(кнопка «Выполнить код»), терминала ОС нет. Ответ — только JSON."
+            )
             messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        f"Ты — преподаватель {course_subject}. "
-                        "Создавай однозначные контрольные задания СТРОГО по материалу "
-                        f"урока «{lesson_title}». Ответ — только JSON."
-                    ),
-                },
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": prompt},
             ]
             response = self.make_api_request(
@@ -826,30 +751,88 @@ stdout:
                 response_format={"type": "json_object"},
             )
             task_data = self._parse_control_task_response(response, lesson_data)
+            task_data = self._sanitize_task_starter(task_data)
 
-            if not self._task_matches_subject(task_data, course_subject):
+            need_retry = False
+            retry_extra = ""
+            if not self._task_matches_subject(
+                task_data,
+                course_subject,
+                lesson_title=lesson_title,
+                lesson_content=content_for_prompt,
+            ):
+                need_retry = True
+                retry_extra = (
+                    f"\n\nПОВТОР: задание НЕ относится к уроку «{lesson_title}» "
+                    f"(область: {course_subject}). Сделай практику строго по "
+                    "полному тексту ЭТОГО урока. Запрещено подменять тему "
+                    "(установка Python, чужие модули курса и т.п.)."
+                )
                 self.logger.warning(
-                    "Контрольное задание не по теме урока (%s), повторная генерация",
-                    course_subject,
+                    "LLM: КЗ не относится к уроку «%s» — повтор",
+                    lesson_title,
                 )
-                strict_prompt = (
-                    prompt
-                    + f"\n\nПОВТОР: предыдущий ответ был про «Основы Python», "
-                    f"а нужно задание по «{course_subject}» и уроку «{lesson_title}». "
-                    "Используй библиотеки и концепции из lesson_content (sklearn, load_iris и т.д.). "
-                    "ЗАПРЕЩЕНО: age, status, совершеннолетний, a=10+b."
+            # Готовый код после маркера — структурный факт о строке task_code,
+            # не угадывание темы (можно срезать/перегенерировать без словарей).
+            if task_code_contains_ready_solution(task_data.get("task_code") or ""):
+                need_retry = True
+                retry_extra += (
+                    "\n\nПОВТОР: в task_code уже лежит готовое решение после "
+                    "«# Ваш код здесь». Оставь только данные + маркер в конце; "
+                    "полное решение — только в solution_code."
                 )
+                self.logger.warning(
+                    "КЗ: task_code содержит готовое решение — повтор"
+                )
+
+            if need_retry:
                 response = self.make_api_request(
                     messages=[
                         messages[0],
-                        {"role": "user", "content": strict_prompt},
+                        {
+                            "role": "user",
+                            "content": prompt + "\n" + anti_copy_rules_ru() + retry_extra,
+                        },
                     ],
-                    temperature=0.2,
+                    temperature=0.35,
                     max_tokens=2000,
                     response_format={"type": "json_object"},
                 )
                 task_data = self._parse_control_task_response(response, lesson_data)
+                task_data = self._sanitize_task_starter(task_data)
 
+            # Терминал / копипаста / чужая тема — снова только LLM-судья.
+            still_bad = not self._task_matches_subject(
+                task_data,
+                course_subject,
+                lesson_title=lesson_title,
+                lesson_content=content_for_prompt,
+            )
+            if still_bad:
+                self.logger.error(
+                    "КЗ отклонено после повтора для «%s»",
+                    lesson_title,
+                )
+                task_data = {
+                    "title": f"Не удалось собрать практику по уроку «{lesson_title}»",
+                    "description": (
+                        "Модель предложила задание не по уроку, с терминалом "
+                        "или с копией примеров из текста. Откройте КЗ ещё раз."
+                    ),
+                    "task_code": "",
+                    "expected_output": "",
+                    "solution_code": "",
+                    "is_needed": False,
+                    "skip_reason": "quality_rejected",
+                    "student_steps": [],
+                    "validation_mode": "llm",
+                    "check_variables": [],
+                }
+            else:
+                task_data = self._sanitize_task_starter(task_data)
+
+            task_data["source_lesson_title"] = lesson_title
+            task_data["source_lesson_id"] = lesson_data.get("id")
             return task_data
         except Exception as e:
             self.logger.error("Ошибка при генерации контрольного задания: %s", e)
@@ -874,59 +857,49 @@ stdout:
         lesson_title = lesson_data.get("title", "")
         lesson_description = lesson_data.get("description", "")
 
-        if "машинное обучение" in course_subject:
-            subject_rules = """
-=== ПРАВИЛА ДЛЯ ML-УРОКА ===
-- Задание должно использовать sklearn / TensorFlow / Keras — то, что разбирается в уроке.
-- Предпочитай load_iris() вместо make_classification с малым n_features.
-- random_state=42 для всех генераторов данных и моделей.
-- Студент дописывает fit(), predict() или score() — не «age/status» из основ Python.
-- ЗАПРЕЩЕНО задания про переменные, if age >= 18, арифметику a=10+b без ML-библиотек.
+        subject_rules = """
+=== ПРАВИЛА ПО СОДЕРЖАНИЮ УРОКА ===
+- Используй только концепции, библиотеки и приёмы, которые реально есть в тексте урока.
+- Если в уроке sklearn/pandas/и т.п. — практика на них; если основы языка — на них.
+- Не подменяй тему шаблоном из другого модуля курса.
+- Для случайных данных в ML: random_state=42. Данные без внешних файлов (без read_csv).
 """
-            example_block = """
-ПРИМЕР корректного ML-задания:
-- task_code: from sklearn.datasets import load_iris + train_test_split + данные + "# Ваш код здесь"
-- student_steps: «Обучите LogisticRegression на X_train/y_train», «Вычислите accuracy на X_test»
-- check_variables: ["model", "accuracy"] или ["accuracy"]
-"""
-        elif "анализ данных" in course_subject:
-            subject_rules = """
-=== ПРАВИЛА ДЛЯ АНАЛИЗА ДАННЫХ ===
-- Используй pandas/numpy/matplotlib из урока.
-- Данные задавай в task_code (словари, списки, DataFrame.from_dict) — без read_csv.
-"""
-            example_block = """
-ПРИМЕР: task_code создаёт DataFrame, студент считает mean/sum или строит простую агрегацию.
-"""
-        else:
-            subject_rules = ""
-            example_block = """
-ПРИМЕР корректного задания (переменные + условие):
-- task_code содержит: age = 17, name = "Анна"
-- student_steps: «Вычислите a = 10 + 5 и b = a * 2», «По правилу condition_rule создайте status»
-- condition_rule: «если age >= 18 → status = "совершеннолетний", иначе → status = "несовершеннолетний"»
-- check_variables: ["a", "b", "status"]
+        example_block = """
+ПРИМЕР формы (имена/значения выдумай СВОИ, не из урока):
+- task_code: начальные данные + строка "# Ваш код здесь" в конце
+- student_steps: конкретные действия ученика
+- solution_code: полное решение отдельно от starter
 """
 
+        from control_task_quality import anti_copy_rules_ru
+        from learning_prompt_context import (
+            control_task_runtime_rules_ru,
+            lesson_context_block,
+        )
+
         return f"""
-Создай ОДНОЗНАЧНОЕ контрольное задание СТРОГО по lesson_content урока «{lesson_title}».
-Предметная область: {course_subject}. Не используй темы из других модулей курса.
+Создай ОДНОЗНАЧНОЕ контрольное задание СТРОГО по полному тексту урока «{lesson_title}».
+Предметная область (оценка модели): {course_subject}. Не используй темы из других модулей курса.
+Поле title в JSON должно отражать ЭТОТ урок («{lesson_title}»), а не другой.
 
 НАЗВАНИЕ УРОКА: {lesson_title}
 ОПИСАНИЕ УРОКА: {lesson_description}
 
-lesson_content:
-{lesson_content}
+{control_task_runtime_rules_ru(lesson_title)}
+{anti_copy_rules_ru()}
+{lesson_context_block(lesson_content)}
 {subject_rules}
 
-ГЛАВНОЕ ПРАВИЛО: студент должен понять задание с ОДНОГО прочтения и решить ЕДИНСТВЕННЫМ способом.
+ГЛАВНОЕ ПРАВИЛО: студент должен понять задание с ОДНОГО прочтения и решить ЕДИНСТВЕННЫМ способом в редакторе Python TeachAI (не в терминале). Нельзя сдать задание одним копированием кода из урока.
 
 === ИСХОДНЫЕ ДАННЫЕ (task_code) ===
-- ВСЕ константы и входные данные (age, name, numbers, X, y, списки, словари) — ТОЛЬКО в task_code.
-- НЕ проси в description/student_steps «создайте age = 17» — данные уже в task_code.
-- В student_steps пиши: «используйте переменную age из task_code», «допишите код после # Ваш код здесь».
-- task_code: импорты + данные + комментарий "# Ваш код здесь".
-- Без fit(), predict(), print(), plt.show() в task_code.
+- ВСЕ начальные данные — ТОЛЬКО в task_code; действия ученика — НЕ в task_code.
+- НЕ проси в description/student_steps «создайте …», если это уже в task_code.
+- В student_steps: «используйте переменную X из заготовки», «допишите код после # Ваш код здесь».
+- task_code: импорты + начальные данные + РОВНО одна строка "# Ваш код здесь" в КОНЦЕ.
+- После "# Ваш код здесь" в task_code НЕ должно быть кода (ни append, ни del, ни print).
+- ЗАПРЕЩЕНО класть в task_code shell-строки вроде python --version.
+- Без fit(), predict(), print(), plt.show() в task_code (кроме редких уроков про sys.version).
 - ВСЕ генераторы случайных данных: random_state=42.
 
 === УСЛОВИЯ (if/elif/else) ===
@@ -961,8 +934,8 @@ validation_mode: всегда "llm".
     "Шаг 2: ..."
   ],
   "condition_rule": "если age >= 18 → status = \"совершеннолетний\", иначе → \"несовершеннолетний\" (или \"\", если условий нет)",
-  "task_code": "age = 17\nname = \"Анна\"\n# Ваш код здесь",
-  "solution_code": "полное решение",
+  "task_code": "score = 17\nlabel = \"Анна\"\n# Ваш код здесь",
+  "solution_code": "score = 17\nlabel = \"Анна\"\n# код ученика полностью",
   "validation_mode": "llm",
   "check_variables": ["a", "b", "status"],
   "output_format": "print('a:', a) print('status:', status) — если нужен вывод",

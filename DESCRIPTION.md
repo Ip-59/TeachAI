@@ -11,7 +11,7 @@ This document is derived **from source-code analysis** of the repository (May 20
 
 ### Purpose
 
-Build an **interactive AI teacher** for learning Python and related topics inside **Jupyter Notebook**: a personalized learning path, on-demand generated materials, and knowledge checks—without a dedicated application server or a custom trained model.
+Build **TeachAI** — an interactive teacher for **Python and AI/ML** inside **Jupyter Notebook**: a personalized path, on-demand materials, and knowledge checks, without an application server or a custom trained model. Executable practice runs in the notebook’s Python kernel; other languages and unrelated everyday topics are out of scope.
 
 Evidence in code: `engine.py` (system coordination), `content_generator.py` (lessons and Q&A via OpenAI), `interface.py` (Jupyter UI).
 

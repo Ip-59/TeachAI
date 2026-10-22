@@ -45,47 +45,40 @@ class ControlTasksInterface:
         Returns:
             widgets.VBox: Виджет с контрольным заданием
         """
-        from IPython.display import clear_output
         try:
-            print("\n" + "="*80)
-            print("🔍 [DIAGNOSTIC] show_control_task ВЫЗВАН")
-            print("="*80)
-            
-            # Очищаем вывод перед показом нового задания
-            clear_output(wait=True)
-            # Генерируем задание
+            # Не вызывать clear_output / display здесь: КЗ встраивается в
+            # control_tasks_container урока. clear_output сносит всю ячейку,
+            # контейнер исчезает с экрана — «всё пропало».
             communication_style = self.lesson_interface.current_course_info.get(
                 "user_profile", {}
             ).get("communication_style", "friendly")
-
             course_context = self.lesson_interface.current_course_info
 
-            print(f"\n📤 [DIAGNOSTIC] Вызываем generate_control_task...")
+            lesson_title = (lesson_data or {}).get("title", "?")
+            self.logger.info(
+                "Генерация КЗ: урок=«%s», длина текста=%s",
+                lesson_title,
+                len(lesson_content or ""),
+            )
             self.current_task = self.tasks_generator.generate_control_task(
                 lesson_data=lesson_data,
                 lesson_content=lesson_content,
                 communication_style=communication_style,
                 course_context=course_context,
             )
+            self.logger.info(
+                "КЗ готово: task_title=%s source_lesson=%s is_needed=%s",
+                self.current_task.get("title"),
+                self.current_task.get("source_lesson_title"),
+                self.current_task.get("is_needed", True),
+            )
 
-            print(f"\n📥 [DIAGNOSTIC] Результат generate_control_task:")
-            print(f"title: {self.current_task.get('title', 'НЕТ')}")
-            print(f"description: {self.current_task.get('description', 'НЕТ')[:100]}...")
-            print(f"task_code: {self.current_task.get('task_code', 'НЕТ')[:100]}...")
-            print(f"expected_output: {self.current_task.get('expected_output', 'НЕТ')}")
-            print("="*80 + "\n")
-
-            # Проверяем, нужно ли задание
             if not self.current_task.get("is_needed", True):
-                # Задание не нужно, показываем сообщение и переходим к следующему уроку
                 return self._create_skip_task_interface(self.current_task)
 
-            # Создаем интерфейс задания
             return self._create_task_interface(self.current_task)
 
         except Exception as e:
-            print(f"\n❌ [DIAGNOSTIC] ОШИБКА в show_control_task: {str(e)}")
-            print("="*80 + "\n")
             self.logger.error(f"Ошибка при показе контрольного задания: {str(e)}")
             return self._create_error_interface(
                 f"Ошибка при загрузке задания: {str(e)}"
@@ -181,11 +174,32 @@ class ControlTasksInterface:
         Returns:
             widgets.VBox: Виджет с заданием
         """
-        self.logger.debug("Контрольное задание: %s", task_data.get("title", ""))
+        import html as html_lib
 
-        # Заголовок задания
+        self.logger.debug("Контрольное задание: %s", task_data.get("title", ""))
+        source_lesson = html_lib.escape(
+            str(
+                task_data.get("source_lesson_title")
+                or (self.lesson_interface.current_course_info or {}).get(
+                    "lesson_title", ""
+                )
+                or ""
+            )
+        )
+        task_title = html_lib.escape(
+            str(task_data.get("title") or "Контрольное задание")
+        )
+        source_line = (
+            f"<p style='margin:0 0 8px 0;color:#6c757d;font-size:13px;'>"
+            f"Урок: <strong>{source_lesson}</strong></p>"
+            if source_lesson
+            else ""
+        )
         title_html = widgets.HTML(
-            value=f"<h2 style='color: #2c3e50; margin: 10px 0;'>{task_data.get('title', 'Контрольное задание')}</h2>",
+            value=(
+                f"{source_line}"
+                f"<h2 style='color: #2c3e50; margin: 10px 0;'>{task_title}</h2>"
+            ),
             layout=widgets.Layout(margin="10px 0"),
         )
 

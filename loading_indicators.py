@@ -1,378 +1,206 @@
 """
-Модуль для отображения индикаторов загрузки при ожидании ответов от OpenAI API.
-Предоставляет различные типы индикаторов для разных операций.
+Индикаторы ожидания ответа LLM (ipywidgets).
+
+Важно: после ``display(widget)`` нельзя «прятать» через ``clear_output`` —
+виджеты Jupyter часто остаются на экране, а ячейка при этом ломается.
+Скрытие — через очистку/``close()`` самого виджета.
 """
 
+from __future__ import annotations
+
+import html
 import logging
-import time
-from typing import Optional, Callable, Any
-from IPython.display import display, clear_output, HTML
+from contextlib import contextmanager
+from typing import Any, Generator, Optional
+
 import ipywidgets as widgets
-from threading import Thread, Event
+from IPython.display import display
+
+logger = logging.getLogger(__name__)
+
+_SPIN_CSS = """
+@keyframes teachai-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+"""
+
+
+def make_wait_banner(message: str, *, variant: str = "default") -> widgets.HTML:
+    """Простой баннер ожидания (спиннер + текст)."""
+    safe = html.escape(message or "Загрузка...")
+    if variant == "lesson":
+        return widgets.HTML(
+            value=(
+                "<div style='background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);"
+                "color:white;padding:20px;border-radius:10px;margin:10px 0;text-align:center;'>"
+                "<div style='display:inline-block;width:44px;height:44px;"
+                "border:4px solid rgba(255,255,255,0.3);border-top:4px solid white;"
+                "border-radius:50%;animation:teachai-spin 1s linear infinite;'></div>"
+                f"<h3 style='margin:14px 0 0 0;color:white;'>{safe}</h3>"
+                "<p style='margin:8px 0 0 0;opacity:0.9;font-size:0.9em;'>"
+                "Это может занять несколько секунд…</p>"
+                f"<style>{_SPIN_CSS}</style></div>"
+            )
+        )
+    return widgets.HTML(
+        value=(
+            "<div style='background:#f8f9fa;padding:18px;border-radius:10px;margin:10px 0;"
+            "text-align:center;border:2px solid #ecf0f1;'>"
+            "<div style='display:inline-block;width:36px;height:36px;"
+            "border:4px solid #ecf0f1;border-top:4px solid #3498db;"
+            "border-radius:50%;animation:teachai-spin 1s linear infinite;'></div>"
+            f"<p style='margin:12px 0 0 0;color:#2c3e50;font-size:1em;font-weight:500;'>"
+            f"{safe}</p>"
+            "<p style='margin:6px 0 0 0;color:#7f8c8d;font-size:0.85em;'>"
+            "Пожалуйста, подождите…</p>"
+            f"<style>{_SPIN_CSS}</style></div>"
+        )
+    )
+
+
+def dismiss_widget(widget: Any) -> None:
+    """Убирает ранее отображённый виджет ожидания без clear_output ячейки."""
+    if widget is None:
+        return
+    try:
+        if hasattr(widget, "value"):
+            widget.value = ""
+        if hasattr(widget, "layout") and widget.layout is not None:
+            widget.layout.display = "none"
+            widget.layout.height = "0px"
+            widget.layout.margin = "0"
+            widget.layout.padding = "0"
+            widget.layout.border = "0"
+        if hasattr(widget, "close"):
+            widget.close()
+    except Exception as exc:
+        logger.debug("Не удалось скрыть виджет ожидания: %s", exc)
+
 
 class LoadingIndicator:
-    """Базовый класс для индикаторов загрузки."""
-    
-    def __init__(self):
-        """Инициализация индикатора загрузки."""
+    """Базовый индикатор ожидания."""
+
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.is_active = False
-        self.widget = None
-        self.stop_event = Event()
-    
+        self.widget: Optional[widgets.Widget] = None
+
     def show(self, message: str = "Загрузка...") -> widgets.Widget:
-        """
-        Показывает индикатор загрузки.
-        
-        Args:
-            message: Сообщение для отображения
-            
-        Returns:
-            widgets.Widget: Виджет с индикатором
-        """
-        try:
-            self.is_active = True
-            self.stop_event.clear()
-            
-            # Создаем виджет с анимированным индикатором
-            html_content = f"""
-            <div style='background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 10px 0; text-align: center; border: 2px solid #ecf0f1;'>
-                <div style='display: inline-block; width: 40px; height: 40px; border: 4px solid #ecf0f1; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;'></div>
-                <p style='margin: 15px 0 0 0; color: #2c3e50; font-size: 1em; font-weight: 500;'>{message}</p>
-                <p style='margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.8em;'>Пожалуйста, подождите...</p>
-                <style>
-                    @keyframes spin {{
-                        0% {{ transform: rotate(0deg); }}
-                        100% {{ transform: rotate(360deg); }}
-                    }}
-                </style>
-            </div>
-            """
-            
-            self.widget = widgets.HTML(value=html_content)
-            self.logger.info(f"Индикатор загрузки показан: {message}")
-            return self.widget
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка при показе индикатора загрузки: {str(e)}")
-            return self._create_error_widget(str(e))
-    
-    def hide(self):
-        """Скрывает индикатор загрузки."""
-        try:
-            self.is_active = False
-            self.stop_event.set()
-            
-            if self.widget:
-                # Очищаем вывод
-                clear_output(wait=True)
-                self.logger.info("Индикатор загрузки скрыт")
-                
-        except Exception as e:
-            self.logger.error(f"Ошибка при скрытии индикатора загрузки: {str(e)}")
-    
-    def _create_error_widget(self, error_message: str) -> widgets.Widget:
-        """Создает виджет с сообщением об ошибке."""
-        html_content = f"""
-        <div style='background: #fee; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #e74c3c;'>
-            <h4 style='margin: 0 0 15px 0; color: #c0392b;'>❌ Ошибка индикатора загрузки</h4>
-            <p style='margin: 5px 0; font-size: 0.9em; color: #7f8c8d;'>
-                {error_message}
-            </p>
-        </div>
-        """
-        
-        return widgets.HTML(value=html_content)
+        self.is_active = True
+        self.widget = make_wait_banner(message, variant="default")
+        self.logger.info("Индикатор показан: %s", message)
+        return self.widget
+
+    def hide(self) -> None:
+        self.is_active = False
+        dismiss_widget(self.widget)
+        self.widget = None
+        self.logger.info("Индикатор скрыт")
 
 
 class OpenAIAPILoadingIndicator(LoadingIndicator):
-    """Специализированный индикатор для операций с OpenAI API."""
-    
-    def __init__(self):
-        """Инициализация индикатора для OpenAI API."""
+    """Сообщения для операций с моделью."""
+
+    def __init__(self) -> None:
         super().__init__()
         self.operation_messages = {
-            "generate_lesson": "🎓 Генерирую урок...",
-            "generate_examples": "📝 Создаю примеры...",
-            "generate_test": "📋 Формирую тест...",
-            "generate_explanation": "💡 Генерирую объяснение...",
-            "generate_control_task": "💻 Создаю контрольное задание...",
-            "check_relevance": "🔍 Проверяю релевантность...",
-            "generate_qa": "❓ Генерирую вопросы и ответы...",
-            "default": "🤖 Обрабатываю запрос к OpenAI..."
+            "generate_course_plan": "📋 Составляю персонализированный учебный план…",
+            "generate_lesson": "🎓 Генерирую урок…",
+            "generate_examples": "📝 Создаю примеры…",
+            "generate_test": "📋 Формирую тест…",
+            "generate_explanation": "💡 Генерирую объяснение…",
+            "generate_control_task": "💻 Создаю контрольное задание…",
+            "check_relevance": "🔍 Проверяю релевантность вопроса…",
+            "generate_qa": "❓ Готовлю ответ на вопрос…",
+            "generate_concepts": "🔑 Выделяю ключевые понятия…",
+            "explain_concept": "💡 Объясняю понятие…",
+            "classify_topic": "🔎 Проверяю тему курса…",
+            "default": "🤖 Обрабатываю запрос к модели…",
         }
-    
-    def show_for_operation(self, operation: str, custom_message: Optional[str] = None) -> widgets.Widget:
-        """
-        Показывает индикатор для конкретной операции.
-        
-        Args:
-            operation: Тип операции
-            custom_message: Пользовательское сообщение
-            
-        Returns:
-            widgets.Widget: Виджет с индикатором
-        """
-        message = custom_message or self.operation_messages.get(operation, self.operation_messages["default"])
-        
-        # Добавляем дополнительную информацию для API операций
-        enhanced_message = f"{message}\n\n⏱️ Это может занять несколько секунд..."
-        
-        return self.show(enhanced_message)
-    
-    def show_with_progress(self, operation: str, progress_callback: Optional[Callable] = None) -> widgets.Widget:
-        """
-        Показывает индикатор с возможностью обновления прогресса.
-        
-        Args:
-            operation: Тип операции
-            progress_callback: Функция обратного вызова для обновления прогресса
-            
-        Returns:
-            widgets.Widget: Виджет с индикатором
-        """
-        message = self.operation_messages.get(operation, self.operation_messages["default"])
-        
-        html_content = f"""
-        <div style='background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 10px 0; text-align: center; border: 2px solid #ecf0f1;'>
-            <div style='display: inline-block; width: 40px; height: 40px; border: 4px solid #ecf0f1; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;'></div>
-            <p style='margin: 15px 0 0 0; color: #2c3e50; font-size: 1em; font-weight: 500;'>{message}</p>
-            <p style='margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.8em;'>⏱️ Ожидание ответа от OpenAI API...</p>
-            <div id='progress-container' style='margin: 10px 0;'>
-                <div style='background: #ecf0f1; height: 6px; border-radius: 3px; overflow: hidden;'>
-                    <div id='progress-bar' style='background: #3498db; height: 100%; width: 0%; transition: width 0.3s ease;'></div>
-                </div>
-                <p id='progress-text' style='margin: 5px 0; font-size: 0.8em; color: #7f8c8d;'>Подключение к API...</p>
-            </div>
-            <style>
-                @keyframes spin {{
-                    0% {{ transform: rotate(0deg); }}
-                    100% {{ transform: rotate(360deg); }}
-                }}
-            </style>
-        </div>
-        """
-        
-        self.widget = widgets.HTML(value=html_content)
-        self.logger.info(f"Индикатор с прогрессом показан для операции: {operation}")
-        return self.widget
-    
-    def update_progress(self, progress: int, status_message: str = ""):
-        """
-        Обновляет прогресс индикатора.
-        
-        Args:
-            progress: Процент выполнения (0-100)
-            status_message: Сообщение о статусе
-        """
-        if not self.is_active or not self.widget:
-            return
-        
-        try:
-            # Обновляем HTML с новым прогрессом
-            current_html = self.widget.value
-            
-            # Заменяем прогресс-бар
-            progress_bar_style = f"width: {progress}%;"
-            current_html = current_html.replace(
-                'id="progress-bar" style="background: #3498db; height: 100%; width: 0%; transition: width 0.3s ease;"',
-                f'id="progress-bar" style="background: #3498db; height: 100%; {progress_bar_style} transition: width 0.3s ease;"'
-            )
-            
-            # Заменяем текст статуса
-            if status_message:
-                current_html = current_html.replace(
-                    'id="progress-text" style="margin: 5px 0; font-size: 0.8em; color: #7f8c8d;">Подключение к API...</p>',
-                    f'id="progress-text" style="margin: 5px 0; font-size: 0.8em; color: #7f8c8d;">{status_message}</p>'
-                )
-            
-            self.widget.value = current_html
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка при обновлении прогресса: {str(e)}")
+
+    def show_for_operation(
+        self, operation: str, custom_message: Optional[str] = None
+    ) -> widgets.Widget:
+        message = custom_message or self.operation_messages.get(
+            operation, self.operation_messages["default"]
+        )
+        return self.show(f"{message}\n\n⏱️ Это может занять несколько секунд…")
 
 
 class LessonLoadingIndicator(OpenAIAPILoadingIndicator):
-    """Специализированный индикатор для загрузки уроков."""
-    
-    def __init__(self):
-        """Инициализация индикатора для уроков."""
-        super().__init__()
-        self.lesson_operation_messages = {
-            "loading_lesson": "📖 Загружаю урок...",
-            "generating_content": "✍️ Генерирую контент урока...",
-            "preparing_examples": "📝 Подготавливаю примеры...",
-            "creating_test": "📋 Создаю тест для проверки знаний...",
-            "finalizing": "✅ Завершаю подготовку урока..."
-        }
-    
+    """Индикатор загрузки урока."""
+
     def show_lesson_loading(self, lesson_title: str = "") -> widgets.Widget:
-        """
-        Показывает индикатор загрузки урока.
-        
-        Args:
-            lesson_title: Название загружаемого урока
-            
-        Returns:
-            widgets.Widget: Виджет с индикатором
-        """
-        title_text = f" для урока '{lesson_title}'" if lesson_title else ""
-        message = f"📖 Загружаю урок{title_text}..."
-        
-        html_content = f"""
-        <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin: 10px 0; text-align: center;'>
-            <div style='display: inline-block; width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite;'></div>
-            <h3 style='margin: 15px 0 0 0; color: white;'>{message}</h3>
-            <p style='margin: 10px 0 0 0; opacity: 0.9; font-size: 0.9em;'>⏱️ Это может занять несколько секунд...</p>
-            <div style='margin: 15px 0 0 0;'>
-                <div style='background: rgba(255,255,255,0.2); height: 8px; border-radius: 4px; overflow: hidden;'>
-                    <div id='lesson-progress' style='background: white; height: 100%; width: 0%; transition: width 0.5s ease;'></div>
-                </div>
-                <p id='lesson-status' style='margin: 5px 0 0 0; opacity: 0.8; font-size: 0.8em;'>Подготовка контента...</p>
-            </div>
-            <style>
-                @keyframes spin {{
-                    0% {{ transform: rotate(0deg); }}
-                    100% {{ transform: rotate(360deg); }}
-                }}
-            </style>
-        </div>
-        """
-        
-        self.widget = widgets.HTML(value=html_content)
-        self.logger.info(f"Индикатор загрузки урока показан: {lesson_title}")
+        title_text = f" «{lesson_title}»" if lesson_title else ""
+        message = f"📖 Загружаю урок{title_text}…"
+        self.is_active = True
+        self.widget = make_wait_banner(message, variant="lesson")
+        self.logger.info("Индикатор урока показан: %s", lesson_title)
         return self.widget
-    
-    def update_lesson_progress(self, stage: str, progress: int = 0):
-        """
-        Обновляет прогресс загрузки урока.
-        
-        Args:
-            stage: Этап загрузки
-            progress: Процент выполнения
-        """
-        if not self.is_active or not self.widget:
-            return
-        
-        try:
-            stage_messages = {
-                "loading_lesson": "Загружаю урок...",
-                "generating_content": "Генерирую контент...",
-                "preparing_examples": "Подготавливаю примеры...",
-                "creating_test": "Создаю тест...",
-                "finalizing": "Завершаю подготовку..."
-            }
-            
-            status_message = stage_messages.get(stage, "Обработка...")
-            
-            # Обновляем HTML
-            current_html = self.widget.value
-            
-            # Обновляем прогресс-бар
-            progress_bar_style = f"width: {progress}%;"
-            current_html = current_html.replace(
-                'id="lesson-progress" style="background: white; height: 100%; width: 0%; transition: width 0.5s ease;"',
-                f'id="lesson-progress" style="background: white; height: 100%; {progress_bar_style} transition: width 0.5s ease;"'
-            )
-            
-            # Обновляем статус
-            current_html = current_html.replace(
-                'id="lesson-status" style="margin: 5px 0 0 0; opacity: 0.8; font-size: 0.8em;">Подготовка контента...</p>',
-                f'id="lesson-status" style="margin: 5px 0 0 0; opacity: 0.8; font-size: 0.8em;">{status_message}</p>'
-            )
-            
-            self.widget.value = current_html
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка при обновлении прогресса урока: {str(e)}")
 
 
 class LoadingManager:
-    """Менеджер для управления индикаторами загрузки."""
-    
-    def __init__(self):
-        """Инициализация менеджера загрузки."""
+    """Один активный индикатор на экран."""
+
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
-        self.current_indicator = None
+        self.current_indicator: Optional[widgets.Widget] = None
         self.indicators = {
             "default": LoadingIndicator(),
             "openai": OpenAIAPILoadingIndicator(),
-            "lesson": LessonLoadingIndicator()
+            "lesson": LessonLoadingIndicator(),
         }
-    
+
     def show_loading(self, indicator_type: str = "default", **kwargs) -> widgets.Widget:
-        """
-        Показывает индикатор загрузки.
-        
-        Args:
-            indicator_type: Тип индикатора
-            **kwargs: Дополнительные параметры
-            
-        Returns:
-            widgets.Widget: Виджет с индикатором
-        """
-        try:
-            indicator = self.indicators.get(indicator_type, self.indicators["default"])
-            
-            if indicator_type == "openai" and "operation" in kwargs:
-                self.current_indicator = indicator.show_for_operation(kwargs["operation"])
-            elif indicator_type == "lesson":
-                lesson_title = kwargs.get("lesson_title", "")
-                self.current_indicator = indicator.show_lesson_loading(lesson_title)
-            else:
-                message = kwargs.get("message", "Загрузка...")
-                self.current_indicator = indicator.show(message)
-            
-            self.logger.info(f"Индикатор загрузки показан: {indicator_type}")
-            return self.current_indicator
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка при показе индикатора загрузки: {str(e)}")
-            return self._create_error_widget(str(e))
-    
-    def hide_loading(self):
-        """Скрывает текущий индикатор загрузки."""
-        try:
-            if self.current_indicator:
-                # Находим активный индикатор и скрываем его
-                for indicator in self.indicators.values():
-                    if indicator.is_active:
-                        indicator.hide()
-                        break
-                
-                self.current_indicator = None
-                self.logger.info("Индикатор загрузки скрыт")
-                
-        except Exception as e:
-            self.logger.error(f"Ошибка при скрытии индикатора загрузки: {str(e)}")
-    
-    def update_progress(self, progress: int, status_message: str = ""):
-        """
-        Обновляет прогресс текущего индикатора.
-        
-        Args:
-            progress: Процент выполнения
-            status_message: Сообщение о статусе
-        """
-        try:
-            # Находим активный индикатор и обновляем его
-            for indicator in self.indicators.values():
-                if indicator.is_active and hasattr(indicator, 'update_progress'):
-                    indicator.update_progress(progress, status_message)
-                    break
-                    
-        except Exception as e:
-            self.logger.error(f"Ошибка при обновлении прогресса: {str(e)}")
-    
-    def _create_error_widget(self, error_message: str) -> widgets.Widget:
-        """Создает виджет с сообщением об ошибке."""
-        html_content = f"""
-        <div style='background: #fee; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #e74c3c;'>
-            <h4 style='margin: 0 0 15px 0; color: #c0392b;'>❌ Ошибка индикатора загрузки</h4>
-            <p style='margin: 5px 0; font-size: 0.9em; color: #7f8c8d;'>
-                {error_message}
-            </p>
-        </div>
-        """
-        
-        return widgets.HTML(value=html_content) 
+        self.hide_loading()
+        indicator = self.indicators.get(indicator_type, self.indicators["default"])
+        if indicator_type == "openai" and "operation" in kwargs:
+            self.current_indicator = indicator.show_for_operation(
+                kwargs["operation"], kwargs.get("custom_message")
+            )
+        elif indicator_type == "lesson":
+            self.current_indicator = indicator.show_lesson_loading(
+                kwargs.get("lesson_title", "")
+            )
+        else:
+            self.current_indicator = indicator.show(
+                kwargs.get("message", "Загрузка...")
+            )
+        self.logger.info("Индикатор показан: %s", indicator_type)
+        return self.current_indicator
+
+    def hide_loading(self) -> None:
+        widget = self.current_indicator
+        self.current_indicator = None
+        for indicator in self.indicators.values():
+            indicator.is_active = False
+            if indicator.widget is widget:
+                indicator.widget = None
+        dismiss_widget(widget)
+        self.logger.info("Индикатор скрыт")
+
+
+@contextmanager
+def displayed_loading(
+    manager: Optional[LoadingManager],
+    indicator_type: str = "openai",
+    **kwargs: Any,
+) -> Generator[Optional[widgets.Widget], None, None]:
+    """
+    Показать индикатор на время блока; всегда скрыть в ``finally``.
+
+    Args:
+        manager: LoadingManager или None (тогда no-op).
+        indicator_type: ``openai`` / ``lesson`` / ``default``.
+        **kwargs: ``operation``, ``lesson_title``, ``message``, …
+    """
+    if manager is None:
+        yield None
+        return
+    widget = manager.show_loading(indicator_type, **kwargs)
+    display(widget)
+    try:
+        yield widget
+    finally:
+        manager.hide_loading()

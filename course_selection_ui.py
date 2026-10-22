@@ -24,12 +24,15 @@ def build_course_selection(setup) -> widgets.VBox:
         if not courses:
             return setup._create_courses_error_interface()
 
+        from project_identity import scope_banner_html
+
         header = setup.utils.create_header("Выбор курса")
         description = widgets.HTML(
             value=(
-                "<p>Можно выбрать курс из списка или ввести своё название — "
-                "план будет сгенерирован под эту тему. Текущий курс не удаляется: "
-                "его можно снова открыть с дашборда.</p>"
+                scope_banner_html()
+                + "<p>Каталог — курсы Python и AI/ML. Своё название можно ввести, "
+                "если это тема той же области (например «Основы pandas для аналитика»). "
+                "Текущий курс не удаляется: его можно снова открыть с дашборда.</p>"
             )
         )
 
@@ -119,18 +122,50 @@ def build_course_selection(setup) -> widgets.VBox:
             icon="play",
             layout=widgets.Layout(width="260px", height="40px"),
         )
-        output = widgets.Output()
+        # VBox-слот вместо Output: display/clear_output в Output даёт задвоение.
+        status_box = widgets.VBox([])
+
+        def _set_status(widget=None) -> None:
+            status_box.children = () if widget is None else (widget,)
 
         def on_start_button_clicked(_b):
-            with output:
-                clear_output(wait=True)
+            if start_button.disabled:
+                return
+            start_button.disabled = True
+            try:
+                _set_status()
                 course = _resolve_course(
-                    setup, source_radio.value, courses, course_dropdown.value,
-                    custom_title.value, custom_desc.value,
+                    setup,
+                    source_radio.value,
+                    courses,
+                    course_dropdown.value,
+                    custom_title.value,
+                    custom_desc.value,
+                    report=_set_status,
                 )
                 if course is None:
                     return
+                if source_radio.value == "custom":
+                    from course_domain_ui import gate_custom_course
+
+                    def _switch_to_catalog() -> None:
+                        source_radio.value = "catalog"
+
+                    gate_custom_course(
+                        setup,
+                        course,
+                        user_profile,
+                        _start_course,
+                        _switch_to_catalog,
+                        status_box=status_box,
+                    )
+                    return
+                clear_output(wait=True)
                 _start_course(setup, course, user_profile)
+            finally:
+                # После ухода с экрана кнопка уже не видна; на предупреждении
+                # снова можно нажать «Начать» / сменить тему.
+                start_button.disabled = False
 
         start_button.on_click(on_start_button_clicked)
         course_dropdown.observe(on_course_change, names="value")
@@ -146,7 +181,7 @@ def build_course_selection(setup) -> widgets.VBox:
                 custom_box,
                 settings_widget,
                 start_button,
-                output,
+                status_box,
             ],
             layout=widgets.Layout(gap="15px"),
         )
@@ -164,19 +199,26 @@ def _resolve_course(
     catalog_id,
     custom_title: str,
     custom_desc: str,
+    report=None,
 ):
     from custom_course import build_custom_course, validate_custom_course
+
+    def _report(widget) -> None:
+        if report is not None:
+            report(widget)
+        else:
+            display(widget)
 
     if source == "custom":
         error = validate_custom_course(custom_title, custom_desc)
         if error:
-            display(setup.utils.create_styled_message(error, "warning"))
+            _report(setup.utils.create_styled_message(error, "warning"))
             return None
         return build_custom_course(custom_title, custom_desc)
 
     course = next((c for c in courses if c["id"] == catalog_id), None)
     if not course:
-        display(
+        _report(
             setup.utils.create_styled_message(
                 "Ошибка при выборе курса. Пожалуйста, попробуйте еще раз.",
                 "incorrect",

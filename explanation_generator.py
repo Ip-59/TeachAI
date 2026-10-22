@@ -47,7 +47,14 @@ class ExplanationGenerator(BaseContentGenerator):
             Exception: Если не удалось сгенерировать объяснение
         """
         try:
+            from learning_prompt_context import FULL_LESSON_MAX_CHARS
+
             lesson_title = str(lesson) if lesson is not None else "Урок"
+            lesson_content = self.prepare_lesson_text_for_analysis(
+                lesson_content,
+                max_chars=FULL_LESSON_MAX_CHARS,
+                lesson_title=lesson_title,
+            )
 
             prompt = self._build_explanation_prompt(
                 course,
@@ -127,6 +134,11 @@ class ExplanationGenerator(BaseContentGenerator):
             communication_style, ContentUtils.COMMUNICATION_STYLES["friendly"]
         )
 
+        from learning_prompt_context import (
+            lesson_context_block,
+            practice_runtime_rules_ru,
+        )
+
         return f"""
         Предоставь подробное объяснение материала по следующему уроку:
 
@@ -135,15 +147,16 @@ class ExplanationGenerator(BaseContentGenerator):
         Тема: {topic}
         Урок: {lesson_title}
 
-        СОДЕРЖАНИЕ УРОКА (ОСНОВА ДЛЯ ОБЪЯСНЕНИЯ):
-        {lesson_content[:2000]}
+        {practice_runtime_rules_ru()}
+        {lesson_context_block(lesson_content)}
 
         Используй следующий стиль общения: {style_description}
 
         Требования:
-        1. Анализируй только содержание урока выше.
-        2. Не придумывай факты, которых нет в уроке.
-        3. Все примеры связаны с содержанием урока.
+        1. Анализируй только полный текст урока выше.
+        2. Не придумывай факты, которых нет в уроке; не предлагай терминал ОС.
+        3. Примеры кода — выполнимые в Python Jupyter TeachAI.
+        4. Объяснение содержательное, не формальный пересказ заголовков.
 
         Структура:
         1. Глубокий разбор основных концепций из урока

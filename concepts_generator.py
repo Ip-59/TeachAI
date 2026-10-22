@@ -47,20 +47,13 @@ class ConceptsGenerator(BaseContentGenerator):
             lesson_description = lesson_data.get("description", "Нет описания")
             lesson_keywords = lesson_data.get("keywords", [])
 
-            # Срезаем breadcrumb-шапку до выглаживания HTML, по самим тегам
-            # (общий хелпер из BaseContentGenerator).
-            content_without_header = self.strip_lesson_breadcrumb(
-                lesson_content, course_context
-            )
+            from learning_prompt_context import FULL_LESSON_MAX_CHARS
 
-            # Удаляем <style>/<script>/комментарии до снятия тегов,
-            # чтобы CSS не утекал в анализ как «материал урока».
-            clean_content = self.clean_lesson_html_for_analysis(content_without_header)
-
-            # 8000 символов — достаточно для типичного урока целиком;
-            # 3000 было слишком мало и часто содержало только введение.
-            content_for_analysis = (
-                clean_content[:8000] if len(clean_content) > 8000 else clean_content
+            content_for_analysis = self.prepare_lesson_text_for_analysis(
+                lesson_content,
+                course_context=course_context,
+                max_chars=FULL_LESSON_MAX_CHARS,
+                lesson_title=lesson_title,
             )
 
             prompt = self._build_concepts_prompt(
@@ -160,10 +153,12 @@ class ConceptsGenerator(BaseContentGenerator):
             concept_name = concept.get("name", "Понятие")
             concept_description = concept.get("brief_description", "Нет описания")
 
-            # Очищаем и ограничиваем содержание урока
-            clean_content = self._clean_html_for_analysis(lesson_content)
-            content_for_context = (
-                clean_content[:2000] if len(clean_content) > 2000 else clean_content
+            from learning_prompt_context import FULL_LESSON_MAX_CHARS
+
+            content_for_context = self.prepare_lesson_text_for_analysis(
+                lesson_content,
+                max_chars=FULL_LESSON_MAX_CHARS,
+                lesson_title=concept_name,
             )
 
             prompt = self._build_concept_explanation_prompt(
@@ -319,6 +314,11 @@ class ConceptsGenerator(BaseContentGenerator):
             communication_style, ContentUtils.COMMUNICATION_STYLES["friendly"]
         )
 
+        from learning_prompt_context import (
+            lesson_context_block,
+            practice_runtime_rules_ru,
+        )
+
         return f"""
 Дай ДЕЙСТВИТЕЛЬНО ПОДРОБНОЕ объяснение следующего понятия.
 Не одно-два предложения, а полноценный учебный материал
@@ -327,9 +327,8 @@ class ConceptsGenerator(BaseContentGenerator):
 Понятие: {concept_name}
 Краткое описание (только отправная точка, его НЕДОСТАТОЧНО): {concept_description}
 
-КОНТЕКСТ ИЗ УРОКА (опора, но можно дополнять стандартными знаниями
-по теме, если в уроке тема раскрыта неполно):
-{content}
+{practice_runtime_rules_ru()}
+{lesson_context_block(content)}
 
 Стиль общения: {style_description}
 

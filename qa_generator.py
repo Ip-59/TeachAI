@@ -51,8 +51,15 @@ class QAGenerator(BaseContentGenerator):
             Exception: Если не удалось сгенерировать ответ
         """
         try:
+            from learning_prompt_context import FULL_LESSON_MAX_CHARS
+
             lesson_title = str(lesson) if lesson is not None else "Урок"
             user_name_str = str(user_name) if user_name is not None else "Пользователь"
+            full_lesson = self.prepare_lesson_text_for_analysis(
+                lesson_content,
+                max_chars=FULL_LESSON_MAX_CHARS,
+                lesson_title=lesson_title,
+            )
 
             prompt = self._build_qa_prompt(
                 course,
@@ -60,7 +67,7 @@ class QAGenerator(BaseContentGenerator):
                 topic,
                 lesson_title,
                 user_question,
-                lesson_content,
+                full_lesson,
                 user_name_str,
                 communication_style,
             )
@@ -148,6 +155,11 @@ class QAGenerator(BaseContentGenerator):
             communication_style, ContentUtils.COMMUNICATION_STYLES["friendly"]
         )
 
+        from learning_prompt_context import (
+            lesson_context_block,
+            practice_runtime_rules_ru,
+        )
+
         return f"""
         Ответь на вопрос пользователя {user_name_str} по следующему уроку:
 
@@ -156,8 +168,8 @@ class QAGenerator(BaseContentGenerator):
         Тема: {topic}
         Урок: {lesson_title}
 
-        Содержание урока:
-        {lesson_content[:2000]}  # Ограничиваем длину для запроса
+        {practice_runtime_rules_ru()}
+        {lesson_context_block(lesson_content)}
 
         Вопрос пользователя:
         {user_question}
@@ -167,13 +179,12 @@ class QAGenerator(BaseContentGenerator):
         ВАЖНЫЕ ТРЕБОВАНИЯ:
         1. НЕ начинай ответ с приветствий типа "Привет, {user_name_str}!" или подобных
         2. Сразу переходи к сути ответа
-        3. Давай подробный и информативный ответ, основываясь на материале урока
-        4. Если информации в материале урока недостаточно, используй свои знания по теме, но укажи это явно
-        5. Используй четкую структуру ответа с заголовками и примерами
+        3. Ответ должен быть содержательным по материалу урока выше, не формальным
+        4. Если в уроке не хватает факта — скажи об этом явно; не выдумывай шаги для терминала ОС
+        5. Примеры кода — только то, что можно выполнить в Python Jupyter TeachAI
         6. Форматируй код в отдельных блоках с подсветкой синтаксиса
-        7. Добавляй практические советы и рекомендации
+        7. Добавляй практические советы, согласованные с уроком и средой TeachAI
 
-        Ответ должен быть профессиональным, структурированным и легко читаемым.
         Формат: Markdown (заголовки, списки). Код только в блоках ```.
         Не оборачивай весь ответ в один fence. Не используй HTML.
         """

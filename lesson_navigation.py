@@ -257,10 +257,11 @@ class LessonNavigation:
             # Показываем загрузку примеров
             if self.lesson_interface.examples_container:
                 self.lesson_interface.examples_container.layout.display = "block"
-                loading_html = widgets.HTML(
-                    value="<p><strong>Генерация примеров...</strong></p>"
-                )
-                self.lesson_interface.examples_container.children = [loading_html]
+                from loading_indicators import make_wait_banner
+
+                self.lesson_interface.examples_container.children = [
+                    make_wait_banner("📝 Создаю практические примеры…")
+                ]
                 try:
                     from examples_generator import ExamplesGenerator
                     from examples_display import build_examples_widgets

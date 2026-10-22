@@ -465,9 +465,13 @@ class StartupDashboard:
         """
         try:
             # Создаем заголовок
+            from project_identity import scope_banner_html
+
             header = widgets.HTML(
-                value="<h2 style='color: #2c3e50; text-align: center; margin-bottom: 20px;'>📊 Дашборд обучения TeachAI</h2>",
-                layout=widgets.Layout(margin='0 0 20px 0')
+                value=scope_banner_html()
+                + "<h2 style='color: #2c3e50; text-align: center; margin: 8px 0 20px 0;'>"
+                "📊 Дашборд обучения</h2>",
+                layout=widgets.Layout(margin="0 0 20px 0"),
             )
             
             # Создаем секции дашборда

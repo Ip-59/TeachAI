@@ -10,8 +10,6 @@
 import logging
 from datetime import datetime
 import re
-from IPython.display import display
-
 # Импортируем все специализированные генераторы
 from course_plan_generator import CoursePlanGenerator
 from lesson_generator import LessonGenerator
@@ -22,6 +20,7 @@ from qa_generator import QAGenerator
 from concepts_generator import ConceptsGenerator
 from relevance_checker import RelevanceChecker
 from content_utils import append_question_reminder
+from loading_indicators import displayed_loading
 
 
 class ContentGenerator:
@@ -97,30 +96,12 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать план
         """
-        try:
-            # Показываем индикатор загрузки
-            if self.loading_manager:
-                loading_widget = self.loading_manager.show_loading(
-                    "openai", operation="generate_course_plan"
-                )
-                display(loading_widget)
-            
-            # Генерируем план курса
-            result = self.course_plan_gen.generate_course_plan(
-            course_data, total_study_hours, lesson_duration_minutes
-        )
-            
-            # Скрываем индикатор загрузки
-            if self.loading_manager:
-                self.loading_manager.hide_loading()
-            
-            return result
-            
-        except Exception as e:
-            # Скрываем индикатор загрузки в случае ошибки
-            if self.loading_manager:
-                self.loading_manager.hide_loading()
-            raise
+        with displayed_loading(
+            self.loading_manager, "openai", operation="generate_course_plan"
+        ):
+            return self.course_plan_gen.generate_course_plan(
+                course_data, total_study_hours, lesson_duration_minutes
+            )
 
     def generate_lesson(
         self, course, section, topic, lesson, user_name, communication_style="friendly"
@@ -142,30 +123,14 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать урок
         """
-        try:
-            # Показываем индикатор загрузки, если доступен
-            if self.loading_manager:
-                loading_widget = self.loading_manager.show_loading(
-                    "lesson", lesson_title=f"{course} - {lesson}"
-                )
-                display(loading_widget)
-            
-            # Генерируем урок
-            result = self.lesson_gen.generate_lesson(
-            course, section, topic, lesson, user_name, communication_style
-        )
-            
-            # Скрываем индикатор загрузки
-            if self.loading_manager:
-                self.loading_manager.hide_loading()
-            
-            return result
-            
-        except Exception as e:
-            # Скрываем индикатор загрузки в случае ошибки
-            if self.loading_manager:
-                self.loading_manager.hide_loading()
-            raise
+        with displayed_loading(
+            self.loading_manager,
+            "lesson",
+            lesson_title=f"{course} - {lesson}",
+        ):
+            return self.lesson_gen.generate_lesson(
+                course, section, topic, lesson, user_name, communication_style
+            )
 
     def generate_examples(
         self,
@@ -209,12 +174,15 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать примеры.
         """
-        return self.examples_gen.generate_examples_data(
-            lesson_data,
-            lesson_content,
-            communication_style,
-            course_context=course_context,
-        )
+        with displayed_loading(
+            self.loading_manager, "openai", operation="generate_examples"
+        ):
+            return self.examples_gen.generate_examples_data(
+                lesson_data,
+                lesson_content,
+                communication_style,
+                course_context=course_context,
+            )
 
     def generate_assessment(
         self, course, section, topic, lesson, lesson_content, num_questions=5
@@ -236,30 +204,12 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать тест
         """
-        try:
-            # Показываем индикатор загрузки
-            if self.loading_manager:
-                loading_widget = self.loading_manager.show_loading(
-                    "openai", operation="generate_test"
-                )
-                display(loading_widget)
-            
-            # Генерируем тест
-            result = self.assessment_gen.generate_assessment(
-            course, section, topic, lesson, lesson_content, num_questions
-        )
-            
-            # Скрываем индикатор загрузки
-            if self.loading_manager:
-                self.loading_manager.hide_loading()
-            
-            return result
-            
-        except Exception as e:
-            # Скрываем индикатор загрузки в случае ошибки
-            if self.loading_manager:
-                self.loading_manager.hide_loading()
-            raise
+        with displayed_loading(
+            self.loading_manager, "openai", operation="generate_test"
+        ):
+            return self.assessment_gen.generate_assessment(
+                course, section, topic, lesson, lesson_content, num_questions
+            )
 
     def answer_question(
         self,
@@ -291,16 +241,19 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать ответ
         """
-        return self.qa_gen.answer_question(
-            course,
-            section,
-            topic,
-            lesson,
-            user_question,
-            lesson_content,
-            user_name,
-            communication_style,
-        )
+        with displayed_loading(
+            self.loading_manager, "openai", operation="generate_qa"
+        ):
+            return self.qa_gen.answer_question(
+                course,
+                section,
+                topic,
+                lesson,
+                user_question,
+                lesson_content,
+                user_name,
+                communication_style,
+            )
 
     def get_detailed_explanation(
         self,
@@ -328,9 +281,12 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать объяснение
         """
-        return self.explanation_gen.get_detailed_explanation(
-            course, section, topic, lesson, lesson_content, communication_style
-        )
+        with displayed_loading(
+            self.loading_manager, "openai", operation="generate_explanation"
+        ):
+            return self.explanation_gen.get_detailed_explanation(
+                course, section, topic, lesson, lesson_content, communication_style
+            )
 
     def generate_concepts(
         self,
@@ -369,20 +325,23 @@ class ContentGenerator:
                 "заглушка, понятия могут не соответствовать конкретному уроку"
             )
 
-        # Получаем понятия из concepts_generator
-        concepts = self.concepts_gen.extract_key_concepts(
-            lesson_content, lesson_data, course_context=course_context
-        )
+        with displayed_loading(
+            self.loading_manager, "openai", operation="generate_concepts"
+        ):
+            concepts = self.concepts_gen.extract_key_concepts(
+                lesson_content, lesson_data, course_context=course_context
+            )
 
-        # Преобразуем формат данных: "name" -> "title", "brief_description" -> "description"
         formatted_concepts = []
         for concept in concepts:
-            formatted_concept = {
-                "title": concept.get("name", "Понятие"),
-                "description": concept.get("brief_description", "Нет описания"),
-            }
-            formatted_concepts.append(formatted_concept)
-
+            formatted_concepts.append(
+                {
+                    "title": concept.get("name", "Понятие"),
+                    "description": concept.get(
+                        "brief_description", "Нет описания"
+                    ),
+                }
+            )
         return formatted_concepts
 
     # ========================================
@@ -424,9 +383,12 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось сгенерировать объяснение
         """
-        return self.concepts_gen.explain_concept(
-            concept, lesson_content, communication_style
-        )
+        with displayed_loading(
+            self.loading_manager, "openai", operation="explain_concept"
+        ):
+            return self.concepts_gen.explain_concept(
+                concept, lesson_content, communication_style
+            )
 
     def check_question_relevance(
         self,
@@ -458,13 +420,16 @@ class ContentGenerator:
         Raises:
             Exception: Если не удалось выполнить проверку.
         """
-        return self.relevance_checker.check_question_relevance(
-            user_question,
-            lesson_content,
-            lesson_data,
-            course_context=course_context,
-            lesson_raw_content=lesson_raw_content,
-        )
+        with displayed_loading(
+            self.loading_manager, "openai", operation="check_relevance"
+        ):
+            return self.relevance_checker.check_question_relevance(
+                user_question,
+                lesson_content,
+                lesson_data,
+                course_context=course_context,
+                lesson_raw_content=lesson_raw_content,
+            )
 
     def generate_non_relevant_response(self, user_question, suggestions):
         """

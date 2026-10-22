@@ -5,37 +5,11 @@
 """
 
 import json
-import re
 from content_utils import BaseContentGenerator
 
 
 class RelevanceChecker(BaseContentGenerator):
     """Проверщик релевантности вопросов к уроку."""
-
-    # Базовые темы Python — релевантны для уроков «Основы Python» и подобных,
-    # даже если конкретная генерация урока не упомянула термин явно.
-    _PYTHON_BASICS_STEMS = {
-        "функци": "функции",
-        "переменн": "переменные",
-        "тип": "типы данных",
-        "данн": "данные",
-        "спис": "списки",
-        "кортеж": "кортежи",
-        "словар": "словари",
-        "множеств": "множества",
-        "услов": "условия",
-        "цикл": "циклы",
-        "оператор": "операторы",
-        "синтакс": "синтаксис",
-        "строк": "строки",
-        "числ": "числа",
-        "def": "определение функций",
-        "return": "return",
-        "import": "импорт",
-        "class": "классы",
-        "метод": "методы",
-        "модул": "модули",
-    }
 
     def __init__(self, api_key):
         """
@@ -90,36 +64,19 @@ class RelevanceChecker(BaseContentGenerator):
 
             analysis_source = lesson_raw_content or lesson_content
             headers = self.extract_lesson_headers(analysis_source)
+            from learning_prompt_context import FULL_LESSON_MAX_CHARS
+
             content_for_check = self.prepare_lesson_text_for_analysis(
                 analysis_source,
                 course_context,
-                max_chars=6000,
+                max_chars=FULL_LESSON_MAX_CHARS,
                 lesson_title=lesson_title,
             )
             if headers:
                 outline = "; ".join(headers)
                 content_for_check = f"СТРУКТУРА УРОКА: {outline}\n\n{content_for_check}"
 
-            local_result = self._quick_local_relevance_check(
-                user_question, content_for_check, lesson_data
-            )
-            if local_result is not None:
-                self.logger.info(
-                    "Локальная проверка релевантности: %s",
-                    local_result["is_relevant"],
-                )
-                return local_result
-
-            topic_result = self._topic_based_relevance_check(
-                user_question, lesson_data
-            )
-            if topic_result is not None:
-                self.logger.info(
-                    "Тематическая проверка релевантности: %s",
-                    topic_result["is_relevant"],
-                )
-                return topic_result
-
+            # Релевантность — только через LLM (без локальных keyword/stem-shortcut).
             prompt = self._build_relevance_prompt(
                 user_question,
                 lesson_title,
@@ -131,19 +88,23 @@ class RelevanceChecker(BaseContentGenerator):
             messages = [
                 {
                     "role": "system",
-                    "content": "Ты - эксперт по образованию, который анализирует соответствие вопросов студентов изучаемому материалу. Твоя задача - определить, относится ли вопрос к теме урока.",
+                    "content": (
+                        "Ты - эксперт по образованию, который анализирует "
+                        "соответствие вопросов студентов изучаемому материалу. "
+                        "Определи, относится ли вопрос к теме урока. "
+                        "Отвечай только JSON."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ]
 
             response_content = self.make_api_request(
                 messages=messages,
-                temperature=0.2,  # Низкая температура для точного анализа
+                temperature=0.2,
                 max_tokens=1500,
                 response_format={"type": "json_object"},
             )
 
-            # Сохраняем отладочную информацию
             self.save_debug_response(
                 "relevance_check",
                 prompt,
@@ -160,17 +121,9 @@ class RelevanceChecker(BaseContentGenerator):
             relevance_data = json.loads(response_content)
             result = self._extract_relevance_from_response(relevance_data)
 
-            # LLM иногда отвергает базовые темы Python, не упомянутые
-            # в конкретной генерации. Перепроверяем тематически.
-            if not result["is_relevant"] and result.get("confidence", 100) <= 85:
-                topic_result = self._topic_based_relevance_check(
-                    user_question, lesson_data
-                )
-                if topic_result is not None:
-                    return topic_result
-
             self.logger.info(
-                f"Проверка релевантности завершена: {result['is_relevant']} (уверенность: {result['confidence']}%)"
+                f"Проверка релевантности завершена: {result['is_relevant']} "
+                f"(уверенность: {result['confidence']}%)"
             )
             return result
 
@@ -363,120 +316,6 @@ class RelevanceChecker(BaseContentGenerator):
             <p><em>Помните: практическое применение знаний так же важно, как и изучение теории!</em></p>
         </div>
         """
-
-    def _lesson_metadata_blob(self, lesson_data):
-        """Собирает метаданные урока в одну строку для поиска."""
-        if not isinstance(lesson_data, dict):
-            return ""
-        keywords = lesson_data.get("keywords", [])
-        if not isinstance(keywords, list):
-            keywords = [str(keywords)]
-        return " ".join(
-            [
-                str(lesson_data.get("title", "")),
-                str(lesson_data.get("description", "")),
-                " ".join(keywords),
-            ]
-        )
-
-    def _is_python_basics_lesson(self, lesson_data):
-        """True, если урок относится к основам Python."""
-        blob = self._lesson_metadata_blob(lesson_data).lower()
-        return any(
-            marker in blob
-            for marker in ("python", "питон", "основы python", "синтаксис")
-        )
-
-    def _term_in_text(self, term, text):
-        """Проверяет наличие термина с учётом словоформ."""
-        if not term or not text:
-            return False
-        term = term.lower()
-        text = text.lower()
-        if term in text:
-            return True
-        if len(term) >= 4:
-            stem = term[: max(4, len(term) - 2)]
-            if stem in text:
-                return True
-        return False
-
-    def _topic_based_relevance_check(self, user_question, lesson_data):
-        """Тематическая проверка для уроков по основам Python.
-
-        Args:
-            user_question (str): Вопрос студента.
-            lesson_data (dict): Метаданные урока.
-
-        Returns:
-            dict | None: Результат, если вопрос относится к базовым темам Python.
-        """
-        if not user_question or not self._is_python_basics_lesson(lesson_data):
-            return None
-
-        question_lower = user_question.lower()
-        for stem, label in self._PYTHON_BASICS_STEMS.items():
-            if stem in question_lower:
-                return {
-                    "is_relevant": True,
-                    "confidence": 88,
-                    "reason": (
-                        f"Вопрос относится к базовой теме Python («{label}»), "
-                        f"которая изучается в уроке «{lesson_data.get('title', 'урок')}»."
-                    ),
-                    "suggestions": [],
-                }
-        return None
-
-    def _quick_local_relevance_check(self, user_question, lesson_text, lesson_data=None):
-        """Быстрая проверка: есть ли слова из вопроса в тексте урока.
-
-        Возвращает результат dict, если совпадение найдено.
-        None — если нужна проверка через LLM.
-
-        Args:
-            user_question (str): Вопрос студента.
-            lesson_text (str): Очищенный текст урока.
-            lesson_data (dict | None): Метаданные урока (title, keywords).
-
-        Returns:
-            dict | None: Результат проверки или None для делегирования LLM.
-        """
-        if not user_question:
-            return None
-
-        question_lower = user_question.lower()
-        search_parts = [lesson_text or ""]
-        if lesson_data:
-            search_parts.append(self._lesson_metadata_blob(lesson_data))
-        search_corpus = " ".join(search_parts).lower()
-        if not search_corpus.strip():
-            return None
-
-        stop_words = {
-            "что", "такое", "как", "почему", "зачем", "где", "когда", "кто",
-            "это", "ли", "в", "и", "на", "по", "для", "из", "от", "до", "не",
-            "а", "the", "is", "are", "what", "how", "why", "можно", "нужно",
-            "расскажи", "объясни", "покажи", "пример", "урок", "тема",
-        }
-
-        keywords = re.findall(r"[a-zа-яё0-9_]{3,}", question_lower)
-        keywords = [w for w in keywords if w not in stop_words]
-        if not keywords:
-            return None
-
-        for keyword in keywords:
-            if self._term_in_text(keyword, search_corpus):
-                return {
-                    "is_relevant": True,
-                    "confidence": 95,
-                    "reason": (
-                        f"Термин «{keyword}» связан с темой текущего урока."
-                    ),
-                    "suggestions": [],
-                }
-
-        return None
 
     def _clean_html_for_analysis(self, content):
         """Совместимая обёртка над общим хелпером BaseContentGenerator.
