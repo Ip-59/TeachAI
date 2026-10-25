@@ -17,7 +17,7 @@ _ANSWER = (
 
 
 def test_answer_keeps_version_sentence_and_link() -> None:
-    cleaned = QAGenerator._remove_greetings(None, _ANSWER)
+    cleaned = QAGenerator._remove_greetings(_ANSWER)
     assert cleaned.startswith("Актуальная версия")
     assert "[python.org](https://www.python.org)" in cleaned
     assert "сайта [python.org]" in cleaned
@@ -25,7 +25,7 @@ def test_answer_keeps_version_sentence_and_link() -> None:
 
 def test_real_greeting_is_removed() -> None:
     text = "Привет, Игорь!\n\nАктуальная версия указана на сайте."
-    cleaned = QAGenerator._remove_greetings(None, text)
+    cleaned = QAGenerator._remove_greetings(text)
     assert not cleaned.startswith("Привет")
     assert cleaned.startswith("Актуальная версия")
 

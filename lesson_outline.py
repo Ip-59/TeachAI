@@ -34,6 +34,8 @@ def iter_plan_lessons(course_plan: dict) -> Iterator[dict[str, Any]]:
                     "topic_title": topic_title,
                     "lesson_id": lesson_id,
                     "lesson_title": lesson.get("title") or "Урок",
+                    "description": lesson.get("description") or "",
+                    "keywords": list(lesson.get("keywords") or []),
                     "full_id": f"{section_id}:{topic_id}:{lesson_id}",
                 }
 

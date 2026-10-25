@@ -75,51 +75,52 @@ class AssessmentResultsHandler:
                 False, если есть неотвеченные вопросы или сбой обработки
                 (кнопка Submit должна снова стать активной).
         """
-        with results_output:
-            clear_output(wait=True)
+        def show_in_slot(widget: widgets.Widget) -> None:
+            results_output.children = (widget,)
 
-            unanswered_questions = [
-                i + 1 for i, answer in enumerate(current_answers) if answer is None
-            ]
-            if unanswered_questions:
-                display(
-                    widgets.HTML(
-                        value=(
-                            "<p style='color: #856404; background-color: #fff3cd; "
-                            "padding: 10px; border-radius: 5px; margin: 3px 0;'>"
-                            "Пожалуйста, ответьте на вопросы: "
-                            f"{', '.join(map(str, unanswered_questions))} "
-                            "перед завершением теста.</p>"
-                        )
+        unanswered_questions = [
+            i + 1 for i, answer in enumerate(current_answers) if answer is None
+        ]
+        if unanswered_questions:
+            show_in_slot(
+                widgets.HTML(
+                    value=(
+                        "<p style='color: #856404; background-color: #fff3cd; "
+                        "padding: 10px; border-radius: 5px; margin: 3px 0;'>"
+                        "Пожалуйста, ответьте на вопросы: "
+                        f"{', '.join(map(str, unanswered_questions))} "
+                        "перед завершением теста.</p>"
                     )
                 )
-                return False
+            )
+            return False
 
-            try:
-                score, results, correct_answers = self.assessment.calculate_score(
-                    current_questions, current_answers
-                )
+        try:
+            score, results, correct_answers = self.assessment.calculate_score(
+                current_questions, current_answers
+            )
 
-                lesson_id = f"{current_section}:{current_topic}:{current_lesson}"
-                is_test_passed = score > 40
+            lesson_id = f"{current_section}:{current_topic}:{current_lesson}"
+            is_test_passed = score > 40
 
-                self.state_manager.save_lesson_assessment(
-                    lesson_id, score, is_test_passed
-                )
+            self.state_manager.save_lesson_assessment(
+                lesson_id, score, is_test_passed
+            )
 
-                course_id = course_plan.get("id", current_course)
+            course_id = course_plan.get("id", current_course)
 
-                self.assessment.log_assessment_results(
-                    course=course_id,
-                    section=current_section,
-                    topic=current_topic,
-                    lesson=current_lesson,
-                    questions=current_questions,
-                    user_answers=current_answers,
-                    correct_answers=correct_answers,
-                    score=score,
-                )
+            self.assessment.log_assessment_results(
+                course=course_id,
+                section=current_section,
+                topic=current_topic,
+                lesson=current_lesson,
+                questions=current_questions,
+                user_answers=current_answers,
+                correct_answers=correct_answers,
+                score=score,
+            )
 
+            show_in_slot(
                 self.display_enhanced_test_results(
                     score,
                     correct_answers,
@@ -131,19 +132,20 @@ class AssessmentResultsHandler:
                     is_test_passed,
                     lesson_id,
                 )
-                return True
+            )
+            return True
 
-            except Exception as e:
-                display(
-                    widgets.HTML(
-                        value=(
-                            "<p style='color: #721c24; background-color: #f8d7da; "
-                            "padding: 10px; border-radius: 5px; margin: 3px 0;'>"
-                            f"Ошибка при обработке результатов теста: {str(e)}</p>"
-                        )
+        except Exception as e:
+            show_in_slot(
+                widgets.HTML(
+                    value=(
+                        "<p style='color: #721c24; background-color: #f8d7da; "
+                        "padding: 10px; border-radius: 5px; margin: 3px 0;'>"
+                        f"Ошибка при обработке результатов теста: {e}</p>"
                     )
                 )
-                return False
+            )
+            return False
 
     def display_enhanced_test_results(
         self,
@@ -385,10 +387,7 @@ class AssessmentResultsHandler:
             buttons_container = widgets.HBox([repeat_lesson_button, continue_anyway_button])
             result_widgets.append(buttons_container)
 
-        # ИСПРАВЛЕНО: Отображаем все результаты ОДНИМ вызовом display()
-        # Создаем единый контейнер со всеми результатами
-        results_container = widgets.VBox(result_widgets)
-        display(results_container)
+        return widgets.VBox(result_widgets)
 
     def _activate_control_tasks_button(self):
         """

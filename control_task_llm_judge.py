@@ -119,6 +119,86 @@ def classify_lesson_subject(
         return _DEFAULT_SUBJECT
 
 
+def lesson_requires_editor_code(
+    generator: Any,
+    *,
+    lesson_title: str,
+    lesson_content: str,
+    knowledge_brief: str,
+) -> tuple[bool | None, str]:
+    """Нужно ли по этому уроку писать код, учитывая, что студент уже знает.
+
+    Returns:
+        (True, "") — практика в редакторе уместна.
+        (False, причина для ученика) — код выдумывать не надо.
+        (None, "") — модель не ответила, генерацию не блокируем.
+    """
+    if generator is None or not hasattr(generator, "make_api_request"):
+        return None, ""
+    body = (lesson_content or "").strip()
+    if len(body) > 8000:
+        body = body[:5000] + "\n…\n" + body[-2000:]
+    prompt = (
+        "Реши, должен ли студент писать код Python в редакторе TeachAI "
+        "как практику ИМЕННО этого урока.\n"
+        f"Урок: «{lesson_title}»\n\n"
+        f"Что студент уже знает до этого урока:\n{knowledge_brief}\n\n"
+        f"Текст урока:\n{body}\n\n"
+        "code_practice=false, если урок объясняет установку, выбор программы, "
+        "кнопки и шаги без написания кода, а раньше студент ещё не учился "
+        "писать код. Нельзя «придумать» задание на переменную и print только "
+        "потому, что курс в целом про Python.\n"
+        "code_practice=true, только если этот урок сам учит приёму, который "
+        "студент теперь выполняет кодом в редакторе, и этот приём уже доступен "
+        "по тексту урока и по тому, что он проходил раньше.\n"
+        "Ответь ТОЛЬКО JSON: "
+        '{"code_practice": true или false, "reason": "одно-два предложения ученику"}.'
+    )
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Ты решаешь, есть ли у урока практика кодом. "
+                "Отвечай только JSON, без markdown."
+            ),
+        },
+        {"role": "user", "content": prompt},
+    ]
+    try:
+        try:
+            raw = generator.make_api_request(
+                messages=messages,
+                temperature=0,
+                max_tokens=220,
+                response_format={"type": "json_object"},
+            )
+        except Exception as fmt_exc:
+            logger.info("json_object недоступен для code_practice: %s", fmt_exc)
+            raw = generator.make_api_request(
+                messages=messages, temperature=0, max_tokens=220
+            )
+        data = _parse_json_object(raw)
+        needed = _bool_field(data, "code_practice")
+        reason = str(data.get("reason") or "").strip()
+        logger.info(
+            "LLM code_practice для «%s»: %s (%s)",
+            lesson_title,
+            needed,
+            reason,
+        )
+        if needed:
+            return True, ""
+        if not reason or reason.lower().startswith("ошибка"):
+            reason = (
+                "Этот урок не учит писать код, а нужных приёмов раньше ещё не было. "
+                "Контрольное задание с кодом здесь не ставится."
+            )
+        return False, reason[:500]
+    except Exception as exc:
+        logger.warning("lesson_requires_editor_code не удался: %s", exc)
+        return None, ""
+
+
 def task_matches_lesson(
     generator: Any,
     *,

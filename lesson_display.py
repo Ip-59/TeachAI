@@ -163,6 +163,12 @@ class LessonDisplay:
             self.lesson_interface.current_lesson_id = cache_key  # Полный ID урока
             # Сбрасываем in-memory кэши интерактивных разделов — они только для этого урока
             self.lesson_interface.current_lesson_concepts = None
+            self._ensure_lesson_concepts(
+                cache_key,
+                lesson_content_data.get("raw_content") or lesson_content_data.get("content") or "",
+                lesson_data,
+                user_profile.get("communication_style", "friendly"),
+            )
             self.lesson_interface.current_lesson_examples = None
             self.lesson_interface.current_lesson_examples_key = None
             self._reset_interactive_containers()
@@ -335,6 +341,9 @@ class LessonDisplay:
             self.lesson_interface.control_tasks_container = widgets.VBox(
                 layout=widgets.Layout(display="none", width="100%")
             )
+            self.lesson_interface.test_container = widgets.VBox(
+                layout=widgets.Layout(display="none", width="100%")
+            )
 
             # Логируем создание контейнеров
             self.logger.info("Контейнеры созданы:")
@@ -432,6 +441,7 @@ class LessonDisplay:
                 self.lesson_interface.explain_container,
                 self.lesson_interface.examples_container,
                 self.lesson_interface.qa_container,
+                self.lesson_interface.test_container,
                 self.lesson_interface.control_tasks_container,
             ]
 
@@ -453,6 +463,28 @@ class LessonDisplay:
                 self.lesson_interface,
             )
     
+    def _ensure_lesson_concepts(
+        self,
+        cache_key: str,
+        lesson_content: str,
+        lesson_data: dict,
+        communication_style: str,
+    ) -> None:
+        """Составляет понятия вместе с уроком и кладёт их в кэш."""
+        from student_knowledge import ensure_lesson_concepts
+
+        info = self.lesson_interface.current_course_info or {}
+        concepts = ensure_lesson_concepts(
+            self.lesson_interface.state_manager,
+            self.lesson_interface.content_generator,
+            cache_key,
+            lesson_content,
+            lesson_data,
+            communication_style,
+            info,
+        )
+        self.lesson_interface.current_lesson_concepts = concepts or None
+
     def _reset_interactive_containers(self):
         """Скрывает и очищает контейнеры примеров/QA/объяснений при смене урока."""
         li = self.lesson_interface
@@ -461,6 +493,7 @@ class LessonDisplay:
             "qa_container",
             "explain_container",
             "control_tasks_container",
+            "test_container",
         ):
             container = getattr(li, name, None)
             if container is not None:

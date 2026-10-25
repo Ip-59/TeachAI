@@ -194,7 +194,8 @@ class QAGenerator(BaseContentGenerator):
         Не оборачивай весь ответ в один fence. Не используй HTML.
         """
 
-    def _remove_greetings(self, answer):
+    @staticmethod
+    def _remove_greetings(answer: str) -> str:
         """
         Убирает приветствия из начала ответа.
 

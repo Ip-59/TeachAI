@@ -134,7 +134,13 @@ class ExamplesGeneration(BaseContentGenerator):
             return examples_data
 
         except Exception as e:
-            self.logger.error("Критическая ошибка при генерации примеров: %s", e)
+            self.logger.exception("Критическая ошибка при генерации примеров")
+            cause = str(e.__cause__ or e)
+            if "401" in cause or "invalid_api_key" in cause or "Incorrect API key" in cause:
+                raise Exception(
+                    "Модель отклонила ключ доступа. Если на дашборде меняли маршрут, "
+                    "перезапустите ядро и откройте урок заново."
+                ) from e
             raise Exception(
                 "Не получилось запросить примеры у модели. Повторите попытку."
             ) from e

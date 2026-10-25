@@ -156,8 +156,6 @@ class AssessmentInterface:
                 )
             except Exception as e:
                 self.logger.error(f"ОШИБКА при генерации вопросов: {str(e)}")
-                # Очищаем сообщение о загрузке и показываем ошибку
-                clear_output(wait=True)
                 return self._create_error_interface(
                     "Ошибка при генерации теста",
                     f"Не удалось сгенерировать вопросы для теста: {str(e)}",
@@ -165,9 +163,6 @@ class AssessmentInterface:
                     current_topic,
                     current_lesson,
                 )
-
-            # Очищаем сообщение о загрузке
-            clear_output(wait=True)
 
             # Сохраняем вопросы
             self.current_questions = questions
@@ -203,8 +198,8 @@ class AssessmentInterface:
                 layout=widgets.Layout(width="200px", height="40px", margin="5px 0"),
             )
 
-            # Контейнер для результатов
-            results_output = widgets.Output(layout=widgets.Layout(margin="0px"))
+            # Слот результатов: замена содержимого, без Output и display()
+            results_box = widgets.VBox(layout=widgets.Layout(margin="0px"))
 
             # Обработчик кнопки завершения теста
             test_submitted = False  # Флаг для предотвращения повторной отправки
@@ -214,6 +209,7 @@ class AssessmentInterface:
 
                 if test_submitted:
                     return
+                test_submitted = True
 
                 # Снимок с RadioButtons: observe иногда не ловит первый выбор
                 answers = collect_answers_from_widgets(
@@ -228,7 +224,7 @@ class AssessmentInterface:
 
                 try:
                     completed = self.results_handler.handle_test_submission(
-                        results_output,
+                        results_box,
                         self.current_questions,
                         answers,
                         course_plan,
@@ -241,10 +237,8 @@ class AssessmentInterface:
                         current_topic,
                         current_lesson,
                     )
-                    if completed:
-                        test_submitted = True
-                    else:
-                        # Не все ответы / ранняя проверка — кнопка снова доступна
+                    if not completed:
+                        test_submitted = False
                         submit_button.disabled = False
                         submit_button.description = "Завершить тест"
                 except Exception as e:
@@ -252,15 +246,14 @@ class AssessmentInterface:
                     submit_button.disabled = False
                     submit_button.description = "Завершить тест"
                     self.logger.error(f"Ошибка при обработке теста: {str(e)}")
-                    with results_output:
-                        error_html = widgets.HTML(
+                    results_box.children = (
+                        widgets.HTML(
                             value=(
-                                f"<p style='color: red;'>"
-                                f"Ошибка при обработке теста: {str(e)}</p>"
+                                "<p style='color: red;'>"
+                                f"Ошибка при обработке теста: {e}</p>"
                             )
-                        )
-                        clear_output(wait=True)
-                        display(error_html)
+                        ),
+                    )
 
             submit_button.on_click(on_submit_button_clicked)
 
@@ -272,7 +265,7 @@ class AssessmentInterface:
                     test_description,
                     questions_container,
                     submit_button,
-                    results_output,
+                    results_box,
                 ],
                 layout=widgets.Layout(margin="0px", padding="0px"),
             )

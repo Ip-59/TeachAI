@@ -89,12 +89,12 @@ class RelevanceChecker(BaseContentGenerator):
                 {
                     "role": "system",
                     "content": (
-                        "Ты преподаватель этого урока. Вопрос по делу, если ты "
-                        "ответил бы на него, не открывая другой урок. "
-                        "Того, что фразы нет в тексте, мало для отказа. "
-                        "Отказывай, только если вопрос про другое занятие или "
-                        "другую область. reason — живая фраза ученику, не протокол "
-                        "«в тексте не рассматривается». Отвечай только JSON."
+                        "Ты преподаватель курса Python и AI/ML. "
+                        "scope=lesson, если вопрос помогает пройти этот урок. "
+                        "scope=course, если вопрос про Python, данные или ML, "
+                        "но не про текущий урок: на него надо ответить. "
+                        "scope=outside, только если вопрос из другой области. "
+                        "Отвечай только JSON."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -369,29 +369,28 @@ class RelevanceChecker(BaseContentGenerator):
 {user_question}
 
 ЗАДАЧА:
-Реши как преподаватель этого урока, а не как сверка формулировок с текстом.
-Вопрос по делу, если на него нужно ответить, чтобы ученик понял урок или
-сделал то, чему урок учит. Точной фразы в тексте может не быть — это не отказ.
-Например, на уроке про установку уместен вопрос, какую версию ставить и как
-понять, что установка удалась.
+Три уровня, не сверка фраз с текстом урока.
 
-Вопрос НЕ по делу, только если он уводит в другое занятие или в другую область
-(другая тема курса, бытовой вопрос, поломка самой учебной программы).
+scope=lesson — вопрос помогает понять или сделать именно этот урок.
+Точной фразы в тексте может не быть.
 
-reason: если отказ — одно-два предложения ученику, что это за другой предмет.
-Не пиши «не рассматривается в тексте», «отсутствует в материале», «формально
-не относится».
+scope=course — вопрос в рамках курса (Python, данные, машинное обучение),
+но не нужен, чтобы пройти именно этот урок.
+На такой вопрос отвечают. reason — одна фраза, что это не тема текущего урока.
+
+scope=outside — вопрос вне курса.
+Только здесь отказ. reason — одно-два предложения ученику.
+
+Не пиши «не рассматривается в тексте», «отсутствует в материале».
 
 ВЕРНИ РЕЗУЛЬТАТ В ФОРМАТЕ JSON:
 {{
-    "is_relevant": true/false,
+    "scope": "lesson" или "course" или "outside",
+    "is_relevant": true для lesson и course, false только для outside,
     "confidence": число от 0 до 100,
-    "reason": "Подробное объяснение почему вопрос релевантен/нерелевантен",
-    "suggestions": ["Предложение 1", "Предложение 2", "Предложение 3"]
+    "reason": "фраза ученику",
+    "suggestions": []
 }}
-
-Если вопрос нерелевантен, в поле suggestions укажи альтернативные источники
-информации (поисковики, специализированные ресурсы, форумы и т.д.).
 """
 
     def _extract_relevance_from_response(self, relevance_data):
@@ -406,14 +405,36 @@ reason: если отказ — одно-два предложения учен�
         """
         try:
             # Проверяем обязательные поля
+            scope = str(relevance_data.get("scope") or "").strip().lower()
             is_relevant = relevance_data.get("is_relevant", False)
             confidence = relevance_data.get("confidence", 0)
             reason = relevance_data.get("reason", "Причина не указана")
             suggestions = relevance_data.get("suggestions", [])
 
+            if scope in ("lesson", "урок"):
+                scope = "lesson"
+            elif scope in ("course", "курс"):
+                scope = "course"
+            elif scope in ("outside", "вне"):
+                scope = "outside"
+            else:
+                scope = ""
+
             # Валидируем и нормализуем данные
             if not isinstance(is_relevant, bool):
                 is_relevant = str(is_relevant).lower() in ["true", "1", "yes", "да"]
+
+            if scope == "course":
+                is_relevant = True
+                on_lesson = False
+            elif scope == "outside":
+                is_relevant = False
+                on_lesson = False
+            elif scope == "lesson":
+                is_relevant = True
+                on_lesson = True
+            else:
+                on_lesson = is_relevant
 
             if not isinstance(confidence, (int, float)):
                 confidence = 50  # Средняя уверенность по умолчанию
@@ -427,6 +448,8 @@ reason: если отказ — одно-два предложения учен�
 
             return {
                 "is_relevant": is_relevant,
+                "on_lesson": on_lesson,
+                "scope": scope or ("lesson" if on_lesson else "outside"),
                 "confidence": confidence,
                 "reason": reason,
                 "suggestions": suggestions,
@@ -438,6 +461,8 @@ reason: если отказ — одно-два предложения учен�
             # Возвращаем безопасный результат по умолчанию
             return {
                 "is_relevant": True,  # По умолчанию считаем релевантным
+                "on_lesson": True,
+                "scope": "lesson",
                 "confidence": 50,
                 "reason": "Не удалось проанализировать релевантность",
                 "suggestions": [],

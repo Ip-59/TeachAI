@@ -116,6 +116,11 @@ class LearningProgressManager:
                     f"Тест по уроку {lesson_id} пройден с оценкой {score}% (урок ещё не завершен)"
                 )
 
+            if is_passed:
+                from student_knowledge import mark_lesson_concepts_passed
+
+                mark_lesson_concepts_passed(self.state_manager, lesson_id)
+
             # Пересчитываем общую статистику
             self._recalculate_course_statistics()
 
@@ -193,6 +198,9 @@ class LearningProgressManager:
             self.state_manager.state["learning"]["lesson_completion_status"][lesson_id] = True
 
             self.logger.info(f"Урок {lesson_id} отмечен как завершенный принудительно")
+            from student_knowledge import mark_lesson_concepts_passed
+
+            mark_lesson_concepts_passed(self.state_manager, lesson_id)
 
             # Пересчитываем статистику
             self._recalculate_course_statistics()

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import html
 import io
+import time
 from contextlib import redirect_stdout
 from typing import Any, Dict, List
 
@@ -34,25 +35,34 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
         button_style="success",
         layout=widgets.Layout(width="160px", margin="8px 0"),
     )
-    output = widgets.Output(layout=widgets.Layout(margin="8px 0"))
+    # Не widgets.Output: его поток в Jupyter дописывается по числу активных
+    # областей вывода, и один щелчок печатает результат несколько раз.
+    result = widgets.HTML(value="")
+    busy_until = {"t": 0.0}
 
     def _on_run(_button: widgets.Button) -> None:
-        output.clear_output(wait=True)
-        with output:
-            buffer = io.StringIO()
-            try:
-                with redirect_stdout(buffer):
-                    exec(code_area.value, {})
-                text = buffer.getvalue()
-                if text.strip():
-                    print(text)
-                else:
-                    print("Код выполнен успешно.")
-            except Exception as exc:
-                print(f"Ошибка: {exc}")
+        now = time.monotonic()
+        if now < busy_until["t"]:
+            return
+        busy_until["t"] = now + 1.0
+        buffer = io.StringIO()
+        try:
+            with redirect_stdout(buffer):
+                exec(code_area.value, {})
+            text = buffer.getvalue()
+            body = text if text.strip() else "Код выполнен успешно."
+            result.value = (
+                "<pre style='white-space:pre-wrap;margin:8px 0;'>"
+                f"{html.escape(body)}</pre>"
+            )
+        except Exception as exc:
+            result.value = (
+                "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
+                f"{html.escape(str(exc))}</pre>"
+            )
 
     run_button.on_click(_on_run)
-    return widgets.VBox([code_area, run_button, output])
+    return widgets.VBox([code_area, run_button, result])
 
 
 def _create_code_widget(code: str, cell_adapter: Any) -> widgets.Widget | None:

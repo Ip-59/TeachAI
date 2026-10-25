@@ -19,6 +19,8 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     assert "точной фразы в тексте может не быть" in lowered
     assert "если понятие или термин из вопроса встречается" not in lowered
     assert "не рассматривается в тексте" in lowered
+    assert "scope=course" in lowered
+    assert "3.15" not in lowered
 
 
 def main() -> None:

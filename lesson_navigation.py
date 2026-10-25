@@ -176,15 +176,42 @@ class LessonNavigation:
             from system_clock import mark_stage
 
             mark_stage("тест")
+            self.lesson_interface._hide_other_containers()
+            test_box = getattr(self.lesson_interface, "test_container", None)
+            if (
+                test_box is not None
+                and getattr(self.lesson_interface, "assessment_interface", None)
+            ):
+                course_id = self.lesson_interface.current_course_info.get(
+                    "course_plan", {}
+                ).get("course_id", "default")
+                info = self.lesson_interface.current_course_info
+                test_box.layout.display = "block"
+                test_box.children = (
+                    widgets.HTML(
+                        value="<p><strong>Готовлю вопросы теста…</strong></p>"
+                    ),
+                )
+                test_button.disabled = True
+                try:
+                    form = self.lesson_interface.assessment_interface.show_assessment(
+                        current_course=course_id,
+                        current_section=info["section_id"],
+                        current_topic=info["topic_id"],
+                        current_lesson=info["lesson_id"],
+                        current_lesson_content=self.lesson_interface.current_lesson_content,
+                    )
+                    test_box.children = (form,)
+                finally:
+                    test_button.disabled = False
+                return
+
             from IPython.display import display
 
-            # Переходим к тестированию
             if (
                 hasattr(self.lesson_interface, "assessment_interface")
                 and self.lesson_interface.assessment_interface
             ):
-                # Используем AssessmentInterface для показа теста
-                # Получаем course_id безопасно
                 course_id = self.lesson_interface.current_course_info.get(
                     "course_plan", {}
                 ).get("course_id", "default")
@@ -275,7 +302,6 @@ class LessonNavigation:
                     make_wait_banner("📝 Создаю практические примеры…")
                 ]
                 try:
-                    from examples_generator import ExamplesGenerator
                     from examples_display import build_examples_widgets
 
                     lesson_id = self.lesson_interface.current_lesson_id
@@ -300,14 +326,13 @@ class LessonNavigation:
                         )
                         examples_data = cached
                     else:
-                        examples_generator = ExamplesGenerator(
-                            self.lesson_interface.content_generator.api_key
-                        )
+                        # Тот же клиент, что у урока и теста. Новый ExamplesGenerator
+                        # читает маршрут заново и может послать чужой ключ.
                         lesson_content = (
                             self.lesson_interface.current_lesson_raw_content
                             or self.lesson_interface.current_lesson_content
                         )
-                        examples_data = examples_generator.generate_examples_data(
+                        examples_data = self.lesson_interface.content_generator.generate_examples_data(
                             lesson_data=self.lesson_interface.current_lesson_data,
                             lesson_content=lesson_content,
                             communication_style=self.lesson_interface.current_course_info[

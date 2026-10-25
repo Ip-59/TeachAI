@@ -80,6 +80,7 @@ class LessonInterface:
         self.explain_container = None
         self.examples_container = None
         self.qa_container = None
+        self.test_container = None
         self.control_tasks_container = None
 
         # Инициализируем модули
@@ -225,6 +226,9 @@ class LessonInterface:
                 self.control_tasks_container.layout.display = "none"
             else:
                 self.logger.warning("control_tasks_container не найден")
+
+            if self.test_container:
+                self.test_container.layout.display = "none"
 
             self.logger.info("Все контейнеры скрыты")
         except Exception as e:

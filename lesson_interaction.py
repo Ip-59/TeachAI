@@ -22,6 +22,19 @@ class LessonInteraction:
         self.logger = logging.getLogger(__name__)
         self.utils = LessonUtils()
 
+    def _remember_concepts(self, concepts: list) -> None:
+        """Пишет понятия урока в профиль, чтобы следующие задания их видели."""
+        from student_knowledge import remember_lesson_concepts
+
+        info = self.lesson_interface.current_course_info or {}
+        full_id = (
+            f"{info.get('section_id', '')}:{info.get('topic_id', '')}:"
+            f"{info.get('lesson_id', '')}"
+        )
+        remember_lesson_concepts(
+            self.lesson_interface.state_manager, full_id, concepts
+        )
+
     def show_explanation_choice(self):
         """
         Показывает выбор типа объяснения.
@@ -123,12 +136,13 @@ class LessonInteraction:
                         )
                         # Сохраняем результат для последующих кликов
                         self.lesson_interface.current_lesson_concepts = concepts
+                    self._remember_concepts(concepts)
 
                     # Создаем список понятий
                     concepts_list = []
                     for concept_data in concepts:
                         concept_button = widgets.Button(
-                            description=f"🔑 {concept_data['title']}",
+                            description=f"🔑 {concept_data.get('title') or concept_data.get('name') or 'Понятие'}",
                             button_style="info",
                             layout=widgets.Layout(width="auto", margin="2px"),
                         )
@@ -210,7 +224,10 @@ class LessonInteraction:
         try:
             concept_title = concept.get("title") or concept.get("name") or "Понятие"
             concept_brief = (
-                concept.get("description") or concept.get("brief_description") or ""
+                concept.get("description")
+                or concept.get("brief_description")
+                or concept.get("brief")
+                or ""
             )
 
             title_html = widgets.HTML(value=f"<h3>🔑 {concept_title}</h3>")
@@ -271,11 +288,12 @@ class LessonInteraction:
                             )
                         )
                         self.lesson_interface.current_lesson_concepts = concepts
+                    self._remember_concepts(concepts)
 
                     concepts_list = []
                     for concept_data in concepts:
                         concept_button = widgets.Button(
-                            description=f"🔑 {concept_data['title']}",
+                            description=f"🔑 {concept_data.get('title') or concept_data.get('name') or 'Понятие'}",
                             button_style="info",
                             layout=widgets.Layout(width="auto", margin="2px"),
                         )
@@ -485,6 +503,22 @@ class LessonInteraction:
                         f"Ответ сгенерирован, длина: {len(answer)} символов"
                     )
 
+                    if not relevance_result.get("on_lesson", True):
+                        import html as html_lib
+
+                        note = html_lib.escape(
+                            relevance_result.get("reason")
+                            or "Это не тема текущего урока, но вопрос по курсу."
+                        )
+                        answer = (
+                            "<div style='background-color:#fff3cd;color:#856404;"
+                            "padding:12px;border-radius:8px;border:1px solid #ffeaa7;"
+                            "margin-bottom:12px;'>"
+                            "<strong>Не тема этого урока.</strong> "
+                            f"{note} Отвечаю, потому что это вопрос по курсу."
+                            "</div>"
+                            + answer
+                        )
                     answer_area.value = answer
 
                     # Очищаем поле ввода

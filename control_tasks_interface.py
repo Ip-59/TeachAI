@@ -65,6 +65,7 @@ class ControlTasksInterface:
                 lesson_content=lesson_content,
                 communication_style=communication_style,
                 course_context=course_context,
+                state_manager=self.lesson_interface.state_manager,
             )
             self.logger.info(
                 "КЗ готово: task_title=%s source_lesson=%s is_needed=%s",

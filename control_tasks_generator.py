@@ -698,6 +698,7 @@ stdout:
         lesson_content: str,
         communication_style: str = "friendly",
         course_context: Optional[Dict[str, Any]] = None,
+        state_manager: Optional[Any] = None,
     ) -> Dict[str, Any]:
         try:
             lesson_title = lesson_data.get("title", "")
@@ -716,6 +717,42 @@ stdout:
             course_subject = self._determine_lesson_subject(
                 course_context, content_for_prompt, lesson_data
             )
+            from student_knowledge import knowledge_brief_ru
+            from control_task_llm_judge import lesson_requires_editor_code
+
+            ctx = course_context or {}
+            full_id = (
+                f"{ctx.get('section_id', '')}:{ctx.get('topic_id', '')}:"
+                f"{ctx.get('lesson_id', '')}"
+            )
+            knowledge = (
+                knowledge_brief_ru(state_manager, full_id)
+                if state_manager is not None
+                else "Сведения о предыдущих уроках не переданы."
+            )
+            code_practice, skip_reason = lesson_requires_editor_code(
+                self,
+                lesson_title=lesson_title,
+                lesson_content=content_for_prompt,
+                knowledge_brief=knowledge,
+            )
+            if code_practice is False:
+                self.logger.info(
+                    "КЗ не ставится для «%s»: урок не требует кода", lesson_title
+                )
+                return {
+                    "title": lesson_title,
+                    "description": "",
+                    "task_code": "",
+                    "expected_output": "",
+                    "solution_code": "",
+                    "is_needed": False,
+                    "unavailable": "not_applicable",
+                    "skip_reason": skip_reason,
+                    "student_steps": [],
+                    "validation_mode": "llm",
+                    "check_variables": [],
+                }
             self.logger.info(
                 "КЗ: генерация для урока «%s» (id=%s, chars=%s)",
                 lesson_title,
@@ -729,6 +766,7 @@ stdout:
                 communication_style,
                 course_context,
                 course_subject,
+                knowledge_brief=knowledge,
             )
             system_content = (
                 f"Ты — преподаватель {course_subject} в системе TeachAI. "
@@ -858,6 +896,7 @@ stdout:
         communication_style: str,
         course_context: Optional[Dict[str, Any]] = None,
         course_subject: str = "программирование на Python",
+        knowledge_brief: str = "",
     ) -> str:
         lesson_title = lesson_data.get("title", "")
         lesson_description = lesson_data.get("description", "")
@@ -888,6 +927,12 @@ stdout:
 
 НАЗВАНИЕ УРОКА: {lesson_title}
 ОПИСАНИЕ УРОКА: {lesson_description}
+
+=== ЧТО СТУДЕНТ УЖЕ ЗНАЕТ ===
+{knowledge_brief or "Сведения о предыдущих уроках не переданы."}
+Требуй в задании только приёмы из этого списка и из текста текущего урока.
+Если урок не учит писать код, а в списке нет приёмов кода — верни is_needed: false.
+Не выдумывай первое упражнение на переменную и print.
 
 {control_task_runtime_rules_ru(lesson_title)}
 {anti_copy_rules_ru()}

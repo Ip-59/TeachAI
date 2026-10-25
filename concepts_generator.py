@@ -150,8 +150,15 @@ class ConceptsGenerator(BaseContentGenerator):
             Exception: Если не удалось сгенерировать объяснение
         """
         try:
-            concept_name = concept.get("name", "Понятие")
-            concept_description = concept.get("brief_description", "Нет описания")
+            concept_name = (
+                concept.get("name") or concept.get("title") or "Понятие"
+            )
+            concept_description = (
+                concept.get("brief_description")
+                or concept.get("description")
+                or concept.get("brief")
+                or "Нет описания"
+            )
 
             from learning_prompt_context import FULL_LESSON_MAX_CHARS
 

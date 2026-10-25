@@ -337,9 +337,10 @@ class ContentGenerator:
             formatted_concepts.append(
                 {
                     "title": concept.get("name", "Понятие"),
-                    "description": concept.get(
-                        "brief_description", "Нет описания"
-                    ),
+                    "description": concept.get("brief_description")
+                    or concept.get("description")
+                    or concept.get("brief")
+                    or "Нет описания",
                 }
             )
         return formatted_concepts

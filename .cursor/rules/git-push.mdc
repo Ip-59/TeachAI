@@ -1,0 +1,18 @@
+---
+description: Пуш TeachAI на GitHub только ключом с флешки
+alwaysApply: true
+---
+
+# Пуш на GitHub (TeachAI)
+
+Когда пользователь просит пуш, отправлять `origin` так:
+
+```bash
+bash .secrets/github_ssh/push_origin.sh
+```
+
+Скрипт лежит в корне проекта и вызывает `git push origin HEAD` ключом `.secrets/github_ssh/id_ed25519_teachai_linux` (подпись `TeachAI Linux-flash`).
+
+Голый `git push` и ключ из `~/.ssh/` не использовать: GitHub его не принимает (`Permission denied (publickey)`).
+
+Не менять `git config`. Не коммитить `.secrets/`.
