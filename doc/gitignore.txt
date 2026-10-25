@@ -1,0 +1,39 @@
+# Byte-код Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Среды разработки
+.env/
+.venv/
+env/
+venv/
+.idea/
+*.swp
+*.swo
+
+# Логи
+*.log
+*.out
+*.err
+logs/
+debug.log
+
+# Файлы тестирования
+.coverage
+.tox/
+.cache/
+
+# Библиотеки
+*.egg
+*.egg-info/
+dist/
+build/
+*.wheel
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Секреты
+*.env
+.env.*

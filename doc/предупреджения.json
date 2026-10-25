@@ -1,0 +1,6310 @@
+предупреджения
+[{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 1,
+	"startColumn": 1,
+	"endLineNumber": 1,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD036",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md036.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD036/no-emphasis-as-heading: Emphasis used instead of a heading",
+	"source": "markdownlint",
+	"startLineNumber": 2,
+	"startColumn": 1,
+	"endLineNumber": 2,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 11,
+	"startColumn": 1,
+	"endLineNumber": 11,
+	"endColumn": 17
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 13,
+	"startColumn": 1,
+	"endLineNumber": 13,
+	"endColumn": 56
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 18,
+	"startColumn": 1,
+	"endLineNumber": 18,
+	"endColumn": 26
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 19,
+	"startColumn": 1,
+	"endLineNumber": 19,
+	"endColumn": 44
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 28,
+	"startColumn": 1,
+	"endLineNumber": 28,
+	"endColumn": 46
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 32,
+	"startColumn": 1,
+	"endLineNumber": 32,
+	"endColumn": 45
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 40,
+	"startColumn": 1,
+	"endLineNumber": 40,
+	"endColumn": 22
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 41,
+	"startColumn": 1,
+	"endLineNumber": 41,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 41,
+	"startColumn": 1,
+	"endLineNumber": 41,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 52,
+	"startColumn": 1,
+	"endLineNumber": 52,
+	"endColumn": 25
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 53,
+	"startColumn": 1,
+	"endLineNumber": 53,
+	"endColumn": 83
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 65,
+	"startColumn": 1,
+	"endLineNumber": 65,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 66,
+	"startColumn": 1,
+	"endLineNumber": 66,
+	"endColumn": 86
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 71,
+	"startColumn": 1,
+	"endLineNumber": 71,
+	"endColumn": 61
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 72,
+	"startColumn": 1,
+	"endLineNumber": 72,
+	"endColumn": 87
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 77,
+	"startColumn": 1,
+	"endLineNumber": 77,
+	"endColumn": 47
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 78,
+	"startColumn": 1,
+	"endLineNumber": 78,
+	"endColumn": 60
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 83,
+	"startColumn": 1,
+	"endLineNumber": 83,
+	"endColumn": 44
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 84,
+	"startColumn": 1,
+	"endLineNumber": 84,
+	"endColumn": 59
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 89,
+	"startColumn": 1,
+	"endLineNumber": 89,
+	"endColumn": 47
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 90,
+	"startColumn": 1,
+	"endLineNumber": 90,
+	"endColumn": 81
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 96,
+	"startColumn": 1,
+	"endLineNumber": 96,
+	"endColumn": 58
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 97,
+	"startColumn": 1,
+	"endLineNumber": 97,
+	"endColumn": 100
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 102,
+	"startColumn": 1,
+	"endLineNumber": 102,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 103,
+	"startColumn": 1,
+	"endLineNumber": 103,
+	"endColumn": 93
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 108,
+	"startColumn": 1,
+	"endLineNumber": 108,
+	"endColumn": 57
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 109,
+	"startColumn": 1,
+	"endLineNumber": 109,
+	"endColumn": 61
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 114,
+	"startColumn": 1,
+	"endLineNumber": 114,
+	"endColumn": 62
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 115,
+	"startColumn": 1,
+	"endLineNumber": 115,
+	"endColumn": 73
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 120,
+	"startColumn": 1,
+	"endLineNumber": 120,
+	"endColumn": 49
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 121,
+	"startColumn": 1,
+	"endLineNumber": 121,
+	"endColumn": 81
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 132,
+	"startColumn": 1,
+	"endLineNumber": 132,
+	"endColumn": 29
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 133,
+	"startColumn": 1,
+	"endLineNumber": 133,
+	"endColumn": 10
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 137,
+	"startColumn": 1,
+	"endLineNumber": 137,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 138,
+	"startColumn": 1,
+	"endLineNumber": 138,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 142,
+	"startColumn": 1,
+	"endLineNumber": 142,
+	"endColumn": 40
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 143,
+	"startColumn": 1,
+	"endLineNumber": 143,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 147,
+	"startColumn": 1,
+	"endLineNumber": 147,
+	"endColumn": 40
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 148,
+	"startColumn": 1,
+	"endLineNumber": 148,
+	"endColumn": 70
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 154,
+	"startColumn": 1,
+	"endLineNumber": 154,
+	"endColumn": 29
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 155,
+	"startColumn": 1,
+	"endLineNumber": 155,
+	"endColumn": 58
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 159,
+	"startColumn": 1,
+	"endLineNumber": 159,
+	"endColumn": 32
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 160,
+	"startColumn": 1,
+	"endLineNumber": 160,
+	"endColumn": 57
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 164,
+	"startColumn": 1,
+	"endLineNumber": 164,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 165,
+	"startColumn": 1,
+	"endLineNumber": 165,
+	"endColumn": 88
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 171,
+	"startColumn": 1,
+	"endLineNumber": 171,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 172,
+	"startColumn": 1,
+	"endLineNumber": 172,
+	"endColumn": 10
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 179,
+	"startColumn": 1,
+	"endLineNumber": 179,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 180,
+	"startColumn": 1,
+	"endLineNumber": 180,
+	"endColumn": 46
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 184,
+	"startColumn": 1,
+	"endLineNumber": 184,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 185,
+	"startColumn": 1,
+	"endLineNumber": 185,
+	"endColumn": 62
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 192,
+	"startColumn": 1,
+	"endLineNumber": 192,
+	"endColumn": 27
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 193,
+	"startColumn": 1,
+	"endLineNumber": 193,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 202,
+	"startColumn": 1,
+	"endLineNumber": 202,
+	"endColumn": 21
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 203,
+	"startColumn": 1,
+	"endLineNumber": 203,
+	"endColumn": 72
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 209,
+	"startColumn": 1,
+	"endLineNumber": 209,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 210,
+	"startColumn": 1,
+	"endLineNumber": 210,
+	"endColumn": 67
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 220,
+	"startColumn": 1,
+	"endLineNumber": 220,
+	"endColumn": 23
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 221,
+	"startColumn": 1,
+	"endLineNumber": 221,
+	"endColumn": 33
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 227,
+	"startColumn": 1,
+	"endLineNumber": 227,
+	"endColumn": 25
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 228,
+	"startColumn": 1,
+	"endLineNumber": 228,
+	"endColumn": 44
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 232,
+	"startColumn": 1,
+	"endLineNumber": 232,
+	"endColumn": 27
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 233,
+	"startColumn": 1,
+	"endLineNumber": 233,
+	"endColumn": 54
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 241,
+	"startColumn": 1,
+	"endLineNumber": 241,
+	"endColumn": 28
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 242,
+	"startColumn": 1,
+	"endLineNumber": 242,
+	"endColumn": 81
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 247,
+	"startColumn": 1,
+	"endLineNumber": 247,
+	"endColumn": 31
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 248,
+	"startColumn": 1,
+	"endLineNumber": 248,
+	"endColumn": 73
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 253,
+	"startColumn": 1,
+	"endLineNumber": 253,
+	"endColumn": 19
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 254,
+	"startColumn": 1,
+	"endLineNumber": 254,
+	"endColumn": 76
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 263,
+	"startColumn": 1,
+	"endLineNumber": 263,
+	"endColumn": 22
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD024",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md024.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD024/no-duplicate-heading: Multiple headings with the same content",
+	"source": "markdownlint",
+	"startLineNumber": 263,
+	"startColumn": 1,
+	"endLineNumber": 263,
+	"endColumn": 22
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 264,
+	"startColumn": 1,
+	"endLineNumber": 264,
+	"endColumn": 48
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 269,
+	"startColumn": 1,
+	"endLineNumber": 269,
+	"endColumn": 17
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 270,
+	"startColumn": 1,
+	"endLineNumber": 270,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 274,
+	"startColumn": 1,
+	"endLineNumber": 274,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 275,
+	"startColumn": 1,
+	"endLineNumber": 275,
+	"endColumn": 45
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 284,
+	"startColumn": 1,
+	"endLineNumber": 284,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 285,
+	"startColumn": 1,
+	"endLineNumber": 285,
+	"endColumn": 66
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 291,
+	"startColumn": 1,
+	"endLineNumber": 291,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 292,
+	"startColumn": 1,
+	"endLineNumber": 292,
+	"endColumn": 59
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 298,
+	"startColumn": 1,
+	"endLineNumber": 298,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 299,
+	"startColumn": 1,
+	"endLineNumber": 299,
+	"endColumn": 59
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 309,
+	"startColumn": 1,
+	"endLineNumber": 309,
+	"endColumn": 50
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 310,
+	"startColumn": 1,
+	"endLineNumber": 310,
+	"endColumn": 67
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 316,
+	"startColumn": 1,
+	"endLineNumber": 316,
+	"endColumn": 50
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 317,
+	"startColumn": 1,
+	"endLineNumber": 317,
+	"endColumn": 76
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 323,
+	"startColumn": 1,
+	"endLineNumber": 323,
+	"endColumn": 30
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 324,
+	"startColumn": 1,
+	"endLineNumber": 324,
+	"endColumn": 64
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 330,
+	"startColumn": 1,
+	"endLineNumber": 330,
+	"endColumn": 51
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 331,
+	"startColumn": 1,
+	"endLineNumber": 331,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 342,
+	"startColumn": 1,
+	"endLineNumber": 342,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 343,
+	"startColumn": 1,
+	"endLineNumber": 343,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 343,
+	"startColumn": 1,
+	"endLineNumber": 343,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 351,
+	"startColumn": 1,
+	"endLineNumber": 351,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 352,
+	"startColumn": 1,
+	"endLineNumber": 352,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 352,
+	"startColumn": 1,
+	"endLineNumber": 352,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 357,
+	"startColumn": 1,
+	"endLineNumber": 357,
+	"endColumn": 43
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 358,
+	"startColumn": 1,
+	"endLineNumber": 358,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 358,
+	"startColumn": 1,
+	"endLineNumber": 358,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 363,
+	"startColumn": 1,
+	"endLineNumber": 363,
+	"endColumn": 31
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 364,
+	"startColumn": 1,
+	"endLineNumber": 364,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 364,
+	"startColumn": 1,
+	"endLineNumber": 364,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 379,
+	"startColumn": 1,
+	"endLineNumber": 379,
+	"endColumn": 15
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 380,
+	"startColumn": 1,
+	"endLineNumber": 380,
+	"endColumn": 71
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 385,
+	"startColumn": 1,
+	"endLineNumber": 385,
+	"endColumn": 21
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 386,
+	"startColumn": 1,
+	"endLineNumber": 386,
+	"endColumn": 26
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 391,
+	"startColumn": 1,
+	"endLineNumber": 391,
+	"endColumn": 30
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 392,
+	"startColumn": 1,
+	"endLineNumber": 392,
+	"endColumn": 61
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 402,
+	"startColumn": 1,
+	"endLineNumber": 402,
+	"endColumn": 47
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 403,
+	"startColumn": 1,
+	"endLineNumber": 403,
+	"endColumn": 70
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 408,
+	"startColumn": 1,
+	"endLineNumber": 408,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 409,
+	"startColumn": 1,
+	"endLineNumber": 409,
+	"endColumn": 70
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 414,
+	"startColumn": 1,
+	"endLineNumber": 414,
+	"endColumn": 30
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 415,
+	"startColumn": 1,
+	"endLineNumber": 415,
+	"endColumn": 71
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по разработке демо и интерактив ячеек.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD047",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md047.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD047/single-trailing-newline: Files should end with a single newline character",
+	"source": "markdownlint",
+	"startLineNumber": 422,
+	"startColumn": 297,
+	"endLineNumber": 422,
+	"endColumn": 298
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 1,
+	"startColumn": 1,
+	"endLineNumber": 1,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 9,
+	"startColumn": 1,
+	"endLineNumber": 9,
+	"endColumn": 32
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 10,
+	"startColumn": 1,
+	"endLineNumber": 10,
+	"endColumn": 70
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 18,
+	"startColumn": 1,
+	"endLineNumber": 18,
+	"endColumn": 43
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 19,
+	"startColumn": 1,
+	"endLineNumber": 19,
+	"endColumn": 46
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 25,
+	"startColumn": 1,
+	"endLineNumber": 25,
+	"endColumn": 53
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 26,
+	"startColumn": 1,
+	"endLineNumber": 26,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 33,
+	"startColumn": 1,
+	"endLineNumber": 33,
+	"endColumn": 53
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 34,
+	"startColumn": 1,
+	"endLineNumber": 34,
+	"endColumn": 33
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 42,
+	"startColumn": 1,
+	"endLineNumber": 42,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 47,
+	"startColumn": 1,
+	"endLineNumber": 47,
+	"endColumn": 58
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 52,
+	"startColumn": 1,
+	"endLineNumber": 52,
+	"endColumn": 46
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 57,
+	"startColumn": 1,
+	"endLineNumber": 57,
+	"endColumn": 43
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 62,
+	"startColumn": 1,
+	"endLineNumber": 62,
+	"endColumn": 46
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 70,
+	"startColumn": 1,
+	"endLineNumber": 70,
+	"endColumn": 29
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 71,
+	"startColumn": 1,
+	"endLineNumber": 71,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 75,
+	"startColumn": 1,
+	"endLineNumber": 75,
+	"endColumn": 29
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 76,
+	"startColumn": 1,
+	"endLineNumber": 76,
+	"endColumn": 68
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 80,
+	"startColumn": 1,
+	"endLineNumber": 80,
+	"endColumn": 35
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 81,
+	"startColumn": 1,
+	"endLineNumber": 81,
+	"endColumn": 48
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 89,
+	"startColumn": 1,
+	"endLineNumber": 89,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 96,
+	"startColumn": 1,
+	"endLineNumber": 96,
+	"endColumn": 24
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 97,
+	"startColumn": 1,
+	"endLineNumber": 97,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 97,
+	"startColumn": 1,
+	"endLineNumber": 97,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 109,
+	"startColumn": 1,
+	"endLineNumber": 109,
+	"endColumn": 24
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 110,
+	"startColumn": 1,
+	"endLineNumber": 110,
+	"endColumn": 76
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 115,
+	"startColumn": 1,
+	"endLineNumber": 115,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 116,
+	"startColumn": 1,
+	"endLineNumber": 116,
+	"endColumn": 40
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 122,
+	"startColumn": 1,
+	"endLineNumber": 122,
+	"endColumn": 27
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 123,
+	"startColumn": 1,
+	"endLineNumber": 123,
+	"endColumn": 66
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 131,
+	"startColumn": 1,
+	"endLineNumber": 131,
+	"endColumn": 24
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 132,
+	"startColumn": 1,
+	"endLineNumber": 132,
+	"endColumn": 60
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 136,
+	"startColumn": 1,
+	"endLineNumber": 136,
+	"endColumn": 21
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 137,
+	"startColumn": 1,
+	"endLineNumber": 137,
+	"endColumn": 51
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 141,
+	"startColumn": 1,
+	"endLineNumber": 141,
+	"endColumn": 51
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 142,
+	"startColumn": 1,
+	"endLineNumber": 142,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 148,
+	"startColumn": 1,
+	"endLineNumber": 148,
+	"endColumn": 24
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 149,
+	"startColumn": 1,
+	"endLineNumber": 149,
+	"endColumn": 25
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Журнал-отчет по сессии разработки демо-ячеек - session_report.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD047",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md047.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD047/single-trailing-newline: Files should end with a single newline character",
+	"source": "markdownlint",
+	"startLineNumber": 155,
+	"startColumn": 94,
+	"endLineNumber": 155,
+	"endColumn": 95
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD041",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md041.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD041/first-line-heading/first-line-h1: First line in a file should be a top-level heading",
+	"source": "markdownlint",
+	"startLineNumber": 1,
+	"startColumn": 1,
+	"endLineNumber": 1,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Above]",
+	"source": "markdownlint",
+	"startLineNumber": 4,
+	"startColumn": 1,
+	"endLineNumber": 4,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 4,
+	"startColumn": 1,
+	"endLineNumber": 4,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD036",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md036.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD036/no-emphasis-as-heading: Emphasis used instead of a heading",
+	"source": "markdownlint",
+	"startLineNumber": 5,
+	"startColumn": 1,
+	"endLineNumber": 5,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 14,
+	"startColumn": 1,
+	"endLineNumber": 14,
+	"endColumn": 17
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 16,
+	"startColumn": 1,
+	"endLineNumber": 16,
+	"endColumn": 56
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 21,
+	"startColumn": 1,
+	"endLineNumber": 21,
+	"endColumn": 26
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 22,
+	"startColumn": 1,
+	"endLineNumber": 22,
+	"endColumn": 44
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 31,
+	"startColumn": 1,
+	"endLineNumber": 31,
+	"endColumn": 46
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 35,
+	"startColumn": 1,
+	"endLineNumber": 35,
+	"endColumn": 45
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 43,
+	"startColumn": 1,
+	"endLineNumber": 43,
+	"endColumn": 22
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 44,
+	"startColumn": 1,
+	"endLineNumber": 44,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 44,
+	"startColumn": 1,
+	"endLineNumber": 44,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 55,
+	"startColumn": 1,
+	"endLineNumber": 55,
+	"endColumn": 25
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 56,
+	"startColumn": 1,
+	"endLineNumber": 56,
+	"endColumn": 83
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 68,
+	"startColumn": 1,
+	"endLineNumber": 68,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 69,
+	"startColumn": 1,
+	"endLineNumber": 69,
+	"endColumn": 86
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 74,
+	"startColumn": 1,
+	"endLineNumber": 74,
+	"endColumn": 61
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 75,
+	"startColumn": 1,
+	"endLineNumber": 75,
+	"endColumn": 87
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 80,
+	"startColumn": 1,
+	"endLineNumber": 80,
+	"endColumn": 47
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 81,
+	"startColumn": 1,
+	"endLineNumber": 81,
+	"endColumn": 60
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 86,
+	"startColumn": 1,
+	"endLineNumber": 86,
+	"endColumn": 44
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 87,
+	"startColumn": 1,
+	"endLineNumber": 87,
+	"endColumn": 59
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 92,
+	"startColumn": 1,
+	"endLineNumber": 92,
+	"endColumn": 47
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 93,
+	"startColumn": 1,
+	"endLineNumber": 93,
+	"endColumn": 81
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 99,
+	"startColumn": 1,
+	"endLineNumber": 99,
+	"endColumn": 58
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 100,
+	"startColumn": 1,
+	"endLineNumber": 100,
+	"endColumn": 100
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 105,
+	"startColumn": 1,
+	"endLineNumber": 105,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 106,
+	"startColumn": 1,
+	"endLineNumber": 106,
+	"endColumn": 93
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 111,
+	"startColumn": 1,
+	"endLineNumber": 111,
+	"endColumn": 57
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 112,
+	"startColumn": 1,
+	"endLineNumber": 112,
+	"endColumn": 61
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 117,
+	"startColumn": 1,
+	"endLineNumber": 117,
+	"endColumn": 62
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 118,
+	"startColumn": 1,
+	"endLineNumber": 118,
+	"endColumn": 73
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 123,
+	"startColumn": 1,
+	"endLineNumber": 123,
+	"endColumn": 49
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 124,
+	"startColumn": 1,
+	"endLineNumber": 124,
+	"endColumn": 81
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 135,
+	"startColumn": 1,
+	"endLineNumber": 135,
+	"endColumn": 29
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 136,
+	"startColumn": 1,
+	"endLineNumber": 136,
+	"endColumn": 10
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 140,
+	"startColumn": 1,
+	"endLineNumber": 140,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 141,
+	"startColumn": 1,
+	"endLineNumber": 141,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 145,
+	"startColumn": 1,
+	"endLineNumber": 145,
+	"endColumn": 40
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 146,
+	"startColumn": 1,
+	"endLineNumber": 146,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 150,
+	"startColumn": 1,
+	"endLineNumber": 150,
+	"endColumn": 40
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 151,
+	"startColumn": 1,
+	"endLineNumber": 151,
+	"endColumn": 70
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 157,
+	"startColumn": 1,
+	"endLineNumber": 157,
+	"endColumn": 29
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 158,
+	"startColumn": 1,
+	"endLineNumber": 158,
+	"endColumn": 58
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 162,
+	"startColumn": 1,
+	"endLineNumber": 162,
+	"endColumn": 32
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 163,
+	"startColumn": 1,
+	"endLineNumber": 163,
+	"endColumn": 57
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 167,
+	"startColumn": 1,
+	"endLineNumber": 167,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 168,
+	"startColumn": 1,
+	"endLineNumber": 168,
+	"endColumn": 88
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 174,
+	"startColumn": 1,
+	"endLineNumber": 174,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 175,
+	"startColumn": 1,
+	"endLineNumber": 175,
+	"endColumn": 10
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 182,
+	"startColumn": 1,
+	"endLineNumber": 182,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 183,
+	"startColumn": 1,
+	"endLineNumber": 183,
+	"endColumn": 46
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 187,
+	"startColumn": 1,
+	"endLineNumber": 187,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 188,
+	"startColumn": 1,
+	"endLineNumber": 188,
+	"endColumn": 62
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 195,
+	"startColumn": 1,
+	"endLineNumber": 195,
+	"endColumn": 27
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 196,
+	"startColumn": 1,
+	"endLineNumber": 196,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 205,
+	"startColumn": 1,
+	"endLineNumber": 205,
+	"endColumn": 21
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 206,
+	"startColumn": 1,
+	"endLineNumber": 206,
+	"endColumn": 72
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 212,
+	"startColumn": 1,
+	"endLineNumber": 212,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 213,
+	"startColumn": 1,
+	"endLineNumber": 213,
+	"endColumn": 67
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 223,
+	"startColumn": 1,
+	"endLineNumber": 223,
+	"endColumn": 23
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 224,
+	"startColumn": 1,
+	"endLineNumber": 224,
+	"endColumn": 33
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 230,
+	"startColumn": 1,
+	"endLineNumber": 230,
+	"endColumn": 25
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 231,
+	"startColumn": 1,
+	"endLineNumber": 231,
+	"endColumn": 44
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 235,
+	"startColumn": 1,
+	"endLineNumber": 235,
+	"endColumn": 27
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 236,
+	"startColumn": 1,
+	"endLineNumber": 236,
+	"endColumn": 54
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 244,
+	"startColumn": 1,
+	"endLineNumber": 244,
+	"endColumn": 28
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 245,
+	"startColumn": 1,
+	"endLineNumber": 245,
+	"endColumn": 81
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 250,
+	"startColumn": 1,
+	"endLineNumber": 250,
+	"endColumn": 31
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 251,
+	"startColumn": 1,
+	"endLineNumber": 251,
+	"endColumn": 73
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 256,
+	"startColumn": 1,
+	"endLineNumber": 256,
+	"endColumn": 19
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 257,
+	"startColumn": 1,
+	"endLineNumber": 257,
+	"endColumn": 76
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 266,
+	"startColumn": 1,
+	"endLineNumber": 266,
+	"endColumn": 22
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD024",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md024.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD024/no-duplicate-heading: Multiple headings with the same content",
+	"source": "markdownlint",
+	"startLineNumber": 266,
+	"startColumn": 1,
+	"endLineNumber": 266,
+	"endColumn": 22
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 267,
+	"startColumn": 1,
+	"endLineNumber": 267,
+	"endColumn": 48
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 272,
+	"startColumn": 1,
+	"endLineNumber": 272,
+	"endColumn": 17
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 273,
+	"startColumn": 1,
+	"endLineNumber": 273,
+	"endColumn": 55
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 277,
+	"startColumn": 1,
+	"endLineNumber": 277,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 278,
+	"startColumn": 1,
+	"endLineNumber": 278,
+	"endColumn": 45
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 287,
+	"startColumn": 1,
+	"endLineNumber": 287,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 288,
+	"startColumn": 1,
+	"endLineNumber": 288,
+	"endColumn": 66
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 294,
+	"startColumn": 1,
+	"endLineNumber": 294,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 295,
+	"startColumn": 1,
+	"endLineNumber": 295,
+	"endColumn": 59
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 301,
+	"startColumn": 1,
+	"endLineNumber": 301,
+	"endColumn": 41
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 302,
+	"startColumn": 1,
+	"endLineNumber": 302,
+	"endColumn": 59
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 312,
+	"startColumn": 1,
+	"endLineNumber": 312,
+	"endColumn": 50
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 313,
+	"startColumn": 1,
+	"endLineNumber": 313,
+	"endColumn": 67
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 319,
+	"startColumn": 1,
+	"endLineNumber": 319,
+	"endColumn": 50
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 320,
+	"startColumn": 1,
+	"endLineNumber": 320,
+	"endColumn": 76
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 326,
+	"startColumn": 1,
+	"endLineNumber": 326,
+	"endColumn": 30
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 327,
+	"startColumn": 1,
+	"endLineNumber": 327,
+	"endColumn": 64
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 333,
+	"startColumn": 1,
+	"endLineNumber": 333,
+	"endColumn": 51
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 334,
+	"startColumn": 1,
+	"endLineNumber": 334,
+	"endColumn": 63
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 345,
+	"startColumn": 1,
+	"endLineNumber": 345,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 346,
+	"startColumn": 1,
+	"endLineNumber": 346,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 346,
+	"startColumn": 1,
+	"endLineNumber": 346,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 354,
+	"startColumn": 1,
+	"endLineNumber": 354,
+	"endColumn": 20
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 355,
+	"startColumn": 1,
+	"endLineNumber": 355,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 355,
+	"startColumn": 1,
+	"endLineNumber": 355,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 360,
+	"startColumn": 1,
+	"endLineNumber": 360,
+	"endColumn": 43
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 361,
+	"startColumn": 1,
+	"endLineNumber": 361,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 361,
+	"startColumn": 1,
+	"endLineNumber": 361,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 366,
+	"startColumn": 1,
+	"endLineNumber": 366,
+	"endColumn": 31
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD031",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md031.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD031/blanks-around-fences: Fenced code blocks should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 367,
+	"startColumn": 1,
+	"endLineNumber": 367,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD040",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md040.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD040/fenced-code-language: Fenced code blocks should have a language specified",
+	"source": "markdownlint",
+	"startLineNumber": 367,
+	"startColumn": 1,
+	"endLineNumber": 367,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 382,
+	"startColumn": 1,
+	"endLineNumber": 382,
+	"endColumn": 15
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 383,
+	"startColumn": 1,
+	"endLineNumber": 383,
+	"endColumn": 71
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 388,
+	"startColumn": 1,
+	"endLineNumber": 388,
+	"endColumn": 21
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 389,
+	"startColumn": 1,
+	"endLineNumber": 389,
+	"endColumn": 26
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 394,
+	"startColumn": 1,
+	"endLineNumber": 394,
+	"endColumn": 30
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 395,
+	"startColumn": 1,
+	"endLineNumber": 395,
+	"endColumn": 61
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 405,
+	"startColumn": 1,
+	"endLineNumber": 405,
+	"endColumn": 47
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 406,
+	"startColumn": 1,
+	"endLineNumber": 406,
+	"endColumn": 70
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 411,
+	"startColumn": 1,
+	"endLineNumber": 411,
+	"endColumn": 36
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 412,
+	"startColumn": 1,
+	"endLineNumber": 412,
+	"endColumn": 70
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD022",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md022.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD022/blanks-around-headings: Headings should be surrounded by blank lines [Expected: 1; Actual: 0; Below]",
+	"source": "markdownlint",
+	"startLineNumber": 417,
+	"startColumn": 1,
+	"endLineNumber": 417,
+	"endColumn": 30
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 418,
+	"startColumn": 1,
+	"endLineNumber": 418,
+	"endColumn": 71
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Накопительный журнал-отчет проекта.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD047",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md047.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD047/single-trailing-newline: Files should end with a single newline character",
+	"source": "markdownlint",
+	"startLineNumber": 425,
+	"startColumn": 297,
+	"endLineNumber": 425,
+	"endColumn": 298
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD026",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md026.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD026/no-trailing-punctuation: Trailing punctuation in heading [Punctuation: ':']",
+	"source": "markdownlint",
+	"startLineNumber": 4,
+	"startColumn": 39,
+	"endLineNumber": 4,
+	"endColumn": 40
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 7,
+	"startColumn": 1,
+	"endLineNumber": 7,
+	"endColumn": 42
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 15,
+	"startColumn": 1,
+	"endLineNumber": 15,
+	"endColumn": 59
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 18,
+	"startColumn": 1,
+	"endLineNumber": 18,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 27,
+	"startColumn": 1,
+	"endLineNumber": 27,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 33,
+	"startColumn": 1,
+	"endLineNumber": 33,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 46,
+	"startColumn": 1,
+	"endLineNumber": 46,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 51,
+	"startColumn": 1,
+	"endLineNumber": 51,
+	"endColumn": 24
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 54,
+	"startColumn": 1,
+	"endLineNumber": 54,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 63,
+	"startColumn": 1,
+	"endLineNumber": 63,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 74,
+	"startColumn": 1,
+	"endLineNumber": 74,
+	"endColumn": 4
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 81,
+	"startColumn": 1,
+	"endLineNumber": 81,
+	"endColumn": 30
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 88,
+	"startColumn": 1,
+	"endLineNumber": 88,
+	"endColumn": 37
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 4]",
+	"source": "markdownlint",
+	"startLineNumber": 97,
+	"startColumn": 1,
+	"endLineNumber": 97,
+	"endColumn": 5
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD012",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md012.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD012/no-multiple-blanks: Multiple consecutive blank lines [Expected: 1; Actual: 2]",
+	"source": "markdownlint",
+	"startLineNumber": 98,
+	"startColumn": 1,
+	"endLineNumber": 98,
+	"endColumn": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD012",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md012.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD012/no-multiple-blanks: Multiple consecutive blank lines [Expected: 1; Actual: 2]",
+	"source": "markdownlint",
+	"startLineNumber": 126,
+	"startColumn": 1,
+	"endLineNumber": 126,
+	"endColumn": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Описание работы системы TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD012",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md012.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD012/no-multiple-blanks: Multiple consecutive blank lines [Expected: 1; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 127,
+	"startColumn": 1,
+	"endLineNumber": 127,
+	"endColumn": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 18,
+	"startColumn": 1,
+	"endLineNumber": 18,
+	"endColumn": 91,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD029",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md029.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD029/ol-prefix: Ordered list item prefix [Expected: 1; Actual: 2; Style: 1/1/1]",
+	"source": "markdownlint",
+	"startLineNumber": 19,
+	"startColumn": 1,
+	"endLineNumber": 19,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 19,
+	"startColumn": 1,
+	"endLineNumber": 19,
+	"endColumn": 29,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD035",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md035.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD035/hr-style: Horizontal rule style [Expected: ---------------------; Actual: ----------------------------]",
+	"source": "markdownlint",
+	"startLineNumber": 21,
+	"startColumn": 1,
+	"endLineNumber": 21,
+	"endColumn": 29,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD001",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md001.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD001/heading-increment: Heading levels should only increment by one level at a time [Expected: h2; Actual: h3]",
+	"source": "markdownlint",
+	"startLineNumber": 23,
+	"startColumn": 1,
+	"endLineNumber": 23,
+	"endColumn": 50,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 23,
+	"startColumn": 1,
+	"endLineNumber": 23,
+	"endColumn": 50,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 36,
+	"startColumn": 1,
+	"endLineNumber": 36,
+	"endColumn": 34,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 55,
+	"startColumn": 1,
+	"endLineNumber": 55,
+	"endColumn": 38,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 71,
+	"startColumn": 1,
+	"endLineNumber": 71,
+	"endColumn": 25,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 85,
+	"startColumn": 1,
+	"endLineNumber": 85,
+	"endColumn": 21,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 99,
+	"startColumn": 1,
+	"endLineNumber": 99,
+	"endColumn": 31,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 107,
+	"startColumn": 1,
+	"endLineNumber": 107,
+	"endColumn": 33,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 123,
+	"startColumn": 1,
+	"endLineNumber": 123,
+	"endColumn": 29,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD029",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md029.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD029/ol-prefix: Ordered list item prefix [Expected: 1; Actual: 3; Style: 1/1/1]",
+	"source": "markdownlint",
+	"startLineNumber": 124,
+	"startColumn": 1,
+	"endLineNumber": 124,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 124,
+	"startColumn": 1,
+	"endLineNumber": 124,
+	"endColumn": 26,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD035",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md035.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD035/hr-style: Horizontal rule style [Expected: ---------------------; Actual: -------------------------]",
+	"source": "markdownlint",
+	"startLineNumber": 126,
+	"startColumn": 1,
+	"endLineNumber": 126,
+	"endColumn": 26,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 128,
+	"startColumn": 1,
+	"endLineNumber": 128,
+	"endColumn": 21,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 141,
+	"startColumn": 1,
+	"endLineNumber": 141,
+	"endColumn": 25,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 147,
+	"startColumn": 1,
+	"endLineNumber": 147,
+	"endColumn": 37,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 159,
+	"startColumn": 1,
+	"endLineNumber": 159,
+	"endColumn": 33,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD003",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md003.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD003/heading-style: Heading style [Expected: setext; Actual: atx]",
+	"source": "markdownlint",
+	"startLineNumber": 168,
+	"startColumn": 1,
+	"endLineNumber": 168,
+	"endColumn": 26,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 179,
+	"startColumn": 1,
+	"endLineNumber": 179,
+	"endColumn": 39,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD029",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md029.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD029/ol-prefix: Ordered list item prefix [Expected: 1; Actual: 4; Style: 1/1/1]",
+	"source": "markdownlint",
+	"startLineNumber": 180,
+	"startColumn": 1,
+	"endLineNumber": 180,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD032",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md032.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD032/blanks-around-lists: Lists should be surrounded by blank lines",
+	"source": "markdownlint",
+	"startLineNumber": 180,
+	"startColumn": 1,
+	"endLineNumber": 180,
+	"endColumn": 19,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD035",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md035.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD035/hr-style: Horizontal rule style [Expected: ---------------------; Actual: ------------------]",
+	"source": "markdownlint",
+	"startLineNumber": 182,
+	"startColumn": 1,
+	"endLineNumber": 182,
+	"endColumn": 19,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 185,
+	"startColumn": 1,
+	"endLineNumber": 185,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 190,
+	"startColumn": 1,
+	"endLineNumber": 190,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 195,
+	"startColumn": 1,
+	"endLineNumber": 195,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 200,
+	"startColumn": 1,
+	"endLineNumber": 200,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 205,
+	"startColumn": 1,
+	"endLineNumber": 205,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 210,
+	"startColumn": 1,
+	"endLineNumber": 210,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 215,
+	"startColumn": 1,
+	"endLineNumber": 215,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 220,
+	"startColumn": 1,
+	"endLineNumber": 220,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 225,
+	"startColumn": 1,
+	"endLineNumber": 225,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD035",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md035.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD035/hr-style: Horizontal rule style [Expected: ---------------------; Actual: ----------------------------------------]",
+	"source": "markdownlint",
+	"startLineNumber": 232,
+	"startColumn": 1,
+	"endLineNumber": 232,
+	"endColumn": 41,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 3]",
+	"source": "markdownlint",
+	"startLineNumber": 237,
+	"startColumn": 1,
+	"endLineNumber": 237,
+	"endColumn": 4,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD009",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md009.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD009/no-trailing-spaces: Trailing spaces [Expected: 0 or 2; Actual: 1]",
+	"source": "markdownlint",
+	"startLineNumber": 239,
+	"startColumn": 106,
+	"endLineNumber": 239,
+	"endColumn": 107,
+	"modelVersionId": 1
+},{
+	"resource": "/e:/TeachAI/TeachAI v.3 Cursor/doc/Техническое задание (ТЗ) на разработку TeachAI.md",
+	"owner": "markdownlint",
+	"code": {
+		"value": "MD035",
+		"target": {
+			"$mid": 1,
+			"path": "/DavidAnson/markdownlint/blob/v0.38.0/doc/md035.md",
+			"scheme": "https",
+			"authority": "github.com"
+		}
+	},
+	"severity": 4,
+	"message": "MD035/hr-style: Horizontal rule style [Expected: ---------------------; Actual: -------------------]",
+	"source": "markdownlint",
+	"startLineNumber": 253,
+	"startColumn": 1,
+	"endLineNumber": 253,
+	"endColumn": 20,
+	"modelVersionId": 1
+}]

@@ -1,0 +1,235 @@
+================================================================================
+  TeachAI — запись разговора: инвентаризация модулей и очистка репозитория
+  Дата: 11 августа 2026
+  Папка: docs/
+================================================================================
+
+--------------------------------------------------------------------------------
+СООБЩЕНИЕ 1 (пользователь)
+--------------------------------------------------------------------------------
+
+надо провести инвентаризацию используемых в проекте модулей и файлов.
+Ненужное удаить по согласованию.
+
+
+--------------------------------------------------------------------------------
+СООБЩЕНИЕ 2 (ассистент)
+--------------------------------------------------------------------------------
+
+Провёл статический анализ импортов от точки входа engine → TeachAI.ipynb /
+run_teachai.py. Ниже инвентаризация и предложения по удалению — ничего не
+удалял, ждал решения по каждой группе.
+
+=== Точки входа (актуальные) ===
+
+| Файл            | Роль                                              |
+|-----------------|---------------------------------------------------|
+| TeachAI.ipynb   | Основной запуск: start_jupyter()                  |
+| run_teachai.py  | Единая точка входа + reload для разработки        |
+| engine.py       | Ядро: конфиг, состояние, генерация, UI            |
+
+main.py дублировал запуск через TeachAIEngine, но нигде не импортировался;
+в README ещё был указан прямой импорт engine.
+
+=== Рабочее ядро (48 модулей, достижимы от engine) ===
+
+Граф (упрощённо):
+
+  TeachAI.ipynb → run_teachai.py → engine.py
+                                      ├─ state_manager
+                                      ├─ content_generator → генераторы
+                                      └─ interface.py → lesson_interface
+                                           → lesson_display / lesson_navigation
+                                           → cell_integration → interactive_cell_*
+
+Генерация контента:
+  content_utils, content_renderer, content_formatter_final,
+  course_plan_generator, lesson_generator,
+  examples_generator (+ examples_generation, examples_validation,
+  examples_display, examples_html_utils, examples_code_fixes),
+  explanation_generator, assessment_generator, qa_generator,
+  concepts_generator, relevance_checker.
+
+Состояние:
+  config, state_manager, user_profile_manager,
+  learning_progress_manager, course_data_manager, logger.
+
+Интерфейс:
+  interface, interface_utils, setup_interface, lesson_interface,
+  lesson_display, lesson_navigation, lesson_interaction, lesson_utils,
+  assessment_interface, assessment_results_handler, control_tasks_interface,
+  completion_interface, startup_dashboard, loading_indicators.
+
+Интерактивные ячейки:
+  cell_integration → interactive_cell_widget → cell_widget_base,
+  interactive_cell_ui, interactive_cell_logic, result_checker,
+  control_tasks_logger, control_tasks_generator, code_formatter.
+
+Данные:
+  courses.json (единственный JSON в git).
+
+=== Кандидаты на удаление ===
+
+--- Группа A — мёртвый код (ни один .py не импортирует) ---
+
+| Файл                              | Причина                                              |
+|-----------------------------------|------------------------------------------------------|
+| content_formatter.py              | Заменён content_formatter_final.py                   |
+| content_formatter_v2.py           | Промежуточная версия, не используется                |
+| examples_utils.py                 | Логика в examples_generation / examples_html_utils   |
+| interface_facade.py               | Дубликат interface.py; engine импортирует interface  |
+| lesson_explanation_interface.py   | Класс нигде не подключается                          |
+| lesson_interactive_handlers.py    | Вынесен из lesson_interface, но не подключён;        |
+|                                   | только в _RELOAD_ORDER                               |
+| interactive_cell_factory.py       | Дублирует фабрику в interactive_cell_widget.py       |
+| utils.py                          | Старый state.json; актуально data/state.json         |
+| setup.py                          | Старый SetupWizard; актуально setup_interface.py     |
+
+--- Группа B — разовые / dev-скрипты (не часть runtime) ---
+
+| Файл                          | Назначение                                   |
+|-------------------------------|----------------------------------------------|
+| temp_code.py                  | Черновик/тест запуска engine                 |
+| fix_lesson_status.py          | Одноразовое исправление completed_lessons    |
+| create_presentation.py        | Генерация PPTX                               |
+| create_presentation_refined.py| То же, уточнённая версия                     |
+| fix_presentation.py           | Правки презентации                           |
+| install_dependencies.py       | Дублирует pip install -r                     |
+| main.py                       | Устаревшая точка входа (дубль run_teachai)   |
+
+--- Группа C — оставить, если нужны (не runtime) ---
+
+| Файл / материалы                         | Комментарий                    |
+|------------------------------------------|--------------------------------|
+| demo cells.ipynb, interactive_cells.ipynb| Эксперименты с ячейками        |
+| *.pptx, шаблон презентации.pdf           | Материалы для отчёта/защиты    |
+| ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md и др. .md    | Документация                   |
+| My_Ask.agent.md, code-profile, .ini      | Вспомогательное                |
+
+--- Группа D — правки без удаления ---
+
+- Убрать из run_teachai._RELOAD_ORDER: interface_facade,
+  lesson_interactive_handlers (если удалить файлы).
+- Обновить README.md: запуск через run_teachai.start_jupyter().
+- В ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md убрать упоминания utils.py и старых
+  formatter’ов при удалении.
+
+=== Замечания по живому коду ===
+
+1. lesson_interactive_handlers.py — незавершённый рефакторинг: логика Q&A
+   есть в файле, но lesson_interface его не использует.
+2. interface.py vs interface_facade.py — отличия минимальны; актуальная
+   версия — interface.py.
+3. cell_integration в lesson_display — интеграция ячеек закомментирована;
+   цепочка работает через lesson_navigation / examples_display.
+
+=== Предлагаемый план ===
+
+Шаг 1 — безопасно (группа A, 9 файлов): удалить мёртвые модули + почистить
+         _RELOAD_ORDER.
+Шаг 2 — по желанию (группа B, 7 файлов): удалить скрипты и main.py.
+Шаг 3 — документация/ноутбуки (группа C): оставить или собрать в docs/ /
+         archive/.
+
+Вопросы на согласование:
+1. Удалить группу A целиком?
+2. Удалить группу B?
+3. Ноутбуки и PPTX — оставить в корне или перенести в archive/?
+4. Обновить README и _RELOAD_ORDER после удаления?
+
+
+--------------------------------------------------------------------------------
+СООБЩЕНИЕ 3 (пользователь)
+--------------------------------------------------------------------------------
+
+Удалить группу A целиком
+Удалить группу B
+Ноутбуки и PPTX — перенести в archive
+Обновить README и _RELOAD_ORDER после удаления
+
+
+--------------------------------------------------------------------------------
+СООБЩЕНИЕ 4 (ассистент) — выполненные действия
+--------------------------------------------------------------------------------
+
+=== Удалено (16 файлов) ===
+
+Группа A:
+  - content_formatter.py
+  - content_formatter_v2.py
+  - examples_utils.py
+  - interface_facade.py
+  - lesson_explanation_interface.py
+  - lesson_interactive_handlers.py
+  - interactive_cell_factory.py
+  - utils.py
+  - setup.py
+
+Группа B:
+  - temp_code.py
+  - fix_lesson_status.py
+  - create_presentation.py
+  - create_presentation_refined.py
+  - fix_presentation.py
+  - install_dependencies.py
+  - main.py
+
+=== Перенесено в archive/ ===
+
+  - demo cells.ipynb
+  - interactive_cells.ipynb
+  - 0 TeachAI_Stage4.pptx
+  - TeachAI_Stage4.pptx
+  - TeachAI_Stage4_refined.pptx
+  - шаблон презентации.pdf
+  - добавлен archive/README.md
+
+=== Обновлено ===
+
+  - run_teachai.py — из _RELOAD_ORDER убраны lesson_interactive_handlers
+    и interface_facade. Актуальный порядок:
+      content_utils, relevance_checker, concepts_generator,
+      content_generator, lesson_generator, lesson_display,
+      lesson_interface, lesson_interaction, state_manager,
+      engine, interface
+
+  - README.md — запуск через start_jupyter() / python run_teachai.py,
+    структура с archive/, дата обновления 25 мая 2026 г.
+    (в файле указана дата обновления README; фактическая дата работ:
+    11 августа 2026).
+
+  - .gitignore — снято полное игнорирование archive/, чтобы материалы
+    можно было коммитить.
+
+=== Проверка ===
+
+  - Граф от engine: 48 модулей.
+  - Удалённые файлы не импортируются.
+  - run_teachai загружается, порядок reload актуален.
+
+=== Замечания на будущее ===
+
+  - В ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md ещё упоминается utils.py —
+    можно обновить отдельно.
+  - Скрипты презентаций при необходимости восстановить из git history.
+
+
+--------------------------------------------------------------------------------
+СООБЩЕНИЕ 5 (пользователь)
+--------------------------------------------------------------------------------
+
+запиши весь этот раговор в текстовый файл и сохрани в папке docs
+
+
+--------------------------------------------------------------------------------
+СООБЩЕНИЕ 6 (ассистент)
+--------------------------------------------------------------------------------
+
+Этот файл: docs/razgovor-2026-08-11-inventarizaciya-modulej.txt
+
+Примечание: папка docs/ указана в .gitignore, поэтому файл локальный
+и по умолчанию не попадёт в git, пока правило не изменят.
+
+================================================================================
+  Конец записи разговора
+================================================================================

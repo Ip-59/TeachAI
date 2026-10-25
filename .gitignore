@@ -29,8 +29,8 @@ github-key.ssh.pub
 
 # Папки разработки и отладки
 debug_responses/
-doc/
-docs/
+#doc/
+#docs/
 test/
 tests/
 logs/
@@ -101,3 +101,7 @@ replace.txt
 *.rar
 # Локальные секреты (SSH-ключи и т.п.) — никогда не коммитить
 .secrets/
+
+# doc и docs в репозитории целиком, несмотря на правила картинок и json выше
+!doc/**
+!docs/**
