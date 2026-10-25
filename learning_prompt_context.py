@@ -10,6 +10,8 @@
 
 from __future__ import annotations
 
+from system_clock import format_clock_ru, read_clock
+
 # Мягкий потолок на случай огромного HTML; None = без обрезки в prepare.
 FULL_LESSON_MAX_CHARS: int | None = 25000
 
@@ -18,6 +20,7 @@ def practice_runtime_rules_ru() -> str:
     """Ограничения среды практики для любого учебного LLM-запроса."""
     return (
         "=== СРЕДА TEACHAI (обязательно учитывать) ===\n"
+        f"- Сейчас по часам компьютера: {format_clock_ru(read_clock())}.\n"
         "- Ученик работает в Jupyter: уроки, примеры, тесты, контрольные задания.\n"
         "- Код запускается ТОЛЬКО как Python через встроенный exec (кнопка "
         "«Выполнить код» / ячейка). Отдельного терминала ОС, bash, cmd НЕТ.\n"

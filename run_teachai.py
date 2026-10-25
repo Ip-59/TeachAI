@@ -93,8 +93,11 @@ def start_jupyter(*, reload_modules: bool = False) -> Optional[Any]:
 
     apply_openai_connection_environment()
 
+    from system_clock import mark_stage
+
     print("⏳ Запуск TeachAI...", flush=True)
     print(f"🌐 OpenAI: {describe_openai_connection()}", flush=True)
+    print(f"🕐 {mark_stage('старт')}", flush=True)
 
     if reload_modules:
         reload_project_modules()

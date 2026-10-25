@@ -397,6 +397,9 @@ class LessonInteraction:
                         )
                         return
 
+                    from system_clock import mark_stage
+
+                    mark_stage("вопрос")
                     self.logger.info(f"Обрабатываем вопрос: {question[:50]}...")
 
                     # Показываем загрузку
@@ -435,13 +438,19 @@ class LessonInteraction:
                     # Если вопрос нерелевантен
                     if not relevance_result.get("is_relevant", True):
                         self.logger.warning("Вопрос нерелевантен уроку")
+                        import html as html_lib
+
+                        safe_question = html_lib.escape(question)
+                        safe_reason = html_lib.escape(
+                            relevance_result.get("reason")
+                            or "Этот вопрос уже про другое занятие."
+                        )
                         answer_area.value = f"""
                         <div style='background-color: #fff3cd; color: #856404; padding: 15px;
                                     border-radius: 8px; border: 1px solid #ffeaa7;'>
-                            <h4>⚠️ Вопрос не связан с уроком</h4>
-                            <p><strong>Ваш вопрос:</strong> {question}</p>
-                            <p><strong>Причина:</strong> {relevance_result.get('reason', 'Вопрос не относится к теме урока')}</p>
-                            <p><strong>Рекомендация:</strong> Задайте вопрос, связанный с содержанием урока.</p>
+                            <h4>Это уже другой урок</h4>
+                            <p><strong>Ваш вопрос:</strong> {safe_question}</p>
+                            <p>{safe_reason}</p>
                         </div>
                         """
                         return

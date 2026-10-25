@@ -14,18 +14,17 @@ from typing import Dict, List
 from content_utils import BaseContentGenerator
 from examples_code_fixes import sanitize_examples
 from examples_html_utils import (
+    executable_examples,
     looks_like_python_code,
-    normalize_examples_payload,
     parse_examples_json_response,
-    validate_examples_payload,
 )
 
 
 class ExamplesValidation(BaseContentGenerator):
     """Валидатор и регенератор примеров (в формате list[dict])."""
 
-    MIN_EXAMPLES = 3
-    MIN_CODE_LINES = 3
+    MIN_EXAMPLES = 1
+    MIN_CODE_LINES = 2
     FORBIDDEN_MARKERS = (
         "document.",
         "function(",
@@ -79,7 +78,7 @@ class ExamplesValidation(BaseContentGenerator):
         if not isinstance(examples, list) or len(examples) < self.MIN_EXAMPLES:
             return False
 
-        for index, example in enumerate(examples[: self.MIN_EXAMPLES], start=1):
+        for index, example in enumerate(examples, start=1):
             code = (example.get("code") or "").strip()
             if not code:
                 self.logger.warning("Пример %s без кода (syntax check)", index)
@@ -96,7 +95,7 @@ class ExamplesValidation(BaseContentGenerator):
         if not isinstance(examples, list) or len(examples) < self.MIN_EXAMPLES:
             return False
 
-        for index, example in enumerate(examples[: self.MIN_EXAMPLES], start=1):
+        for index, example in enumerate(examples, start=1):
             code = (example.get("code") or "").strip()
             if not code:
                 self.logger.warning("Пример %s без кода", index)
@@ -140,7 +139,7 @@ class ExamplesValidation(BaseContentGenerator):
     ) -> List[Dict[str, str]]:
         """Повторная генерация с жёстким JSON-промптом. Возвращает list[dict]."""
         strict_prompt = f"""
-Сгенерируй РОВНО 3 примера Python для урока "{lesson_title}" ({course_subject}).
+Сгенерируй 3 примера для урока "{lesson_title}" ({course_subject}).
 
 Описание: {lesson_description}
 Ключевые слова: {keywords_str}
@@ -149,9 +148,10 @@ class ExamplesValidation(BaseContentGenerator):
 {lesson_content[:2500]}
 
 ОБЯЗАТЕЛЬНО:
-- JSON с массивом examples из 3 элементов
+- JSON с массивом examples
 - У каждого элемента поля title, description, code
-- code — минимум 5 строк рабочего Python-кода, готового к запуску
+- code — только Python этого урока, минимум 2 строки, без команд терминала
+- Если по уроку честный исполняемый пример невозможен, верни "examples": []
 - ЗАПРЕЩЕНЫ заглушки без кода («в этом примере мы создадим...»)
 - Без внешних файлов, без input()
 
@@ -181,8 +181,12 @@ class ExamplesValidation(BaseContentGenerator):
             response_format={"type": "json_object"},
         )
         payload = parse_examples_json_response(response)
-        validate_examples_payload(payload, min_examples=3)
-        return normalize_examples_payload(payload).get("examples", [])
+        examples = executable_examples(payload)
+        if not examples:
+            raise ValueError(
+                "Повторная генерация не дала Python-кода, который можно запустить"
+            )
+        return examples
 
     def _create_fallback_python_example(
         self,
@@ -276,12 +280,11 @@ class ExamplesValidation(BaseContentGenerator):
         except Exception as exc:
             self.logger.warning("Повторная генерация упала: %s", exc)
 
-        self.logger.error("Повторная генерация не дала рабочих примеров, используем fallback")
-        return sanitize_examples(
-            self._create_fallback_python_example(
-                lesson_title, lesson_content, lesson_description
-            )
+        self.logger.info(
+            "По уроку «%s» нет примера, который можно запустить в редакторе",
+            lesson_title,
         )
+        return []
 
     def _finalize_examples(self, examples: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """Санитизация кода (sklearn/tf) перед показом пользователю."""

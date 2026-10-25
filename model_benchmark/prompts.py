@@ -17,7 +17,7 @@ COMMUNICATION_STYLES: dict[str, str] = {
 
 
 def build_lesson_system_prompt() -> str:
-    """Системный промпт как в LessonGenerator TeachAI."""
+    """Исторический промпт бенчмарка. Не копировать в LessonGenerator."""
     return (
         "Ты - опытный преподаватель Python и эксперт в программировании. "
         "Создавай подробные, информативные и практически полезные уроки БЕЗ финальных "

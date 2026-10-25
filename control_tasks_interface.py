@@ -74,6 +74,11 @@ class ControlTasksInterface:
             )
 
             if not self.current_task.get("is_needed", True):
+                if self.current_task.get("unavailable") == "request_failed":
+                    return self._create_retry_notice(
+                        self.current_task.get("skip_reason")
+                        or "Не получилось запросить контрольное задание. Повторите попытку."
+                    )
                 return self._create_skip_task_interface(self.current_task)
 
             return self._create_task_interface(self.current_task)
@@ -769,15 +774,24 @@ class ControlTasksInterface:
             widgets.VBox: Виджет с сообщением и кнопкой перехода
         """
         # Причина пропуска задания
-        skip_reason = task_data.get("skip_reason", "Контрольное задание не требуется для данного урока")
-        
-        # Сообщение о пропуске
+        import html as html_lib
+
+        skip_reason = html_lib.escape(
+            task_data.get("skip_reason")
+            or "Контрольное задание не требуется для данного урока"
+        )
+
         skip_message = widgets.HTML(
-            value=f"<div style='background-color: #e7f3ff; border: 1px solid #b8daff; border-radius: 5px; padding: 20px; margin: 10px 0;'>"
-            f"<h3 style='color: #004085; margin: 0 0 10px 0;'>ℹ️ Контрольное задание не требуется</h3>"
-            f"<p style='color: #004085; margin: 0;'>{skip_reason}</p>"
-            f"<p style='color: #004085; margin: 10px 0 0 0;'>Урок можно считать пройденным. Переходите к следующему уроку.</p>"
-            f"</div>"
+            value=(
+                "<div style='background-color: #e7f3ff; border: 1px solid #b8daff; "
+                "border-radius: 5px; padding: 20px; margin: 10px 0;'>"
+                "<h3 style='color: #004085; margin: 0 0 10px 0;'>"
+                "Контрольное задание не требуется</h3>"
+                f"<p style='color: #004085; margin: 0;'>{skip_reason}</p>"
+                "<p style='color: #004085; margin: 10px 0 0 0;'>"
+                "Можно перейти к следующему уроку.</p>"
+                "</div>"
+            )
         )
         
         # Кнопка перехода к следующему уроку
@@ -815,6 +829,21 @@ class ControlTasksInterface:
             skip_message,
             next_lesson_button
         ])
+
+    def _create_retry_notice(self, message: str) -> widgets.VBox:
+        """Сообщение, что задание не запросилось. Урок из-за этого не закрывается."""
+        import html as html_lib
+
+        safe = html_lib.escape(message)
+        notice = widgets.HTML(
+            value=(
+                "<div style='background-color: #e7f3ff; border: 1px solid #b8daff; "
+                "border-radius: 5px; padding: 20px; margin: 10px 0;'>"
+                "<p style='color: #004085; margin: 0; line-height: 1.5;'>"
+                f"{safe}</p></div>"
+            )
+        )
+        return widgets.VBox([notice])
 
     def _create_error_interface(self, error_message: str) -> widgets.VBox:
         """

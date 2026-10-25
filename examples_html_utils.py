@@ -96,42 +96,93 @@ def normalize_examples_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     return {"examples": normalized}
 
 
-def validate_examples_payload(payload: Dict[str, Any], min_examples: int = 3) -> None:
-    """Проверяет структуру JSON до нормализации.
+NO_CODE_NOTICE = (
+    "По этому уроку нет примера, который можно запустить в редакторе TeachAI. "
+    "Подставлять код из другой темы не будем."
+)
 
-    Главный критерий — наличие исполняемого кода. Текст в description
-    не блокирует пример: «заглушечные» фразы в описании будут удалены
-    на этапе нормализации.
 
-    Raises:
-        ValueError: Если структура некорректна или примеров недостаточно.
+def examples_notice(text: str) -> Dict[str, Any]:
+    """Ответ «примера с кодом нет»: это не сбой генерации."""
+    notice = (text or "").strip() or NO_CODE_NOTICE
+    return {"status": "notice", "notice": notice, "examples": []}
+
+
+def is_examples_notice(data: Any) -> bool:
+    """True, если вместо списка примеров пришло объяснение, почему кода нет."""
+    return isinstance(data, dict) and data.get("status") == "notice"
+
+
+def _student_notice(text: Any) -> str:
+    notice = str(text or "").strip()
+    lowered = notice.lower()
+    if (
+        not notice
+        or "traceback" in lowered
+        or lowered.startswith("ошибка")
+        or "не удалось сгенерировать" in lowered
+    ):
+        return NO_CODE_NOTICE
+    return notice[:500]
+
+
+def interpret_examples_payload(payload: Dict[str, Any]) -> Any:
+    """Либо примеры с Python-кодом, либо сообщение, что по уроку их нет.
+
+    Решает модель полем practice_possible. Если она обещала код, а в code
+    лежат шаги установки или команды терминала, ученику показывается
+    сообщение, а не текст исключения.
     """
-    raw_examples = payload.get("examples") or []
-    if isinstance(raw_examples, dict):
-        raw_examples = [raw_examples]
+    if payload.get("practice_possible") is False:
+        return examples_notice(_student_notice(payload.get("notice")))
+    examples = executable_examples(payload)
+    if examples:
+        return examples
+    return examples_notice(_student_notice(payload.get("notice")))
 
-    for index, item in enumerate(raw_examples, start=1):
-        if not isinstance(item, dict):
-            raise ValueError(f"Пример {index} должен быть объектом JSON")
-        code = str(item.get("code") or item.get("content") or "").strip()
-        if not looks_like_python_code(code):
-            raise ValueError(
-                f"Пример '{item.get('title', index)}' не содержит рабочий Python-код"
-            )
 
+def executable_examples(payload: Dict[str, Any]) -> List[Dict[str, str]]:
+    """Оставляет примеры, чей code похож на Python из нескольких строк.
+
+    Шаги установки и команды терминала в поле code отбрасываются.
+    Один такой ответ не бракует остальные примеры того же урока.
+    """
     normalized = normalize_examples_payload(payload)
-    if len(normalized["examples"]) < min_examples:
-        raise ValueError(
-            f"JSON должен содержать минимум {min_examples} примеров с полем code"
-        )
+    kept: List[Dict[str, str]] = []
     for example in normalized["examples"]:
         lines = [
             line
             for line in example["code"].splitlines()
             if line.strip() and not line.strip().startswith("#")
         ]
-        if len(lines) < 2:
-            raise ValueError(f"Пример '{example['title']}' содержит слишком мало кода")
+        if len(lines) >= 2:
+            kept.append(example)
+    return kept
+
+
+def validate_examples_payload(payload: Dict[str, Any], min_examples: int = 1) -> None:
+    """Проверяет, что в JSON есть хотя бы min_examples исполняемых Python-примеров.
+
+    Raises:
+        ValueError: Если структура некорректна или рабочих примеров нет.
+    """
+    raw_examples = payload.get("examples") or []
+    if isinstance(raw_examples, dict):
+        raw_examples = [raw_examples]
+
+    if not raw_examples:
+        raise ValueError("JSON не содержит examples")
+
+    for index, item in enumerate(raw_examples, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"Пример {index} должен быть объектом JSON")
+
+    if len(executable_examples(payload)) < min_examples:
+        raise ValueError(
+            "В ответе нет примеров с исполняемым Python-кодом. "
+            "Поле code запускается в Jupyter: туда нельзя класть шаги установки "
+            "и команды терминала."
+        )
 
 
 def render_examples_json_to_html(payload: Dict[str, Any]) -> str:

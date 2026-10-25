@@ -10,10 +10,10 @@ from typing import Any, Dict, List
 
 from content_utils import BaseContentGenerator, ContentUtils
 from examples_html_utils import (
-    normalize_examples_payload,
+    interpret_examples_payload,
+    is_examples_notice,
     parse_examples_json_response,
     render_examples_json_to_html,
-    validate_examples_payload,
 )
 
 
@@ -88,8 +88,10 @@ class ExamplesGeneration(BaseContentGenerator):
                     "role": "system",
                     "content": (
                         f"Ты — преподаватель {course_subject}. "
-                        "Генерируешь ТОЛЬКО JSON с массивом examples. "
-                        "Каждый example обязан содержать поле code с рабочим Python-кодом."
+                        "Отвечаешь только JSON. Сначала реши, есть ли у этого урока "
+                        "пример, который честно выполняется как Python в редакторе. "
+                        "Если нет — practice_possible false и короткое notice ученику. "
+                        "Не подменяй тему другим кодом и не клади в code шаги установки."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -118,14 +120,24 @@ class ExamplesGeneration(BaseContentGenerator):
                 },
             )
 
-            self.logger.info(
-                f"Примеры по теме '{course_subject}' успешно сгенерированы ({len(examples_data)} шт.)"
-            )
+            if is_examples_notice(examples_data):
+                self.logger.info(
+                    "По уроку нет исполняемого примера: %s",
+                    examples_data["notice"],
+                )
+            else:
+                self.logger.info(
+                    "Примеры по теме '%s' сгенерированы (%s шт.)",
+                    course_subject,
+                    len(examples_data),
+                )
             return examples_data
 
         except Exception as e:
-            self.logger.error(f"Критическая ошибка при генерации примеров: {str(e)}")
-            raise Exception(f"Не удалось сгенерировать примеры: {str(e)}")
+            self.logger.error("Критическая ошибка при генерации примеров: %s", e)
+            raise Exception(
+                "Не получилось запросить примеры у модели. Повторите попытку."
+            ) from e
 
     def generate_examples(
         self,
@@ -145,17 +157,16 @@ class ExamplesGeneration(BaseContentGenerator):
             communication_style=communication_style,
             course_context=course_context,
         )
+        if is_examples_notice(examples_data):
+            import html as html_lib
+
+            return f"<p>{html_lib.escape(examples_data['notice'])}</p>"
         return render_examples_json_to_html({"examples": examples_data})
 
     def _parse_and_validate(self, response: str) -> List[Dict[str, str]]:
         """Парсит JSON-ответ LLM, валидирует и нормализует. Возвращает list[dict]."""
         payload = parse_examples_json_response(response)
-        validate_examples_payload(payload, min_examples=3)
-        normalized = normalize_examples_payload(payload)
-        examples = normalized.get("examples", [])
-        if not examples:
-            raise ValueError("LLM вернул примеры без исполняемого кода")
-        return examples
+        return interpret_examples_payload(payload)
 
     def _determine_course_subject(
         self, course_context, lesson_content, lesson_keywords, lesson_data=None
@@ -316,9 +327,9 @@ class ExamplesGeneration(BaseContentGenerator):
         )
 
         return f"""
-Создай РОВНО 3 практических примера на Python СТРОГО по материалу урока «{lesson_title}».
+Создай 3 практических примера СТРОГО по материалу урока «{lesson_title}».
 Предметная область курса (контекст): {course_subject}.
-Примеры должны иллюстрировать ТОЛЬКО то, что разбирается в этом уроке, а не другие темы курса.
+Каждый пример показывает только приём из этого урока. Не добирай число примерами из других занятий.
 
 Название урока: {lesson_title}
 Описание урока: {lesson_description}
@@ -330,22 +341,22 @@ class ExamplesGeneration(BaseContentGenerator):
 Стиль пояснений: {style_description}
 
 КРИТИЧЕСКИ ВАЖНО:
-1. Каждый пример — это РЕАЛЬНЫЙ исполняемый Python-код в поле "code" (минимум 5 строк кода).
-2. ЗАПРЕЩЕНО писать заглушки: «в этом примере мы создадим», «здесь мы создадим».
-3. Поле description — в настоящем времени: «Создаёт переменные…», «Суммирует список…».
-4. Код должен работать при запуске в Jupyter TeachAI (без терминала ОС, без внешних файлов, без input()).
-5. Примеры должны иллюстрировать концепции ИМЕННО из полного текста урока выше.
-6. Для ML-уроков: random_state=42, импорты sklearn (from sklearn.datasets import load_iris).
-7. НЕ используй make_classification с n_features меньше 5 — лучше load_iris().
-8. Для TensorFlow/Keras — только простой Sequential; если сомневаешься, используй sklearn.neural_network.MLPClassifier.
-9. НЕ используй pd.read_csv(), open('file.txt') и другие внешние файлы.
+1. Сначала реши, можно ли по ЭТОМУ уроку показать код, который ученик запускает в редакторе TeachAI, не меняя тему урока.
+2. Если нельзя (урок про установку, кнопки программы, действия вне редактора) — "practice_possible": false, в "notice" 1–2 предложения ученику почему примера нет, "examples": [].
+3. Если можно — "practice_possible": true и примеры. Поле code — только Python по этому уроку. Без команд терминала, без пошаговых инструкций в code.
+4. ЗАПРЕЩЕНО писать заглушки: «в этом примере мы создадим», «здесь мы создадим».
+5. Поле description — в настоящем времени и про этот пример.
+6. Без внешних файлов и без input(). Библиотеки — только те, что уже есть в тексте урока.
+7. Если в уроке есть случайные данные, зафиксируй seed.
 
 Формат ответа — ТОЛЬКО JSON:
 {{
+  "practice_possible": true,
+  "notice": "",
   "examples": [
     {{
       "title": "Краткий заголовок примера 1",
-      "description": "1-2 предложения: что делает код и зачем это для ML/Python.",
+      "description": "1-2 предложения: что делает код в этом уроке.",
       "code": "import ...\\n\\n# рабочий код\\nprint(...)"
     }},
     {{
@@ -361,5 +372,5 @@ class ExamplesGeneration(BaseContentGenerator):
   ]
 }}
 
-Поле "code" обязательно в каждом примере. Без markdown, без HTML — только чистый Python-код в JSON-строке.
+Поле "code" — только Python этого урока, без markdown, без HTML и без команд терминала.
 """

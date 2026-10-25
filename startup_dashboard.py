@@ -36,6 +36,9 @@ class StartupDashboard:
             widgets.Widget: Виджет с информацией о прогрессе и кнопкой продолжения
         """
         try:
+            from system_clock import mark_stage
+
+            self._clock_line = mark_stage("дашборд")
             self.logger.info("Создание интерактивного дашборда статистики...")
             
             # Получаем данные для дашборда
@@ -467,10 +470,19 @@ class StartupDashboard:
             # Создаем заголовок
             from project_identity import scope_banner_html
 
+            import html as html_lib
+
+            clock_line = html_lib.escape(getattr(self, "_clock_line", "") or "")
             header = widgets.HTML(
                 value=scope_banner_html()
-                + "<h2 style='color: #2c3e50; text-align: center; margin: 8px 0 20px 0;'>"
-                "📊 Дашборд обучения</h2>",
+                + "<h2 style='color: #2c3e50; text-align: center; margin: 8px 0 8px 0;'>"
+                "📊 Дашборд обучения</h2>"
+                + (
+                    f"<p style='text-align: center; color: #34495e; margin: 0 0 12px 0;'>"
+                    f"Сейчас: {clock_line}</p>"
+                    if clock_line
+                    else ""
+                ),
                 layout=widgets.Layout(margin="0 0 20px 0"),
             )
             

@@ -107,8 +107,12 @@ class ControlTaskAccess:
             container.children = [
                 widgets.HTML(
                     value=(
-                        "<p style='color: red;'>Ошибка при генерации "
-                        f"контрольного задания: {exc}</p>"
+                        "<div style='background:#e7f3ff;border:1px solid #b8daff;"
+                        "border-radius:8px;padding:16px;margin:8px 0;'>"
+                        "<p style='color:#004085;margin:0;line-height:1.5;'>"
+                        "Не получилось открыть контрольное задание. "
+                        "Повторите попытку."
+                        "</p></div>"
                     )
                 ),
                 close_button,

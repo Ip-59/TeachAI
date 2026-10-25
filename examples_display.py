@@ -15,7 +15,12 @@ from typing import Any, Dict, List
 import ipywidgets as widgets
 
 from examples_code_fixes import sanitize_examples
-from examples_html_utils import is_stub_only_description, looks_like_python_code
+from examples_html_utils import (
+    NO_CODE_NOTICE,
+    is_examples_notice,
+    is_stub_only_description,
+    looks_like_python_code,
+)
 
 
 def _create_fallback_code_widget(code: str) -> widgets.VBox:
@@ -63,6 +68,19 @@ def _create_code_widget(code: str, cell_adapter: Any) -> widgets.Widget | None:
     return _create_fallback_code_widget(code)
 
 
+def _notice_widget(text: str) -> widgets.HTML:
+    """Обычное сообщение: по уроку нет запускаемого примера."""
+    safe = html.escape(text)
+    return widgets.HTML(
+        value=(
+            "<div style='background:#e7f3ff;border:1px solid #b8daff;"
+            "border-radius:8px;padding:16px;margin:8px 0;'>"
+            "<p style='color:#004085;margin:0;line-height:1.5;'>"
+            f"{safe}</p></div>"
+        )
+    )
+
+
 def build_examples_widgets(
     examples_data: List[Dict[str, str]],
     cell_adapter: Any,
@@ -76,6 +94,9 @@ def build_examples_widgets(
     Returns:
         Список виджетов для examples_container.
     """
+    if is_examples_notice(examples_data):
+        return [_notice_widget(str(examples_data.get("notice") or NO_CODE_NOTICE))]
+
     widgets_to_display: List[widgets.Widget] = [
         widgets.HTML(value="<h3>Практические примеры</h3>")
     ]
@@ -119,15 +140,6 @@ def build_examples_widgets(
         rendered_count += 1
 
     if rendered_count == 0:
-        widgets_to_display.append(
-            widgets.HTML(
-                value=(
-                    "<p style='color:#721c24;'>"
-                    "Не удалось показать исполняемые примеры. "
-                    "Нажмите «Показать примеры» ещё раз."
-                    "</p>"
-                )
-            )
-        )
+        widgets_to_display.append(_notice_widget(NO_CODE_NOTICE))
 
     return widgets_to_display

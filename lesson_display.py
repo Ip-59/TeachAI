@@ -48,6 +48,9 @@ class LessonDisplay:
             widgets.VBox: Виджет с уроком
         """
         try:
+            from system_clock import mark_stage
+
+            mark_stage("урок")
             # Создаем ключ кэша для текущего урока
             cache_key = f"{section_id}:{topic_id}:{lesson_id}"
 

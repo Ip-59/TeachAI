@@ -9,7 +9,12 @@
 from typing import Any, Dict, List, Optional
 
 from examples_generation import ExamplesGeneration
-from examples_html_utils import render_examples_json_to_html
+from examples_html_utils import (
+    NO_CODE_NOTICE,
+    examples_notice,
+    is_examples_notice,
+    render_examples_json_to_html,
+)
 from examples_validation import ExamplesValidation
 
 
@@ -41,6 +46,8 @@ class ExamplesGenerator:
                 communication_style=communication_style,
                 course_context=course_context,
             )
+            if is_examples_notice(raw):
+                return raw
 
             course_subject = self.generation._determine_course_subject(
                 course_context,
@@ -72,16 +79,24 @@ class ExamplesGenerator:
                 lesson_content=lesson_content,
                 communication_style=communication_style,
             )
+            if not validated:
+                return examples_notice(NO_CODE_NOTICE)
 
             self.logger.info(
-                f"Примеры по теме '{course_subject}' сгенерированы и валидированы "
-                f"({len(validated)} шт.)"
+                "Примеры по теме '%s' сгенерированы и валидированы (%s шт.)",
+                course_subject,
+                len(validated),
             )
             return validated
 
         except Exception as e:
-            self.logger.error(f"Критическая ошибка при генерации примеров: {str(e)}")
-            raise Exception(f"Не удалось сгенерировать примеры: {str(e)}")
+            self.logger.error("Критическая ошибка при генерации примеров: %s", e)
+            message = str(e)
+            if message.startswith("Не получилось запросить примеры"):
+                raise
+            raise Exception(
+                "Не получилось запросить примеры у модели. Повторите попытку."
+            ) from e
 
     def generate_examples(
         self,
@@ -101,6 +116,10 @@ class ExamplesGenerator:
             communication_style=communication_style,
             course_context=course_context,
         )
+        if is_examples_notice(examples_data):
+            import html as html_lib
+
+            return f"<p>{html_lib.escape(examples_data['notice'])}</p>"
         body = render_examples_json_to_html({"examples": examples_data})
         return self.generation._apply_visible_styles(body, communication_style)
 

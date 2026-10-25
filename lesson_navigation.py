@@ -173,6 +173,9 @@ class LessonNavigation:
             show_courses_home(self.lesson_interface)
 
         def on_test_button_clicked(b):
+            from system_clock import mark_stage
+
+            mark_stage("тест")
             from IPython.display import display
 
             # Переходим к тестированию
@@ -221,6 +224,9 @@ class LessonNavigation:
                 display(HTML("<p style='color: red;'>Модуль оценивания недоступен</p>"))
 
         def on_ask_button_clicked(b):
+            from system_clock import mark_stage
+
+            mark_stage("вопрос")
             # Скрываем другие контейнеры
             self.logger.info(
                 "Кнопка 'Задать вопрос' нажата - скрываем другие контейнеры"
@@ -244,6 +250,9 @@ class LessonNavigation:
                 )
 
         def on_explain_button_clicked(b):
+            from system_clock import mark_stage
+
+            mark_stage("объяснение")
             # НОВАЯ ЛОГИКА: Показываем выбор типа объяснения
             # Скрываем другие контейнеры
             self.lesson_interface._hide_other_containers()
@@ -252,6 +261,9 @@ class LessonNavigation:
             self.lesson_interface._show_explanation_choice()
 
         def on_examples_button_clicked(b):
+            from system_clock import mark_stage
+
+            mark_stage("примеры")
             # Скрываем другие контейнеры
             self.lesson_interface._hide_other_containers()
             # Показываем загрузку примеров
@@ -322,12 +334,19 @@ class LessonNavigation:
 
                     self.lesson_interface.examples_container.children = widgets_to_display
                 except Exception as e:
-                    self.logger.error(f"Ошибка при генерации примеров: {str(e)}")
+                    self.logger.error("Ошибка при генерации примеров: %s", e)
 
                     self.lesson_interface.examples_container.children = []
 
                     error_html = widgets.HTML(
-                        value=f"<p style='color: red;'>Ошибка при генерации примеров: {str(e)}</p>"
+                        value=(
+                            "<div style='background:#e7f3ff;border:1px solid #b8daff;"
+                            "border-radius:8px;padding:16px;margin:8px 0;'>"
+                            "<p style='color:#004085;margin:0;line-height:1.5;'>"
+                            "Не получилось запросить примеры у модели. "
+                            "Повторите попытку."
+                            "</p></div>"
+                        )
                     )
                     close_button = widgets.Button(
                         description="✕ Закрыть",
@@ -345,6 +364,9 @@ class LessonNavigation:
                     ]
 
         def on_control_tasks_button_clicked(b):
+            from system_clock import mark_stage
+
+            mark_stage("контрольное")
             if not getattr(self, "control_access", None):
                 self.control_access = ControlTaskAccess(self.lesson_interface)
             self.control_access.handle_open_clicked()
