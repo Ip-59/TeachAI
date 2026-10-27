@@ -1,0 +1,189 @@
+"""Основной путь ученика в настоящем ядре Jupyter (ZAP, CRS, LSN, TST, KZ, ST)."""
+import pytest
+
+from helpers import L1
+
+pytestmark = pytest.mark.scenario
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="ZAP-01: при запуске печатается отладка «🔍 ОТЛАДКА» (interface.py:65-67)")
+def test_ZAP_01_no_debug_output_on_start(nb):
+    out = nb.start_teachai()
+    assert "Traceback" not in out
+    assert "ОТЛАДКА" not in out
+
+
+def test_PRF_01_empty_name_does_not_create_profile(nb):
+    nb.start_teachai()
+    nb.click("Сохранить настройки")
+    assert nb.llm_calls() == []
+    assert not (nb.proj / "data" / "state.json").exists() or not nb.state()["user"].get("name")
+
+
+def test_CRS_01_start_catalog_course(lesson):
+    assert lesson.llm_calls() == ["plan", "lesson", "concepts"]
+    st = lesson.state()
+    assert st["active_course_id"] == "python-basics"
+    assert "python-basics" in st["courses"]
+
+
+def test_TST_07_sixty_percent_passes_but_does_not_complete(lesson):
+    lesson.click("Пройти тест")
+    lesson.answer_test(3)
+    lesson.click("Завершить тест")
+    learn = lesson.state()["learning"]
+    assert learn["lesson_scores"][L1] == 60
+    assert not learn.get("lesson_completion_status", {}).get(L1)
+    assert lesson.buttons("Перейти к контрольным заданиям")
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="TST-02: в тесте заранее выбран первый вариант (assessment_questions_ui.py:94)")
+def test_TST_02_no_option_preselected(lesson):
+    lesson.click("Пройти тест")
+    values = lesson.eval(
+        "[w.value for w in __import__('ipywidgets').Widget.widgets.values() "
+        "if type(w).__name__ == 'RadioButtons' and len(w.options) == 3][-5:]")
+    assert values == [None] * 5
+
+
+def test_KZ_08_wrong_solution_is_recorded_and_lesson_not_completed(lesson):
+    lesson.click("Пройти тест"); lesson.answer_test(3); lesson.click("Завершить тест")
+    lesson.click("Контрольные задания")
+    lesson.llm_use("task_validate", "task_validate_wrong")
+    lesson.set_code("a = 2\nb = 3\ntotal = 1")
+    lesson.click("Проверить решение")
+    st = lesson.state()
+    assert st["control_tasks"][L1]["is_correct"] is False
+    assert not st["learning"]["lesson_completion_status"].get(L1)
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="KZ-09/D4: эталонное решение показывается автоматически после первой ошибки (control_tasks_interface.py:482-490)")
+def test_KZ_09_reference_solution_not_shown_after_wrong_attempt(lesson):
+    lesson.click("Пройти тест"); lesson.answer_test(3); lesson.click("Завершить тест")
+    lesson.click("Контрольные задания")
+    lesson.llm_use("task_validate", "task_validate_wrong")
+    lesson.set_code("a = 2\nb = 3\ntotal = 1")
+    lesson.click("Проверить решение")
+    assert not any("Эталонное решение" in t for t in lesson.html_texts())
+
+
+def test_KZ_10_correct_solution_completes_lesson(lesson):
+    lesson.click("Пройти тест"); lesson.answer_test(3); lesson.click("Завершить тест")
+    lesson.click("Контрольные задания")
+    lesson.set_code("a = 2\nb = 3\ntotal = a + b")
+    lesson.click("Проверить решение")
+    st = lesson.state()
+    assert st["control_tasks"][L1]["is_correct"] is True
+    assert st["learning"]["lesson_completion_status"][L1] is True
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="D3: нет поля lesson_pass_mode — «Продолжить с текущей оценкой» неотличим от обычного прохождения")
+def test_TST_09_continue_after_failed_test_marks_no_test(lesson):
+    lesson.click("Пройти тест"); lesson.answer_test(1); lesson.click("Завершить тест")
+    lesson.click("Продолжить с текущей оценкой")
+    learn = lesson.state()["learning"]
+    assert learn["lesson_completion_status"][L1] is True
+    assert learn.get("lesson_pass_mode", {}).get(L1) == "no_test"
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LSN-04/D2: понятия попадают в профиль при открытии списка «Ключевые понятия» (lesson_interaction.py:139,291)")
+def test_LSN_04_opening_concepts_does_not_count_them(lesson):
+    lesson.click("Объяснить подробнее")
+    lesson.click("Ключевые понятия")
+    assert L1 not in (lesson.state()["learning"].get("lesson_concepts") or {})
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LSN-10/D8: отклонённый вопрос увеличивает questions_count (lesson_interaction.py:434-438)")
+def test_LSN_10_outside_question_not_counted_as_answered(lesson):
+    lesson.click("Задать вопрос")
+    lesson.llm_use("relevance", "relevance_outside")
+    lesson.type_into("Введите ваш вопрос", "Какая завтра погода?")
+    lesson.click("Отправить вопрос")
+    assert "qa" not in lesson.llm_calls()
+    assert lesson.state()["learning"]["questions_count"].get(L1, 0) == 0
+
+
+def test_LSN_08_relevant_question_is_answered_and_counted(lesson):
+    lesson.click("Задать вопрос")
+    lesson.type_into("Введите ваш вопрос", "Что такое переменная?")
+    lesson.click("Отправить вопрос")
+    assert lesson.llm_calls()[-2:] == ["relevance", "qa"]
+    assert lesson.state()["learning"]["questions_count"][L1] == 1
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LSN-15: после «Повторить урок» «← Назад к курсам» не открывает дашборд (lesson_interface.py:93-96, assessment_results_handler.py:324)")
+def test_LSN_15_back_to_courses_works_after_repeat_lesson(lesson):
+    lesson.click("Пройти тест"); lesson.answer_test(1); lesson.click("Завершить тест")
+    lesson.click("Повторить урок")
+    before = len(lesson.buttons("Продолжить обучение"))
+    lesson.click("Назад к курсам")
+    assert len(lesson.buttons("Продолжить обучение")) == before + 1
+
+
+def _start_custom_out_of_domain(nb):
+    nb.start_teachai()
+    nb.set_value("Имя", "Тест"); nb.set_value("Общее время", 3); nb.set_value("Длительность урока", 30)
+    nb.click("Сохранить настройки")
+    nb.choose("Своё название курса")
+    nb.llm_use("domain", "domain_out")
+    nb.set_value("Название", "Курс кройки и шитья")
+    nb.click("Начать курс")
+
+
+def test_CRS_04_out_of_domain_course_is_blocked_with_choice(nb):
+    _start_custom_out_of_domain(nb)
+    assert nb.buttons("Всё равно начать")
+    assert nb.buttons("Выбрать другой курс")
+    assert "plan" not in nb.llm_calls()
+    assert not nb.state().get("courses")
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="CRS-05/D7: пометка «вне области» не сохраняется в state (course_domain_ui.py:146 пишет domain_override только в локальный dict)")
+def test_CRS_05_forced_out_of_domain_course_is_marked_in_state(nb):
+    _start_custom_out_of_domain(nb)
+    nb.click("Всё равно начать")
+    st = nb.state()
+    assert "plan" in nb.llm_calls()
+    meta = st["courses"][st["active_course_id"]]["meta"]
+    assert meta.get("domain_override") is True
+
+
+def test_KZ_01_open_task_without_test_asks_confirmation_then_records_bypass(lesson):
+    lesson.click("Контрольные задания")
+    assert lesson.buttons("Перейти к практике без теста")
+    assert "task_gen" not in lesson.llm_calls()
+    lesson.click("Перейти к практике без теста")
+    assert lesson.state()["learning"]["control_task_bypass"][L1] is True
+    assert "task_gen" in lesson.llm_calls()
+
+
+def test_KZ_02_cancel_bypass_records_nothing(lesson):
+    lesson.click("Контрольные задания")
+    lesson.click("Отмена")
+    assert not lesson.state()["learning"].get("control_task_bypass")
+    assert "task_gen" not in lesson.llm_calls()
+
+
+def test_KZ_13_bypass_and_task_not_required_passes_lesson(lesson):
+    """D6: тест обойдён + «Задание не требуется» => урок пройден."""
+    lesson.llm_use("code_practice", "code_practice_no")
+    lesson.click("Контрольные задания")
+    lesson.click("Перейти к практике без теста")
+    lesson.click("Перейти к следующему уроку")
+    learn = lesson.state()["learning"]
+    assert learn["control_task_bypass"][L1] is True
+    assert learn["lesson_completion_status"][L1] is True
+
+
+def test_ZAP_07_second_start_in_same_kernel_makes_no_llm_calls(lesson):
+    calls_before = len(lesson.llm_calls())
+    lesson.start_teachai()
+    assert len(lesson.llm_calls()) == calls_before
+    assert lesson.buttons("Продолжить обучение")
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="TST-03: «Завершить тест» без единого ответа принимается и оценивается (assessment_questions_ui.py:94, нет value=None)")
+def test_TST_03_empty_test_is_not_accepted(lesson):
+    lesson.click("Пройти тест")
+    lesson.click("Завершить тест")
+    assert L1 not in lesson.state()["learning"].get("lesson_attempts", {})

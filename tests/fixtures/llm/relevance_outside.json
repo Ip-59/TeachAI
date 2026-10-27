@@ -1,0 +1,7 @@
+{
+  "scope": "outside",
+  "is_relevant": false,
+  "confidence": 99,
+  "reason": "Вопрос про погоду не относится к курсу.",
+  "suggestions": []
+}

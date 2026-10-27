@@ -1,0 +1,10 @@
+{
+  "practice_possible": true,
+  "examples": [
+    {
+      "title": "Тип",
+      "description": "Тип числа.",
+      "code": "print(type(3.5))"
+    }
+  ]
+}

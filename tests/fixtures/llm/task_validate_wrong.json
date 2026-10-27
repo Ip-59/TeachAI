@@ -1,0 +1,6 @@
+{
+  "is_correct": false,
+  "score": 0,
+  "feedback": "Сумма посчитана неверно.",
+  "failure_reason": "total не равно 5"
+}

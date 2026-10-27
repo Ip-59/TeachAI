@@ -1,0 +1,15 @@
+{
+  "practice_possible": true,
+  "examples": [
+    {
+      "title": "Переменная",
+      "description": "Сохраняем число.",
+      "code": "x = 5\nprint(x)"
+    },
+    {
+      "title": "Две переменные",
+      "description": "Складываем.",
+      "code": "a = 2\nb = 3\nprint(a + b)"
+    }
+  ]
+}

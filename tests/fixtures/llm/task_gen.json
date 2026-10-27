@@ -1,0 +1,21 @@
+{
+  "title": "Сумма чисел",
+  "description": "Сложите два числа.",
+  "student_steps": [
+    "Используйте a и b из заготовки",
+    "Запишите сумму в total"
+  ],
+  "condition_rule": "",
+  "task_code": "a = 2\nb = 3\n# Ваш код здесь",
+  "solution_code": "a = 2\nb = 3\ntotal = a + b",
+  "validation_mode": "llm",
+  "check_variables": [
+    "total"
+  ],
+  "output_format": "",
+  "hints": [
+    "Используйте оператор +"
+  ],
+  "is_needed": true,
+  "skip_reason": ""
+}

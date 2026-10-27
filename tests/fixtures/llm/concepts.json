@@ -1,0 +1,12 @@
+{
+  "concepts": [
+    {
+      "name": "Переменная",
+      "brief_description": "Имя для значения"
+    },
+    {
+      "name": "Функция print",
+      "brief_description": "Вывод на экран"
+    }
+  ]
+}

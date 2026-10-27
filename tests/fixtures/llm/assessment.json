@@ -1,0 +1,54 @@
+{
+  "questions": [
+    {
+      "text": "Вопрос 1?",
+      "options": [
+        "верно 1",
+        "неверно 1a",
+        "неверно 1b"
+      ],
+      "correct_option": 1,
+      "explanation": "Потому что."
+    },
+    {
+      "text": "Вопрос 2?",
+      "options": [
+        "верно 2",
+        "неверно 2a",
+        "неверно 2b"
+      ],
+      "correct_option": 1,
+      "explanation": "Потому что."
+    },
+    {
+      "text": "Вопрос 3?",
+      "options": [
+        "верно 3",
+        "неверно 3a",
+        "неверно 3b"
+      ],
+      "correct_option": 1,
+      "explanation": "Потому что."
+    },
+    {
+      "text": "Вопрос 4?",
+      "options": [
+        "верно 4",
+        "неверно 4a",
+        "неверно 4b"
+      ],
+      "correct_option": 1,
+      "explanation": "Потому что."
+    },
+    {
+      "text": "Вопрос 5?",
+      "options": [
+        "верно 5",
+        "неверно 5a",
+        "неверно 5b"
+      ],
+      "correct_option": 1,
+      "explanation": "Потому что."
+    }
+  ]
+}

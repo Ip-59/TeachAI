@@ -32,7 +32,6 @@ debug_responses/
 #doc/
 #docs/
 test/
-tests/
 logs/
 
 # Данные и состояние (исключаем все кроме примеров)
@@ -43,6 +42,7 @@ data/
 !model_benchmark/rubric.json
 !model_benchmark/scenarios/*.json
 !model_benchmark/results/lesson_benchmark_*.json
+!tests/fixtures/llm/*.json
 
 # Byte-код Python
 __pycache__/

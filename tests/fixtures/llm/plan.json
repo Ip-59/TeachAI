@@ -1,0 +1,53 @@
+{
+  "title": "Основы Python",
+  "description": "Тестовый курс",
+  "total_duration_minutes": 90,
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "Введение",
+      "description": "Раздел",
+      "duration_minutes": 90,
+      "topics": [
+        {
+          "id": "topic-1-1",
+          "title": "Основы",
+          "description": "Тема",
+          "duration_minutes": 90,
+          "lessons": [
+            {
+              "id": "lesson-1-1-1",
+              "title": "Урок 1: переменные и вывод",
+              "description": "Описание урока 1",
+              "duration_minutes": 30,
+              "keywords": [
+                "переменные",
+                "print"
+              ]
+            },
+            {
+              "id": "lesson-1-1-2",
+              "title": "Урок 2: числа и строки",
+              "description": "Описание урока 2",
+              "duration_minutes": 30,
+              "keywords": [
+                "переменные",
+                "print"
+              ]
+            },
+            {
+              "id": "lesson-1-1-3",
+              "title": "Урок 3: числа и строки",
+              "description": "Описание урока 3",
+              "duration_minutes": 30,
+              "keywords": [
+                "переменные",
+                "print"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
