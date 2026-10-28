@@ -65,7 +65,6 @@ def test_SEC_04_no_eval_on_program_output():
             del os.TEACHAI_EVAL_PROBE
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="SEC-02: код ученика читает OPENAI_API_KEY (control_tasks_generator.py:64, exec в процессе ядра)")
 def test_SEC_02_student_code_cannot_read_api_key():
     from control_tasks_generator import ControlTasksGenerator
 
@@ -73,7 +72,6 @@ def test_SEC_02_student_code_cannot_read_api_key():
     assert "sk-test" not in out
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="SEC-01: код ученика пишет в файлы текущей папки (control_tasks_generator.py:64)")
 def test_SEC_01_student_code_cannot_touch_project_files(isolated_project):
     from control_tasks_generator import ControlTasksGenerator
 
@@ -82,8 +80,9 @@ def test_SEC_01_student_code_cannot_touch_project_files(isolated_project):
     assert not marker.exists()
 
 
-@pytest.mark.skip(reason="KZ-16: `while True` повесит тест, пока нет таймаута (пакет 4, D9). После D9 снять skip и ожидать сообщение «Код выполнялся слишком долго…»")
 def test_KZ_16_infinite_loop_is_stopped():
     from control_tasks_generator import ControlTasksGenerator
 
-    ControlTasksGenerator.execute_code("while True:\n    pass")
+    with pytest.raises(Exception) as ei:
+        ControlTasksGenerator.execute_code("while True:\n    pass")
+    assert "Код выполнялся слишком долго" in str(ei.value)

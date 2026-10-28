@@ -270,24 +270,13 @@ class ControlTasksInterface:
             results_output.children = []
             
             try:
-                # Создаем пространство имен для выполнения
-                namespace = {}
-                
-                # Создаем буферы для захвата вывода
-                import io
-                import sys
-                from contextlib import redirect_stdout
-                
-                output_buffer = io.StringIO()
+                from code_sandbox import run_or_raise
+
                 full_code = ControlTasksGenerator.resolve_executable_code(
                     task_data.get("task_code", ""), code_input.value
                 )
-
-                with redirect_stdout(output_buffer):
-                    exec(full_code, namespace)
-                
-                # Получаем результат
-                output = output_buffer.getvalue()
+                sandbox_result = run_or_raise(full_code, capture_variables=False)
+                output = sandbox_result.stdout or ""
                 
                 # Создаем виджет для отображения результата
                 if output.strip():

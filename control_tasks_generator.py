@@ -58,11 +58,11 @@ class ControlTasksGenerator(BaseContentGenerator):
 
     @staticmethod
     def execute_code(code: str) -> Tuple[str, Dict[str, Any]]:
-        output_buffer = io.StringIO()
-        local_vars: Dict[str, Any] = {}
-        with redirect_stdout(output_buffer):
-            exec(code, {}, local_vars)
-        return output_buffer.getvalue().strip(), local_vars
+        """Выполняет код ученика в дочернем процессе (D9 / code_sandbox)."""
+        from code_sandbox import run_or_raise
+
+        result = run_or_raise(code, capture_variables=True)
+        return (result.stdout or "").strip(), result.variables
 
     @classmethod
     def _inject_random_state(cls, func_name: str, args: str) -> str:
