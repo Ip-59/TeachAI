@@ -131,12 +131,12 @@ class NotebookSession:
             "and w.layout.display != 'none']"
         )
 
-    def click(self, text: str, nth: int = -1) -> None:
-        """Нажимает nth-ую (по умолчанию последнюю созданную) подходящую кнопку."""
+    def click(self, text: str, nth: int = -1) -> str:
+        """Нажимает nth-ую (по умолчанию последнюю созданную) подходящую кнопку; возвращает stdout обработчика."""
         found = [b for b in self.buttons(text) if not b["dis"]]
         assert found, f"нет активной кнопки «{text}». Есть: {[b['d'] for b in self.buttons()]}"
         idx = found[nth]["i"]
-        self.run(f"list(__import__('ipywidgets').Widget.widgets.values())[{idx}].click()")
+        return self.run(f"list(__import__('ipywidgets').Widget.widgets.values())[{idx}].click()")
 
     def set_value(self, description: str, value) -> None:
         """Меняет value у поля ввода/слайдера/списка по подписи (description содержит текст); берёт последнее созданное."""

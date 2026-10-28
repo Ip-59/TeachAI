@@ -93,6 +93,7 @@ def build_compact_questions_interface(
         options = question["options"]
         radio_buttons = widgets.RadioButtons(
             options=[(option, j + 1) for j, option in enumerate(options)],
+            value=None,  # без предвыбранного варианта: иначе неотвеченный вопрос засчитывается
             description="",
             disabled=False,
             layout=widgets.Layout(margin="4px 10px", width="100%"),

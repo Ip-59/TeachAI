@@ -71,38 +71,15 @@ class CoursePlanGenerator(BaseContentGenerator):
 
             course_plan = json.loads(response_content)
 
-            # ОТЛАДКА: Выводим структуру плана для диагностики
-            print("🔍 ОТЛАДКА: Структура полученного плана курса:")
-            print(f"Ключи верхнего уровня: {list(course_plan.keys())}")
+            self.logger.debug("Ключи плана от LLM: %s", list(course_plan.keys()))
 
             # ВАЛИДАЦИЯ И ИСПРАВЛЕНИЕ структуры
             course_plan = self._validate_and_fix_course_plan(
                 course_plan, course_data, total_study_hours, lesson_duration_minutes
             )
 
-            if "sections" in course_plan:
-                print(f"✅ Количество разделов: {len(course_plan['sections'])}")
-                if course_plan["sections"]:
-                    first_section = course_plan["sections"][0]
-                    print(f"✅ Ключи первого раздела: {list(first_section.keys())}")
-                    if "topics" in first_section:
-                        print(
-                            f"✅ Количество тем в первом разделе: {len(first_section['topics'])}"
-                        )
-                        if first_section["topics"]:
-                            first_topic = first_section["topics"][0]
-                            print(f"✅ Ключи первой темы: {list(first_topic.keys())}")
-                            if "lessons" in first_topic:
-                                print(
-                                    f"✅ Количество уроков в первой теме: {len(first_topic['lessons'])}"
-                                )
-                                if first_topic["lessons"]:
-                                    first_lesson = first_topic["lessons"][0]
-                                    print(
-                                        f"✅ Ключи первого урока: {list(first_lesson.keys())}"
-                                    )
-            else:
-                print("❌ Проблема с валидацией плана курса!")
+            if not course_plan.get("sections"):
+                self.logger.warning("После валидации в плане нет разделов")
 
             self.logger.info("Учебный план успешно сгенерирован через OpenAI API")
             return course_plan
@@ -215,7 +192,7 @@ class CoursePlanGenerator(BaseContentGenerator):
             if "sections" not in course_plan or not isinstance(
                 course_plan["sections"], list
             ):
-                print("⚠️ Создаем минимальную структуру разделов...")
+                self.logger.warning("Создаем минимальную структуру разделов")
                 course_plan["sections"] = self._create_minimal_sections(
                     course_data, lesson_duration_minutes
                 )
@@ -279,7 +256,7 @@ class CoursePlanGenerator(BaseContentGenerator):
                         if "keywords" not in lesson:
                             lesson["keywords"] = ["основы", "практика"]
 
-            print("✅ План курса валидирован и исправлен")
+            self.logger.debug("План курса валидирован и исправлен")
             return course_plan
 
         except Exception as e:

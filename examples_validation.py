@@ -15,6 +15,7 @@ from content_utils import BaseContentGenerator
 from examples_code_fixes import sanitize_examples
 from examples_html_utils import (
     executable_examples,
+    has_runnable_python,
     looks_like_python_code,
     parse_examples_json_response,
 )
@@ -24,7 +25,6 @@ class ExamplesValidation(BaseContentGenerator):
     """Валидатор и регенератор примеров (в формате list[dict])."""
 
     MIN_EXAMPLES = 1
-    MIN_CODE_LINES = 2
     FORBIDDEN_MARKERS = (
         "document.",
         "function(",
@@ -55,12 +55,7 @@ class ExamplesValidation(BaseContentGenerator):
             code = (example.get("code") or "").strip()
             if not code or not looks_like_python_code(code):
                 continue
-            lines = [
-                line
-                for line in code.splitlines()
-                if line.strip() and not line.strip().startswith("#")
-            ]
-            if len(lines) < self.MIN_CODE_LINES:
+            if not has_runnable_python(code):
                 continue
             lower = code.lower()
             if any(marker in lower for marker in self.FORBIDDEN_MARKERS):

@@ -95,6 +95,12 @@ class LessonInterface:
             self.assessment_interface = AssessmentInterface(
                 state_manager, assessment, system_logger, self
             )
+            # engine нужен кнопкам «Повторить урок», «Вернуться к уроку» и
+            # «← Назад к курсам»: новые LessonInterface наследуют его отсюда.
+            self.assessment_interface.engine = engine
+            results_handler = getattr(self.assessment_interface, "results_handler", None)
+            if results_handler is not None:
+                results_handler.engine = engine
             self.logger.info("AssessmentInterface успешно инициализирован")
         except Exception as e:
             self.logger.error(f"Ошибка при инициализации AssessmentInterface: {str(e)}")

@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import html
+import ast
 import json
 from typing import Any, Dict, List
 
@@ -141,6 +142,29 @@ def interpret_examples_payload(payload: Dict[str, Any]) -> Any:
     return examples_notice(_student_notice(payload.get("notice")))
 
 
+def has_runnable_python(code: str) -> bool:
+    """Код — это Python, а не шаги установки или команда терминала.
+
+    Несколько строк кода остаются как раньше. Одна строка (`print(type(3.5))`)
+    годится, если она похожа на Python и разбирается как Python;
+    `pip install numpy` и `python --version` под это не подходят.
+    """
+    lines = [
+        line
+        for line in (code or "").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+    if len(lines) >= 2:
+        return True
+    if len(lines) == 1:
+        try:
+            ast.parse(code)
+        except SyntaxError:
+            return False
+        return looks_like_python_code(code)
+    return False
+
+
 def executable_examples(payload: Dict[str, Any]) -> List[Dict[str, str]]:
     """Оставляет примеры, чей code похож на Python из нескольких строк.
 
@@ -150,12 +174,7 @@ def executable_examples(payload: Dict[str, Any]) -> List[Dict[str, str]]:
     normalized = normalize_examples_payload(payload)
     kept: List[Dict[str, str]] = []
     for example in normalized["examples"]:
-        lines = [
-            line
-            for line in example["code"].splitlines()
-            if line.strip() and not line.strip().startswith("#")
-        ]
-        if len(lines) >= 2:
+        if has_runnable_python(example["code"]):
             kept.append(example)
     return kept
 

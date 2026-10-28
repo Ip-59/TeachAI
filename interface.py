@@ -62,9 +62,7 @@ class UserInterface:
 
         # Инициализируем специализированные интерфейсы
         try:
-            print(f"🔍 ОТЛАДКА UserInterface.__init__:")
-            print(f"🔍 assessment = {assessment}")
-            print(f"🔍 type(assessment) = {type(assessment)}")
+            self.logger.debug("UserInterface.__init__: assessment=%s", type(assessment).__name__)
 
             self.setup_interface = SetupInterface(
                 state_manager, content_generator, system_logger, assessment

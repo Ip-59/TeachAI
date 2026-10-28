@@ -72,7 +72,6 @@ def test_LSN_13_next_lesson_is_first_unfinished():
     assert lesson == "lesson-1-1-3"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="PRF-05: верное КЗ добавляет лишнюю «попытку теста» (control_tasks_interface.py:535)")
 def test_PRF_05_correct_task_does_not_add_test_attempt():
     from control_tasks_interface import ControlTasksInterface
 

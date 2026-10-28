@@ -15,12 +15,28 @@ def test_ZAP_02_sample_env_not_overwritten(isolated_project):
     assert sample.read_text(encoding="utf-8") == "МОЁ СОДЕРЖИМОЕ"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LSN-06: однострочный пример отбрасывается (examples_html_utils.py:158)")
 def test_LSN_06_one_line_example_is_kept():
     from examples_html_utils import executable_examples
 
     payload = {"examples": [{"title": "Тип", "description": "", "code": "print(type(3.5))"}]}
     assert len(executable_examples(payload)) == 1
+
+
+@pytest.mark.parametrize("code", ["pip install numpy", "python --version", "$ pip install pandas"])
+def test_LSN_06_one_line_terminal_commands_are_still_dropped(code):
+    from examples_html_utils import executable_examples
+
+    payload = {"examples": [{"title": "Установка", "description": "", "code": code}]}
+    assert executable_examples(payload) == []
+
+
+def test_LSN_06_one_line_example_passes_quality_check():
+    from examples_validation import ExamplesValidation
+
+    checker = ExamplesValidation("sk-test-not-a-real-key")
+    assert checker.validate_examples_quality(
+        [{"title": "Тип", "description": "", "code": "print(type(3.5))"}]
+    )
 
 
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="LLM-01: 401 повторяется 3 раза и объясняется «прокси» (content_utils.py:588-632)")

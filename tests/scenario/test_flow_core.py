@@ -6,7 +6,6 @@ from helpers import L1
 pytestmark = pytest.mark.scenario
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="ZAP-01: при запуске печатается отладка «🔍 ОТЛАДКА» (interface.py:65-67)")
 def test_ZAP_01_no_debug_output_on_start(nb):
     out = nb.start_teachai()
     assert "Traceback" not in out
@@ -37,7 +36,24 @@ def test_TST_07_sixty_percent_passes_but_does_not_complete(lesson):
     assert lesson.buttons("Перейти к контрольным заданиям")
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="TST-02: в тесте заранее выбран первый вариант (assessment_questions_ui.py:94)")
+def test_ZAP_01_no_debug_output_on_course_start(nb):
+    nb.start_teachai()
+    nb.set_value("Имя", "Тест"); nb.set_value("Общее время", 3); nb.set_value("Длительность урока", 30)
+    out = nb.click("Сохранить настройки") + nb.click("Начать курс")
+    assert "ОТЛАДКА" not in out
+    assert "Ключи" not in out
+
+
+def test_KZ_18_checking_a_solution_prints_no_diagnostics(lesson):
+    lesson.click("Пройти тест"); lesson.answer_test(5); lesson.click("Завершить тест")
+    lesson.click("Контрольные задания")
+    lesson.llm_use("task_validate", "task_validate_wrong")
+    lesson.set_code("a = 2\nb = 3\ntotal = 1")
+    out = lesson.click("Проверить решение")
+    assert "DIAGNOSTIC" not in out
+    assert "expected_output" not in out
+
+
 def test_TST_02_no_option_preselected(lesson):
     lesson.click("Пройти тест")
     values = lesson.eval(
@@ -111,7 +127,6 @@ def test_LSN_08_relevant_question_is_answered_and_counted(lesson):
     assert lesson.state()["learning"]["questions_count"][L1] == 1
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LSN-15: после «Повторить урок» «← Назад к курсам» не открывает дашборд (lesson_interface.py:93-96, assessment_results_handler.py:324)")
 def test_LSN_15_back_to_courses_works_after_repeat_lesson(lesson):
     lesson.click("Пройти тест"); lesson.answer_test(1); lesson.click("Завершить тест")
     lesson.click("Повторить урок")
@@ -182,7 +197,6 @@ def test_ZAP_07_second_start_in_same_kernel_makes_no_llm_calls(lesson):
     assert lesson.buttons("Продолжить обучение")
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="TST-03: «Завершить тест» без единого ответа принимается и оценивается (assessment_questions_ui.py:94, нет value=None)")
 def test_TST_03_empty_test_is_not_accepted(lesson):
     lesson.click("Пройти тест")
     lesson.click("Завершить тест")

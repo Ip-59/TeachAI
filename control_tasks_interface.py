@@ -367,13 +367,6 @@ class ControlTasksInterface:
 
             # Получаем параметры проверки переменной
             check_variable = task_data.get("check_variable")
-            expected_variable_value = task_data.get("expected_variable_value")
-
-            print(f"\n🔍 [DIAGNOSTIC] Проверка решения:")
-            print(f"check_variable: {check_variable}")
-            print(f"expected_variable_value: {expected_variable_value}")
-            print(f"expected_output: {task_data.get('expected_output', 'НЕТ')}")
-            print(f"user_code: {user_code[:200]}...")
 
             # Проверяем выполнение
             validation_result = self.tasks_generator.validate_task_execution(
@@ -381,19 +374,12 @@ class ControlTasksInterface:
                 task_data=task_data,
             )
 
-            print(f"Результат валидации: {validation_result}")
-            
-            # Дополнительная диагностика
-            if check_variable:
-                print(f"🔍 [DIAGNOSTIC] Проверка переменной '{check_variable}':")
-                print(f"   Ожидаемое значение: {expected_variable_value}")
-                print(f"   Фактическое значение: {validation_result.get('actual_variable')}")
-                print(f"   Совпадение: {validation_result.get('is_correct')}")
-            else:
-                print(f"🔍 [DIAGNOSTIC] Проверка вывода:")
-                print(f"   Ожидаемый вывод: '{task_data.get('expected_output', '')}'")
-                print(f"   Фактический вывод: '{validation_result.get('actual_output', '')}'")
-                print(f"   Совпадение: {validation_result.get('actual_output') == task_data.get('expected_output', '').strip()}")
+            # Ожидаемые значения в лог не пишем: это ответ на задание.
+            self.logger.debug(
+                "Проверка КЗ: check_variable=%s, is_correct=%s",
+                check_variable,
+                validation_result.get("is_correct"),
+            )
 
             # Создаем все виджеты для отображения
             result_widgets = []
@@ -532,11 +518,8 @@ class ControlTasksInterface:
                 if is_correct:
                     sm = self.lesson_interface.state_manager
                     if sm.can_open_control_tasks(lesson_id):
-                        sm.save_lesson_assessment(
-                            lesson_id,
-                            sm.get_lesson_score(lesson_id),
-                            True,
-                        )
+                        # Не вызываем save_lesson_assessment: это дописывало бы
+                        # в lesson_attempts фиктивную «попытку теста».
                         sm.mark_lesson_complete_manually(lesson_id)
                         self.logger.info(
                             "Урок %s завершён: КЗ верно, тест пройден или обойдён",
