@@ -73,7 +73,6 @@ def test_KZ_08_wrong_solution_is_recorded_and_lesson_not_completed(lesson):
     assert not st["learning"]["lesson_completion_status"].get(L1)
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="KZ-09/D4: эталонное решение показывается автоматически после первой ошибки (control_tasks_interface.py:482-490)")
 def test_KZ_09_reference_solution_not_shown_after_wrong_attempt(lesson):
     lesson.click("Пройти тест"); lesson.answer_test(3); lesson.click("Завершить тест")
     lesson.click("Контрольные задания")
@@ -81,6 +80,7 @@ def test_KZ_09_reference_solution_not_shown_after_wrong_attempt(lesson):
     lesson.set_code("a = 2\nb = 3\ntotal = 1")
     lesson.click("Проверить решение")
     assert not any("Эталонное решение" in t for t in lesson.html_texts())
+    assert lesson.buttons("Показать решение")
 
 
 def test_KZ_10_correct_solution_completes_lesson(lesson):
@@ -108,7 +108,6 @@ def test_LSN_04_opening_concepts_does_not_count_them(lesson):
     assert L1 not in (lesson.state()["learning"].get("lesson_concepts") or {})
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LSN-10/D8: отклонённый вопрос увеличивает questions_count (lesson_interaction.py:434-438)")
 def test_LSN_10_outside_question_not_counted_as_answered(lesson):
     lesson.click("Задать вопрос")
     lesson.llm_use("relevance", "relevance_outside")
@@ -116,6 +115,7 @@ def test_LSN_10_outside_question_not_counted_as_answered(lesson):
     lesson.click("Отправить вопрос")
     assert "qa" not in lesson.llm_calls()
     assert lesson.state()["learning"]["questions_count"].get(L1, 0) == 0
+    assert lesson.state()["learning"]["offtopic_count"].get(L1, 0) == 1
 
 
 def test_LSN_08_relevant_question_is_answered_and_counted(lesson):
@@ -152,7 +152,6 @@ def test_CRS_04_out_of_domain_course_is_blocked_with_choice(nb):
     assert not nb.state().get("courses")
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="CRS-05/D7: пометка «вне области» не сохраняется в state (course_domain_ui.py:146 пишет domain_override только в локальный dict)")
 def test_CRS_05_forced_out_of_domain_course_is_marked_in_state(nb):
     _start_custom_out_of_domain(nb)
     nb.click("Всё равно начать")

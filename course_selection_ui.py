@@ -322,6 +322,8 @@ def _start_course(setup, course: dict, user_profile: dict) -> None:
         )
         if course.get("source"):
             course_plan["source"] = course["source"]
+        if course.get("domain_override"):
+            course_plan["domain_override"] = True
 
         begin_new_course(setup.state_manager.state)
         success = setup.state_manager.save_course_plan(course_plan)

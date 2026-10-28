@@ -33,6 +33,8 @@ class ControlTasksInterface:
         self.task_result = None
         # ИСПРАВЛЕНО: Флаг для предотвращения множественных вызовов
         self.is_checking = False
+        # D4: ученик открывал эталон для текущего задания
+        self._solution_revealed = False
 
     def show_control_task(self, lesson_data: Dict[str, Any], lesson_content: str):
         """
@@ -256,6 +258,9 @@ class ControlTasksInterface:
             layout=widgets.Layout(width="200px", margin="10px 0"),
         )
 
+        self._solution_revealed = False
+        show_solution_button = self._make_show_solution_button(task_data)
+
         # ИСПРАВЛЕНО: Контейнер для результатов как VBox вместо Output
         results_output = widgets.VBox(layout=widgets.Layout(margin="10px 0"))
 
@@ -325,7 +330,7 @@ class ControlTasksInterface:
 
         # Создаем контейнер с кнопками
         buttons_container = widgets.HBox(
-            [execute_button, check_button],
+            [execute_button, check_button, show_solution_button],
             layout=widgets.Layout(justify_content="space-around", margin="10px 0"),
         )
 
@@ -465,14 +470,8 @@ class ControlTasksInterface:
                     )
                 result_widgets.append(error_html)
 
-                # Эталонное решение
-                solution_html = widgets.HTML(
-                    value=f"<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px; margin: 10px 0;'>"
-                    f"<h4 style='color: #856404; margin: 0;'>Эталонное решение:</h4>"
-                    f"<pre style='background-color: #f8f9fa; padding: 10px; border-radius: 3px; margin: 10px 0;'>{task_data.get('solution_code', '')}</pre>"
-                    f"</div>"
-                )
-                result_widgets.append(solution_html)
+                # D4: эталон не показываем автоматически — только по кнопке.
+                result_widgets.append(self._make_show_solution_button(task_data))
 
                 # Сохраняем результат
                 self._save_task_result(task_data, False)
@@ -497,6 +496,38 @@ class ControlTasksInterface:
             # ИСПРАВЛЕНО: Сбрасываем флаг проверки
             self.is_checking = False
 
+    def _make_show_solution_button(self, task_data: Dict[str, Any]) -> widgets.Widget:
+        """Кнопка «Показать решение» (D4); доступна в любой момент."""
+        box = widgets.VBox()
+        btn = widgets.Button(
+            description="Показать решение",
+            button_style="warning",
+            layout=widgets.Layout(width="220px", margin="8px 0"),
+        )
+        out = widgets.HTML(value="")
+
+        def on_show(_b):
+            self._solution_revealed = True
+            code = task_data.get("solution_code") or ""
+            import html as html_lib
+            safe = html_lib.escape(code)
+            out.value = (
+                "<div style='background-color:#fff3cd;border:1px solid #ffeaa7;"
+                "border-radius:5px;padding:15px;margin:10px 0;'>"
+                "<h4 style='color:#856404;margin:0;'>Эталонное решение</h4>"
+                f"<pre style='background:#f8f9fa;padding:10px;border-radius:3px;"
+                f"margin:10px 0;'>{safe}</pre>"
+                "<p style='color:#856404;margin:0;font-size:0.9em;'>"
+                "Сдача после просмотра будет с пометкой «с подсказкой».</p>"
+                "</div>"
+            )
+            btn.disabled = True
+
+        btn.on_click(on_show)
+        box.children = (btn, out)
+        return box
+
+
     def _save_task_result(self, task_data: Dict[str, Any], is_correct: bool):
         """
         Сохраняет результат выполнения задания.
@@ -511,7 +542,10 @@ class ControlTasksInterface:
             lesson_id = self.lesson_interface.current_lesson_id
             if lesson_id:
                 self.lesson_interface.state_manager.save_control_task_result(
-                    lesson_id, task_data.get("title", "Задание"), is_correct
+                    lesson_id,
+                    task_data.get("title", "Задание"),
+                    is_correct,
+                    with_hint=bool(self._solution_revealed),
                 )
                 
                 # ИСПРАВЛЕНО: Если контрольное задание выполнено правильно И тест пройден - урок завершен
@@ -520,7 +554,9 @@ class ControlTasksInterface:
                     if sm.can_open_control_tasks(lesson_id):
                         # Не вызываем save_lesson_assessment: это дописывало бы
                         # в lesson_attempts фиктивную «попытку теста».
-                        sm.mark_lesson_complete_manually(lesson_id, pass_mode="normal")
+                        sm.mark_lesson_complete_manually(
+                            lesson_id, pass_mode="normal"
+                        )
                         self.logger.info(
                             "Урок %s завершён: КЗ верно, тест пройден или обойдён",
                             lesson_id,

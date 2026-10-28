@@ -136,7 +136,6 @@ class LessonInteraction:
                         )
                         # Сохраняем результат для последующих кликов
                         self.lesson_interface.current_lesson_concepts = concepts
-
                     # Создаем список понятий
                     concepts_list = []
                     for concept_data in concepts:
@@ -287,7 +286,6 @@ class LessonInteraction:
                             )
                         )
                         self.lesson_interface.current_lesson_concepts = concepts
-
                     concepts_list = []
                     for concept_data in concepts:
                         concept_button = widgets.Button(
@@ -426,16 +424,11 @@ class LessonInteraction:
                     # Получаем информацию о курсе для правильного вызова методов
                     course_info = self.lesson_interface.current_course_info
 
-                    # Увеличиваем счетчик вопросов
-                    # Создаем уникальный ID урока для счетчика
-                    lesson_full_id = f"{course_info.get('section_id', 'unknown')}:{course_info.get('topic_id', 'unknown')}:{course_info.get('lesson_id', 'unknown')}"
-                    questions_count = (
-                        self.lesson_interface.state_manager.increment_questions_count(
-                            lesson_full_id
-                        )
+                    lesson_full_id = (
+                        f"{course_info.get('section_id', 'unknown')}:"
+                        f"{course_info.get('topic_id', 'unknown')}:"
+                        f"{course_info.get('lesson_id', 'unknown')}"
                     )
-
-                    self.logger.info(f"Счетчик вопросов обновлен: {questions_count}")
 
                     # Проверяем релевантность вопроса.
                     # Передаём course_context, чтобы из тела урока была срезана
@@ -451,25 +444,40 @@ class LessonInteraction:
 
                     self.logger.info(f"Релевантность вопроса: {relevance_result}")
 
-                    # Если вопрос нерелевантен
-                    if not relevance_result.get("is_relevant", True):
-                        self.logger.warning("Вопрос нерелевантен уроку")
+                    # D8: outside → offtopic_count, не questions_count.
+                    scope = relevance_result.get("scope") or (
+                        "outside" if not relevance_result.get("is_relevant", True) else "lesson"
+                    )
+                    if scope == "outside" or not relevance_result.get("is_relevant", True):
+                        self.logger.warning("Вопрос вне курса")
                         import html as html_lib
 
+                        n = self.lesson_interface.state_manager.increment_offtopic_count(
+                            lesson_full_id
+                        )
                         safe_question = html_lib.escape(question)
                         safe_reason = html_lib.escape(
                             relevance_result.get("reason")
-                            or "Этот вопрос уже про другое занятие."
+                            or "Этот вопрос не про урок и не про курс."
                         )
                         answer_area.value = f"""
                         <div style='background-color: #fff3cd; color: #856404; padding: 15px;
                                     border-radius: 8px; border: 1px solid #ffeaa7;'>
-                            <h4>Это уже другой урок</h4>
+                            <h4>Вопрос вне курса</h4>
                             <p><strong>Ваш вопрос:</strong> {safe_question}</p>
                             <p>{safe_reason}</p>
+                            <p>Это уже {n}-й вопрос не в тему урока и не в тему курса.</p>
                         </div>
                         """
                         return
+
+                    # Отвеченный вопрос (lesson или course) — в questions_count.
+                    questions_count = (
+                        self.lesson_interface.state_manager.increment_questions_count(
+                            lesson_full_id
+                        )
+                    )
+                    self.logger.info(f"Счетчик вопросов обновлен: {questions_count}")
 
                     # Генерируем ответ
                     self.logger.info("Генерируем ответ на вопрос")

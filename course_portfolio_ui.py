@@ -170,11 +170,12 @@ class CoursePortfolioPanel:
         active = " · текущий" if row.get("is_active") else ""
         source = "свой" if row.get("source") == "user" else "каталог"
         badge = "завершён" if status == "completed" else "в процессе"
+        override = " · вне области" if row.get("domain_override") else ""
         info = widgets.HTML(
             value=(
                 f"<div style='padding:8px 0;'><strong>{title}</strong>"
                 f"<br><span style='color:#6c757d;font-size:13px;'>"
-                f"{badge}{active} · {source} · {percent:.0f}%</span></div>"
+                f"{badge}{active}{override} · {source} · {percent:.0f}%</span></div>"
             )
         )
         open_btn = widgets.Button(

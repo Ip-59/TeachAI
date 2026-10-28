@@ -64,14 +64,17 @@ def _slot_from_mirror(state: dict, course_id: str) -> dict[str, Any]:
     title = plan.get("title") or course_id or "Курс"
     source = plan.get("source") or "catalog"
     status = "completed" if _looks_completed(state) else "active"
-    return {
-        "meta": {
+    meta = {
             "course_id": course_id,
             "title": title,
             "source": source,
             "status": status,
             "updated_at": _now(),
-        },
+        }
+    if plan.get("domain_override"):
+        meta["domain_override"] = True
+    return {
+        "meta": meta,
         "learning": copy.deepcopy(learning),
         "course_plan": copy.deepcopy(plan),
         "lesson_content_cache": copy.deepcopy(
@@ -157,6 +160,9 @@ def snapshot_active(state: dict) -> None:
     slot = _slot_from_mirror(state, cid)
     created = (existing.get("meta") or {}).get("created_at")
     slot["meta"]["created_at"] = created or _now()
+    # D7: не терять пометку «вне области» при каждом save_state
+    if (existing.get("meta") or {}).get("domain_override"):
+        slot["meta"]["domain_override"] = True
     if (existing.get("meta") or {}).get("status") == "completed":
         slot["meta"]["status"] = "completed"
     state["courses"][cid] = slot
@@ -177,6 +183,7 @@ def list_user_courses(state: dict) -> list[dict[str, Any]]:
                 "source": meta.get("source") or "catalog",
                 "status": meta.get("status") or "active",
                 "is_active": cid == active,
+                "domain_override": bool(meta.get("domain_override")),
                 "current_lesson": learning.get("current_lesson") or "",
                 "current_section": learning.get("current_section") or "",
                 "current_topic": learning.get("current_topic") or "",
@@ -250,6 +257,9 @@ def bind_new_plan(state: dict, course_plan: dict, source: str = "catalog") -> No
     meta["updated_at"] = _now()
     if "created_at" not in meta:
         meta["created_at"] = _now()
+    # D7: курс вне области
+    if course_plan.get("domain_override"):
+        meta["domain_override"] = True
 
 
 def mark_active_completed(state: dict) -> None:
