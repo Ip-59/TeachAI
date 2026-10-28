@@ -91,9 +91,9 @@ def test_KZ_10_correct_solution_completes_lesson(lesson):
     st = lesson.state()
     assert st["control_tasks"][L1]["is_correct"] is True
     assert st["learning"]["lesson_completion_status"][L1] is True
+    assert st["learning"]["lesson_pass_mode"][L1] == "normal"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="D3: нет поля lesson_pass_mode — «Продолжить с текущей оценкой» неотличим от обычного прохождения")
 def test_TST_09_continue_after_failed_test_marks_no_test(lesson):
     lesson.click("Пройти тест"); lesson.answer_test(1); lesson.click("Завершить тест")
     lesson.click("Продолжить с текущей оценкой")
@@ -102,7 +102,6 @@ def test_TST_09_continue_after_failed_test_marks_no_test(lesson):
     assert learn.get("lesson_pass_mode", {}).get(L1) == "no_test"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LSN-04/D2: понятия попадают в профиль при открытии списка «Ключевые понятия» (lesson_interaction.py:139,291)")
 def test_LSN_04_opening_concepts_does_not_count_them(lesson):
     lesson.click("Объяснить подробнее")
     lesson.click("Ключевые понятия")

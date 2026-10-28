@@ -166,27 +166,12 @@ class CourseDataManager:
                         )
                         # Продолжаем поиск следующего урока
 
-            # Если текущего урока нет или он завершен, ищем следующий урок
+            # D1/LSN-13: следующий = первый незавершённый в плане (не «следующий по позиции»).
             if not current_section or not current_topic or not current_lesson:
                 self.logger.info(
-                    "Текущий урок не найден, возвращаем первый урок из плана"
+                    "Текущий урок не найден, возвращаем первый незавершённый"
                 )
-                return self._get_first_lesson_from_plan(course_plan)
-
-            # ИСПРАВЛЕНО: Ищем следующий урок после завершенного текущего
-            next_lesson = self._find_next_lesson_in_plan(
-                course_plan, current_section, current_topic, current_lesson
-            )
-
-            if next_lesson:
-                section_id, topic_id, lesson_id, lesson_data = next_lesson
-                self.logger.info(
-                    f"Найден следующий урок: {section_id}:{topic_id}:{lesson_id}"
-                )
-                return section_id, topic_id, lesson_id, lesson_data
-            else:
-                self.logger.info("Все уроки курса пройдены")
-                return None, None, None, None
+            return self._find_first_unfinished_lesson(course_plan)
 
         except Exception as e:
             self.logger.error(f"Ошибка при определении следующего урока: {str(e)}")
@@ -227,6 +212,27 @@ class CourseDataManager:
         except Exception as e:
             self.logger.error(f"Ошибка при получении первого урока: {str(e)}")
             return None, None, None, None
+
+    def _find_first_unfinished_lesson(self, course_plan):
+        """Первый урок плана, для которого is_lesson_completed ложно (LSN-13)."""
+        try:
+            from lesson_outline import iter_plan_lessons
+
+            for item in iter_plan_lessons(course_plan):
+                section_id = item["section_id"]
+                topic_id = item["topic_id"]
+                lesson_id = item["lesson_id"]
+                full = f"{section_id}:{topic_id}:{lesson_id}"
+                if not self.state_manager.learning_progress.is_lesson_completed(full):
+                    self.logger.info("Первый незавершённый урок: %s", full)
+                    lesson_data = self.get_lesson_data(section_id, topic_id, lesson_id)
+                    return section_id, topic_id, lesson_id, lesson_data
+            self.logger.info("Все уроки курса пройдены")
+            return None, None, None, None
+        except Exception as e:
+            self.logger.error(f"Ошибка поиска незавершённого урока: {e}")
+            return None, None, None, None
+
 
     def _find_next_lesson_in_plan(
         self, course_plan, current_section, current_topic, current_lesson

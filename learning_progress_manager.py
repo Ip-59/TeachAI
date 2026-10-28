@@ -46,15 +46,12 @@ class LearningProgressManager:
 
             if lesson is not None:
                 self.state_manager.state["learning"]["current_lesson"] = lesson
-                # Добавляем урок в список пройденных, если его там еще нет
+                # D1: открытие = посещение, не прохождение.
                 lesson_id = f"{section}:{topic}:{lesson}"
-                if (
-                    lesson_id
-                    not in self.state_manager.state["learning"]["completed_lessons"]
-                ):
-                    self.state_manager.state["learning"]["completed_lessons"].append(
-                        lesson_id
-                    )
+                learning = self.state_manager.state["learning"]
+                visited = learning.setdefault("visited_lessons", [])
+                if lesson_id not in visited:
+                    visited.append(lesson_id)
 
             self.logger.debug(
                 f"Прогресс обучения обновлен: course={course}, section={section}, topic={topic}, lesson={lesson}"
@@ -116,10 +113,7 @@ class LearningProgressManager:
                     f"Тест по уроку {lesson_id} пройден с оценкой {score}% (урок ещё не завершен)"
                 )
 
-            if is_passed:
-                from student_knowledge import mark_lesson_concepts_passed
-
-                mark_lesson_concepts_passed(self.state_manager, lesson_id)
+            # D2: понятия не засчитываются при тесте — только при переходе дальше.
 
             # Пересчитываем общую статистику
             self._recalculate_course_statistics()
@@ -179,25 +173,31 @@ class LearningProgressManager:
             )
             return False
 
-    def mark_lesson_complete_manually(self, lesson_id):
+    def mark_lesson_complete_manually(self, lesson_id, pass_mode: str = "forced"):
         """
-        Отмечает урок как завершенный принудительно (для кнопки "Продолжить с текущим результатом").
-        
+        Отмечает урок как завершённый и засчитывает понятия (D1/D2/D3).
+
         Args:
-            lesson_id (str): ID урока
-            
-        Returns:
-            bool: True если операция прошла успешно, иначе False
+            lesson_id: ID урока
+            pass_mode: normal | no_test | task_not_required | forced
         """
         try:
-            # Инициализируем структуру, если её нет
-            if "lesson_completion_status" not in self.state_manager.state["learning"]:
-                self.state_manager.state["learning"]["lesson_completion_status"] = {}
+            learning = self.state_manager.state["learning"]
+            learning.setdefault("lesson_completion_status", {})
+            learning.setdefault("lesson_pass_mode", {})
+            learning.setdefault("completed_lessons", [])
+            learning.setdefault("visited_lessons", [])
 
-            # Отмечаем урок как завершенный принудительно
-            self.state_manager.state["learning"]["lesson_completion_status"][lesson_id] = True
+            learning["lesson_completion_status"][lesson_id] = True
+            learning["lesson_pass_mode"][lesson_id] = pass_mode
+            if lesson_id not in learning["completed_lessons"]:
+                learning["completed_lessons"].append(lesson_id)
+            if lesson_id not in learning["visited_lessons"]:
+                learning["visited_lessons"].append(lesson_id)
 
-            self.logger.info(f"Урок {lesson_id} отмечен как завершенный принудительно")
+            self.logger.info(
+                "Урок %s отмечен как завершённый (mode=%s)", lesson_id, pass_mode
+            )
             from student_knowledge import mark_lesson_concepts_passed
 
             mark_lesson_concepts_passed(self.state_manager, lesson_id)
@@ -308,16 +308,17 @@ class LearningProgressManager:
             if "lesson_completion_status" not in self.state_manager.state["learning"]:
                 self.state_manager.state["learning"]["lesson_completion_status"] = {}
 
-            # Отмечаем урок как незавершенный
-            self.state_manager.state["learning"]["lesson_completion_status"][
-                lesson_id
-            ] = False
-
-            # Также удаляем оценку (урок нужно пересдать)
-            if "lesson_scores" in self.state_manager.state["learning"]:
-                self.state_manager.state["learning"]["lesson_scores"].pop(
-                    lesson_id, None
-                )
+            learning = self.state_manager.state["learning"]
+            learning.setdefault("lesson_completion_status", {})
+            learning["lesson_completion_status"][lesson_id] = False
+            # D5/TST-08: лучший балл теста сохраняем; урок просто снова открыт.
+            completed = learning.setdefault("completed_lessons", [])
+            if lesson_id in completed:
+                completed.remove(lesson_id)
+            # pass_mode прошлого прохождения оставляем в истории? Сбрасываем —
+            # иначе дашборд покажет «пройден без сдачи» у незавершённого.
+            modes = learning.setdefault("lesson_pass_mode", {})
+            modes.pop(lesson_id, None)
 
             self.logger.info(f"Урок {lesson_id} отмечен как незавершенный")
 
@@ -420,6 +421,21 @@ class LearningProgressManager:
 
         except Exception as e:
             self.logger.error(f"Ошибка при пересчете статистики курса: {str(e)}")
+
+    def increment_offtopic_count(self, lesson_id):
+        """Увеличивает счётчик вопросов вне курса (D8)."""
+        learning = self.state_manager.state["learning"]
+        counts = learning.setdefault("offtopic_count", {})
+        counts[lesson_id] = int(counts.get(lesson_id) or 0) + 1
+        self.state_manager.save_state()
+        return counts[lesson_id]
+
+    def get_offtopic_count(self, lesson_id):
+        return int(
+            (self.state_manager.state["learning"].get("offtopic_count") or {}).get(
+                lesson_id, 0
+            )
+        )
 
     def get_lesson_score(self, lesson_id):
         """

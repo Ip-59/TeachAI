@@ -297,28 +297,16 @@ class StartupDashboard:
             state = self.state_manager.state
             learning = state.get("learning", {})
             
-            completed_lessons = learning.get("completed_lessons", [])
-            course_plan = state.get("course_plan", {})
-            sections = course_plan.get("sections", [])
-            
-            # Подсчитываем общее количество уроков
-            total_lessons = 0
-            for section in sections:
-                for topic in section.get("topics", []):
-                    total_lessons += len(topic.get("lessons", []))
-            
-            # Процент завершения
-            progress_percent = learning.get("course_progress_percent", 0)
-            if total_lessons > 0:
-                progress_percent = (len(completed_lessons) / total_lessons) * 100
-            
+            # D1: один источник — is_lesson_completed через calculate_course_progress.
+            progress = self.state_manager.learning_progress.calculate_course_progress()
             return {
-                "completed_lessons_count": len(completed_lessons),
-                "total_lessons_count": total_lessons,
-                "progress_percent": round(progress_percent, 1),
+                "completed_lessons_count": progress["completed"],
+                "total_lessons_count": progress["total"],
+                "progress_percent": round(progress["percent"], 1),
                 "current_lesson": learning.get("current_lesson", ""),
                 "current_section": learning.get("current_section", ""),
-                "current_topic": learning.get("current_topic", "")
+                "current_topic": learning.get("current_topic", ""),
+                "lesson_pass_mode": learning.get("lesson_pass_mode") or {},
             }
         except Exception as e:
             self.logger.error(f"Ошибка при получении статистики прогресса: {str(e)}")
@@ -345,9 +333,9 @@ class StartupDashboard:
             # Общее время обучения (примерная оценка)
             user_profile = state.get("user", {})
             lesson_duration = user_profile.get("lesson_duration_minutes", 30)
-            completed_lessons = state.get("learning", {}).get("completed_lessons", [])
-            
-            estimated_total_time = len(completed_lessons) * lesson_duration
+            # D1: время только по реально пройденным.
+            progress = self.state_manager.learning_progress.calculate_course_progress()
+            estimated_total_time = progress["completed"] * lesson_duration
             
             return {
                 "days_since_last_access": days_since_last,

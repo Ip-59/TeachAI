@@ -136,7 +136,6 @@ class LessonInteraction:
                         )
                         # Сохраняем результат для последующих кликов
                         self.lesson_interface.current_lesson_concepts = concepts
-                    self._remember_concepts(concepts)
 
                     # Создаем список понятий
                     concepts_list = []
@@ -288,7 +287,6 @@ class LessonInteraction:
                             )
                         )
                         self.lesson_interface.current_lesson_concepts = concepts
-                    self._remember_concepts(concepts)
 
                     concepts_list = []
                     for concept_data in concepts:

@@ -333,8 +333,10 @@ class AssessmentResultsHandler:
                 display(lesson_widget)
 
             def on_continue_anyway_clicked(b):
-                # ИСПРАВЛЕНО: Принудительно отмечаем урок как завершенный
-                self.state_manager.mark_lesson_complete_manually(lesson_id)
+                # D3: пройден без сдачи теста
+                self.state_manager.mark_lesson_complete_manually(
+                    lesson_id, pass_mode="no_test"
+                )
 
                 # Активируем кнопку "Контрольные задания"
                 self._activate_control_tasks_button()

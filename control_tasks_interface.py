@@ -520,7 +520,7 @@ class ControlTasksInterface:
                     if sm.can_open_control_tasks(lesson_id):
                         # Не вызываем save_lesson_assessment: это дописывало бы
                         # в lesson_attempts фиктивную «попытку теста».
-                        sm.mark_lesson_complete_manually(lesson_id)
+                        sm.mark_lesson_complete_manually(lesson_id, pass_mode="normal")
                         self.logger.info(
                             "Урок %s завершён: КЗ верно, тест пройден или обойдён",
                             lesson_id,
@@ -727,7 +727,9 @@ class ControlTasksInterface:
             lesson_id = self.lesson_interface.current_lesson_id
             if lesson_id:
                 # Отмечаем урок как завершенный вручную
-                self.lesson_interface.state_manager.mark_lesson_complete_manually(lesson_id)
+                self.lesson_interface.state_manager.mark_lesson_complete_manually(
+                    lesson_id, pass_mode="forced"
+                )
                 self.logger.info(f"Урок {lesson_id} принудительно отмечен как завершенный")
                 
                 # Принудительно сохраняем состояние
@@ -791,7 +793,9 @@ class ControlTasksInterface:
             if lesson_id:
                 # ИСПРАВЛЕНО: Урок считается пройденным при пропуске контрольного задания 
                 # независимо от результата теста
-                self.lesson_interface.state_manager.mark_lesson_complete_manually(lesson_id)
+                self.lesson_interface.state_manager.mark_lesson_complete_manually(
+                    lesson_id, pass_mode="task_not_required"
+                )
                 self.logger.info(f"Урок {lesson_id} отмечен как пройденный (контрольное задание не требуется)")
                 
                 # Принудительно сохраняем состояние

@@ -37,6 +37,7 @@ class StateManager:
 
         # Загружаем состояние
         self.state = self._load_state()
+        self._run_state_migrations()
         from course_portfolio import migrate_state
 
         if migrate_state(self.state):
@@ -46,6 +47,7 @@ class StateManager:
         # Инициализируем специализированные менеджеры
         self.user_profile = UserProfileManager(self)
         self.learning_progress = LearningProgressManager(self)
+        self._finish_state_migrations()
         self.course_data = CourseDataManager(self)
 
         self.logger.info(
@@ -130,6 +132,9 @@ class StateManager:
                 "current_topic": "",
                 "current_lesson": "",
                 "completed_lessons": [],
+                "visited_lessons": [],
+                "lesson_pass_mode": {},
+                "offtopic_count": {},
                 "lesson_scores": {},
                 "lesson_attempts": {},
                 "lesson_completion_status": {},
@@ -157,6 +162,34 @@ class StateManager:
                 "version": "1.0.0",
             },
         }
+
+    def _run_state_migrations(self):
+        """Фаза 1: новые ключи и attempts. Фильтрация completed — после managers."""
+        try:
+            from state_migration import ensure_learning_fields, migrate_control_task_attempts
+
+            changed = ensure_learning_fields(self.state)
+            changed = migrate_control_task_attempts(self.state) or changed
+            self._migration_dirty = changed
+        except Exception as e:
+            self.logger.error(f"Ошибка миграции состояния (фаза 1): {e}")
+            self._migration_dirty = False
+
+    def _finish_state_migrations(self):
+        """Фаза 2: разделить visited/completed (нужен is_lesson_completed)."""
+        try:
+            from state_migration import migrate_visited_and_completed
+
+            changed = migrate_visited_and_completed(
+                self.state, self.is_lesson_completed
+            )
+            if changed or getattr(self, "_migration_dirty", False):
+                self.save_state()
+            self._migration_dirty = False
+        except Exception as e:
+            self.logger.error(f"Ошибка миграции состояния (фаза 2): {e}")
+            self._migration_dirty = False
+
 
     def save_state(self):
         """
@@ -270,8 +303,10 @@ class StateManager:
     def is_lesson_completed(self, lesson_id):
         return self.learning_progress.is_lesson_completed(lesson_id)
 
-    def mark_lesson_complete_manually(self, lesson_id):
-        return self.learning_progress.mark_lesson_complete_manually(lesson_id)
+    def mark_lesson_complete_manually(self, lesson_id, pass_mode: str = "forced"):
+        return self.learning_progress.mark_lesson_complete_manually(
+            lesson_id, pass_mode=pass_mode
+        )
 
     def is_test_passed(self, lesson_id):
         return self.learning_progress.is_test_passed(lesson_id)
@@ -296,6 +331,12 @@ class StateManager:
 
     def get_questions_count(self, lesson_id):
         return self.learning_progress.get_questions_count(lesson_id)
+
+    def increment_offtopic_count(self, lesson_id):
+        return self.learning_progress.increment_offtopic_count(lesson_id)
+
+    def get_offtopic_count(self, lesson_id):
+        return self.learning_progress.get_offtopic_count(lesson_id)
 
     def reset_questions_count(self, lesson_id):
         return self.learning_progress.reset_questions_count(lesson_id)
@@ -371,35 +412,38 @@ class StateManager:
         return self.course_data.get_lesson_data(section_id, topic_id, lesson_id)
 
     def save_control_task_result(
-        self, lesson_id: str, task_title: str, is_correct: bool
+        self, lesson_id: str, task_title: str, is_correct: bool, with_hint: bool = False
     ):
-        """
-        Сохраняет результат выполнения контрольного задания.
-
-        Args:
-            lesson_id (str): ID урока
-            task_title (str): Название задания
-            is_correct (bool): Правильно ли выполнено задание
-        """
+        """Сохраняет попытку КЗ: лучший результат + история (D4/D5)."""
         try:
-            # Инициализируем секцию контрольных заданий если её нет
-            if "control_tasks" not in self.state:
-                self.state["control_tasks"] = {}
-
-            # Сохраняем результат
-            self.state["control_tasks"][lesson_id] = {
-                "task_title": task_title,
-                "is_correct": is_correct,
-                "completed_at": datetime.now().isoformat(),
-            }
-
-            # Сохраняем состояние
-            self.save_state()
-
-            self.logger.info(
-                f"Результат контрольного задания сохранен: {lesson_id} - {is_correct}"
+            tasks = self.state.setdefault("control_tasks", {})
+            rec = tasks.get(lesson_id) or {}
+            attempts = list(rec.get("attempts") or [])
+            attempts.append(
+                {
+                    "is_correct": bool(is_correct),
+                    "timestamp": datetime.now().isoformat(),
+                    "with_hint": bool(with_hint),
+                }
             )
-
+            prev_best = bool(rec.get("best_is_correct", rec.get("is_correct", False)))
+            best = prev_best or bool(is_correct)
+            tasks[lesson_id] = {
+                "task_title": task_title,
+                "is_correct": best,  # совместимость: «лучший»
+                "best_is_correct": best,
+                "with_hint": bool(rec.get("with_hint", False)) or bool(with_hint),
+                "completed_at": datetime.now().isoformat(),
+                "attempts": attempts,
+            }
+            self.save_state()
+            self.logger.info(
+                "Результат КЗ сохранён: %s correct=%s best=%s hint=%s",
+                lesson_id,
+                is_correct,
+                best,
+                with_hint,
+            )
         except Exception as e:
             self.logger.error(f"Ошибка при сохранении результата контрольного задания: {str(e)}")
 
