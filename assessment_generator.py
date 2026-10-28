@@ -6,7 +6,11 @@
 import json
 import re
 import random
-from content_utils import BaseContentGenerator
+from content_utils import BaseContentGenerator, parse_llm_json
+
+
+class AssessmentFormatError(Exception):
+    """Ответ модели не удалось превратить в тест (формат, число вариантов, индекс ответа)."""
 
 
 class AssessmentGenerator(BaseContentGenerator):
@@ -70,32 +74,45 @@ class AssessmentGenerator(BaseContentGenerator):
                 {"role": "user", "content": prompt},
             ]
 
-            content = self.make_api_request(
-                messages=messages,
-                temperature=0.5,  # Уменьшаем temperature для более точного следования материалу
-                max_tokens=3000,
-                response_format={"type": "json_object"},
-            )
+            questions = None
+            for attempt in (1, 2):
+                content = self.make_api_request(
+                    messages=messages,
+                    temperature=0.5,  # Уменьшаем temperature для более точного следования материалу
+                    max_tokens=3000,
+                    response_format={"type": "json_object"},
+                )
 
-            # Сохраняем отладочную информацию
-            self.save_debug_response(
-                "assessment",
-                prompt,
-                content,
-                {
-                    "course": course,
-                    "section": section,
-                    "topic": topic,
-                    "lesson": lesson_title,
-                    "num_questions": num_questions,
-                },
-            )
+                # Сохраняем отладочную информацию
+                self.save_debug_response(
+                    "assessment",
+                    prompt,
+                    content,
+                    {
+                        "course": course,
+                        "section": section,
+                        "topic": topic,
+                        "lesson": lesson_title,
+                        "num_questions": num_questions,
+                        "attempt": attempt,
+                    },
+                )
 
-            questions_data = json.loads(content)
-            questions = self._extract_questions_from_response(questions_data)
+                try:
+                    questions = self._parse_questions(content)
+                    break
+                except AssessmentFormatError as format_error:
+                    self.logger.warning(
+                        "Тест, попытка %s/2: модель вернула неверный формат: %s",
+                        attempt,
+                        format_error,
+                    )
 
-            if not questions or len(questions) == 0:
-                raise Exception("API вернул пустой список вопросов")
+            if questions is None:
+                raise AssessmentFormatError(
+                    "модель дважды вернула тест в неподходящем виде. "
+                    "Вернитесь к уроку и откройте тест ещё раз."
+                )
 
             # ПРИНУДИТЕЛЬНАЯ РАНДОМИЗАЦИЯ - поскольку API не следует инструкциям
             randomized_questions = self._force_randomize_questions(questions)
@@ -110,6 +127,22 @@ class AssessmentGenerator(BaseContentGenerator):
             raise Exception(
                 f"Не удалось сгенерировать вопросы для урока '{lesson}': {str(e)}"
             )
+
+    def _parse_questions(self, content):
+        """JSON ответа -> список вопросов; любой сбой формата — AssessmentFormatError."""
+        try:
+            questions_data = parse_llm_json(content)
+        except ValueError as exc:
+            raise AssessmentFormatError(f"ответ не JSON: {exc}") from exc
+        try:
+            questions = self._extract_questions_from_response(questions_data)
+        except AssessmentFormatError:
+            raise
+        except Exception as exc:
+            raise AssessmentFormatError(str(exc)) from exc
+        if not questions:
+            raise AssessmentFormatError("API вернул пустой список вопросов")
+        return questions
 
     def _clean_html_for_analysis(self, lesson_content):
         """

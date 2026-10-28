@@ -33,6 +33,48 @@ def append_question_reminder(answer_html: str, questions_count: int) -> str:
     return answer_html
 
 
+
+def parse_llm_json(text):
+    """Разбирает JSON из ответа модели; снимает обёртку ```json ... ``` и лишний текст вокруг.
+
+    Raises:
+        ValueError: (json.JSONDecodeError — его подкласс), если JSON не найден.
+    """
+    raw = (text or "").strip()
+    fenced = re.match(r"^```[A-Za-z0-9_-]*[ \t]*\n?(.*?)\n?```\s*$", raw, re.S)
+    if fenced:
+        raw = fenced.group(1).strip()
+    try:
+        return json.loads(raw)
+    except ValueError:
+        starts = [i for i in (raw.find("{"), raw.find("[")) if i != -1]
+        end = max(raw.rfind("}"), raw.rfind("]"))
+        if starts and end > min(starts):
+            return json.loads(raw[min(starts) : end + 1])
+        raise
+
+
+_NON_RETRYABLE_STATUS = {400: "Запрос отклонён сервером (400).", 401: "Неверный API-ключ или нет доступа (401). Проверьте ключ в .env.",
+                         403: "Доступ запрещён (403). Проверьте ключ, регион и маршрут.", 404: "Модель или адрес API не найдены (404)."}
+
+
+def non_retryable_api_error(exc: Exception) -> str:
+    """Русское пояснение для ошибок, которые не лечатся повтором; "" — повторять можно.
+
+    401/403/404/400 и нехватка квоты не пройдут со второй попытки.
+    Таймауты, обрывы связи, 429 и 5xx повторяются как раньше.
+    """
+    status = getattr(exc, "status_code", None)
+    if status is None:
+        match = re.search(r"Error code:\s*(\d{3})", str(exc))
+        status = int(match.group(1)) if match else None
+    if status in _NON_RETRYABLE_STATUS:
+        return _NON_RETRYABLE_STATUS[status]
+    if "insufficient_quota" in str(exc).lower():
+        return "Недостаточно средств или превышена квота API."
+    return ""
+
+
 class ContentUtils:
     """Базовые утилиты для работы с контентом."""
 
@@ -612,6 +654,11 @@ class BaseContentGenerator:
                 )
             except Exception as e:
                 last_exception = e
+                fatal = non_retryable_api_error(e)
+                if fatal:
+                    # Повтор не поможет: ключ, права или запрос не изменятся.
+                    self.logger.error(f"Запрос к LLM не повторяется: {str(e)}")
+                    raise Exception(f"{fatal} Исходная ошибка: {str(e)}") from e
                 self.logger.warning(
                     f"Попытка {attempt}/{retries} неудачна: {str(e)}. "
                     f"Повтор через {delay} сек..."

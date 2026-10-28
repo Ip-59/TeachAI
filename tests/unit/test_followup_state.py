@@ -5,6 +5,7 @@
 import json
 import logging
 import os
+from types import SimpleNamespace
 
 import pytest
 
@@ -68,13 +69,14 @@ def test_ST_11_broken_state_does_not_crash(caplog, isolated_project):
         sm = StateManager()
     assert "user" in sm.state and "learning" in sm.state
     assert "Ошибка при загрузке состояния" in caplog.text
+    # битый файл не должен пропасть при ближайшем сохранении
+    assert sm.save_state() is True
+    backups = list(path.parent.glob("state.json.broken-*"))
+    assert len(backups) == 1
+    assert backups[0].read_text(encoding="utf-8") == "{битый"
+    assert json.loads(path.read_text(encoding="utf-8"))["user"] == sm.state["user"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="ST-12: save_state пишет state.json напрямую, без tmp+rename (state_manager.py:166-167)",
-)
 def test_ST_12_save_state_is_atomic(monkeypatch):
     renamed: list[tuple[str, str]] = []
     real_replace = os.replace
@@ -88,6 +90,22 @@ def test_ST_12_save_state_is_atomic(monkeypatch):
     sm = make_state()
     assert sm.save_state() is True
     assert renamed, "запись state не проходит через rename/replace"
+
+
+def test_ST_12_failed_write_keeps_previous_state(monkeypatch):
+    sm = make_state()
+    path = sm.state_file
+    before = path.read_text(encoding="utf-8")
+    sm.state["user"]["name"] = "Новое имя"
+
+    def broken_dump(obj, fp, *args, **kwargs):
+        fp.write('{"оборвано')
+        raise OSError("диск переполнен")
+
+    monkeypatch.setattr(json, "dump", broken_dump)
+    assert sm.save_state() is False
+    assert path.read_text(encoding="utf-8") == before
+    assert not list(path.parent.glob("*.tmp"))
 
 
 def test_LSN_12_locked_lesson_is_rejected(caplog):
@@ -106,38 +124,40 @@ def test_LSN_12_locked_lesson_is_rejected(caplog):
     assert sm.state["learning"]["current_lesson"] == "lesson-1-1-1"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="CRS-10: слот пишется по id плана, а повтор ищет id каталога (course_selection_ui.py:307, course_portfolio.py:236)",
-)
-def test_CRS_10_plan_id_other_than_catalog_stays_one_slot(fake_llm):
-    """Повторный старт каталожного курса не должен плодить слот с id из ответа модели."""
-    from course_plan_generator import CoursePlanGenerator
-    from course_portfolio import begin_new_course, has_course
+def test_CRS_10_plan_id_other_than_catalog_stays_one_slot(fake_llm, monkeypatch):
+    """Повторный старт каталожного курса не должен плодить слот с id из ответа модели.
+
+    Идёт через настоящий course_selection_ui._start_course; подменены только показ
+    сообщений и открытие урока.
+    """
+    import course_selection_ui
+    from content_generator import ContentGenerator
     from helpers import load_plan
     from state_manager import StateManager
 
     plan = load_plan()
     plan["id"] = "llm-renamed-id"
     fake_llm.use("plan", plan)
+    monkeypatch.setattr(course_selection_ui, "_open_lesson_after_plan", lambda *_a, **_k: None)
+    monkeypatch.setattr(course_selection_ui, "display", lambda *_a, **_k: None)
     sm = StateManager()
-    gen = CoursePlanGenerator("sk-test-not-a-real-key")
+    setup = SimpleNamespace(
+        state_manager=sm,
+        content_generator=ContentGenerator("sk-test-not-a-real-key"),
+        system_logger=SimpleNamespace(log_activity=lambda **_k: None),
+        utils=SimpleNamespace(
+            create_styled_message=lambda text, *_a, **_k: text,
+            format_api_error=lambda exc, context="": f"{context}: {exc}",
+        ),
+    )
+    profile = {"total_study_hours": 3, "lesson_duration_minutes": 30}
 
-    def start_once() -> str:
-        if has_course(sm.state, COURSE["id"]):
-            return "resume"
-        begin_new_course(sm.state)
-        course_plan = gen.generate_course_plan(COURSE, 3, 30)
-        course_plan["source"] = COURSE["source"]
-        sm.save_course_plan(course_plan)
-        sm.update_learning_progress(course=COURSE["id"])
-        return "created"
-
-    assert start_once() == "created"
-    assert start_once() == "resume"
-    assert len(sm.state["courses"]) == 1
-    assert COURSE["id"] in sm.state["courses"]
+    course_selection_ui._start_course(setup, COURSE, profile)
+    assert fake_llm.count("plan") == 1
+    course_selection_ui._start_course(setup, COURSE, profile)
+    assert fake_llm.count("plan") == 1, "повторный старт сгенерировал план заново"
+    assert list(sm.state["courses"]) == [COURSE["id"]]
+    assert sm.state["active_course_id"] == COURSE["id"]
 
 
 def test_LLM_04_broken_json_is_a_clear_error(fake_llm):
@@ -188,11 +208,6 @@ def test_LLM_04_broken_json_is_a_clear_error(fake_llm):
     assert "Traceback" not in verdict.reason
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="LLM-05: json.loads не снимает обёртку ```json (course_plan_generator.py:72, assessment_generator.py:94, concepts_generator.py:90)",
-)
 def test_LLM_05_fenced_json_for_plan_test_and_concepts(fake_llm):
     from assessment_generator import AssessmentGenerator
     from concepts_generator import ConceptsGenerator
@@ -251,28 +266,82 @@ def test_LLM_05_fenced_json_for_judge_and_domain(fake_llm):
     assert classify_course_topic("Кройка", generator=api).status == "out"
 
 
-def test_LLM_06_correct_option_zero_and_four(fake_llm):
-    """0 приводится к 1. Индекс 4 сразу даёт ошибку: повторного запроса к модели нет.
+def test_LLM_05_fenced_json_for_relevance(fake_llm):
+    fake_llm.use(
+        "relevance",
+        _fenced({"scope": "lesson", "is_relevant": True, "confidence": 90, "reason": "По теме."}),
+    )
+    from relevance_checker import RelevanceChecker
 
-    Пакет 2: один повтор, затем понятное сообщение ученику.
-    """
+    result = RelevanceChecker("sk-test-not-a-real-key").check_question_relevance(
+        user_question="Что такое переменная?",
+        lesson_content="<p>Переменная хранит значение.</p>",
+        lesson_data=LESSON_META,
+        lesson_raw_content="Переменная хранит значение.",
+    )
+    assert result["is_relevant"] is True
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '{"a": 1}',
+        '```json\n{"a": 1}\n```',
+        '```\n{"a": 1}\n```',
+        'Вот ответ:\n```json\n{"a": 1}\n```',
+        '  {"a": 1}  ',
+    ],
+)
+def test_LLM_05_parse_llm_json_variants(text):
+    from content_utils import parse_llm_json
+
+    assert parse_llm_json(text) == {"a": 1}
+
+
+def test_LLM_05_parse_llm_json_rejects_garbage():
+    from content_utils import parse_llm_json
+
+    with pytest.raises(ValueError):
+        parse_llm_json("это не json")
+
+
+def _one_question(index: int) -> dict:
+    return {
+        "questions": [
+            {"text": "Вопрос?", "options": ["a", "b", "c"], "correct_option": index, "explanation": "x"}
+        ]
+    }
+
+
+def test_LLM_06_correct_option_zero_is_normalized_to_one():
     from assessment_generator import AssessmentGenerator
 
     gen = AssessmentGenerator("sk-test-not-a-real-key")
-
-    def questions(index: int) -> dict:
-        return {
-            "questions": [
-                {
-                    "text": "Вопрос?",
-                    "options": ["a", "b", "c"],
-                    "correct_option": index,
-                    "explanation": "x",
-                }
-            ]
-        }
-
-    normalized = gen._extract_questions_from_response(questions(0))
+    normalized = gen._extract_questions_from_response(_one_question(0))
     assert normalized[0]["correct_option"] == 1
-    with pytest.raises(Exception, match="Некорректный индекс"):
-        gen._extract_questions_from_response(questions(4))
+
+
+def test_LLM_06_bad_index_then_good_answer_is_retried_once(fake_llm):
+    from assessment_generator import AssessmentGenerator
+
+    fake_llm.use("assessment", _one_question(4), _one_question(2))
+    got = AssessmentGenerator("sk-test-not-a-real-key").generate_assessment(
+        "Курс", "Раздел", "Тема", "Урок", "Текст урока", 1
+    )
+    assert fake_llm.count("assessment") == 2
+    assert len(got) == 1
+
+
+def test_LLM_06_two_bad_answers_give_a_clear_message(fake_llm):
+    from assessment_generator import AssessmentGenerator
+
+    fake_llm.use("assessment", _one_question(4))
+    with pytest.raises(Exception) as err:
+        AssessmentGenerator("sk-test-not-a-real-key").generate_assessment(
+            "Курс", "Раздел", "Тема", "Урок", "Текст урока", 1
+        )
+    assert fake_llm.count("assessment") == 2
+    message = str(err.value)
+    assert "дважды" in message
+    assert "Некорректный индекс" not in message
+    assert "{" not in message and "Traceback" not in message

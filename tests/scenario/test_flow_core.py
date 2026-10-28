@@ -201,3 +201,17 @@ def test_TST_03_empty_test_is_not_accepted(lesson):
     lesson.click("Пройти тест")
     lesson.click("Завершить тест")
     assert L1 not in lesson.state()["learning"].get("lesson_attempts", {})
+
+
+def test_LLM_06_bad_test_twice_shows_one_clear_message(lesson):
+    bad = {"questions": [{"text": "В?", "options": ["a", "b", "c"], "correct_option": 4, "explanation": "x"}]}
+    lesson.llm_use("assessment", bad)
+    lesson.click("Пройти тест")
+    assert lesson.llm_calls().count("assessment") == 2
+    texts = lesson.eval(
+        "[w.value for w in __import__('ipywidgets').Widget.widgets.values() "
+        "if type(w).__name__ == 'HTML' and 'дважды' in w.value]")
+    assert texts, "ученик не увидел понятного сообщения"
+    assert texts[-1].count("Не удалось сгенерировать вопросы") == 1
+    assert "Некорректный индекс" not in texts[-1]
+    assert lesson.buttons("Вернуться к уроку")

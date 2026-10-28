@@ -5,7 +5,7 @@
 
 import json
 import re
-from content_utils import BaseContentGenerator
+from content_utils import BaseContentGenerator, parse_llm_json
 from student_content import render_student_content
 
 
@@ -87,7 +87,7 @@ class ConceptsGenerator(BaseContentGenerator):
                 },
             )
 
-            concepts_data = json.loads(response_content)
+            concepts_data = parse_llm_json(response_content)
             concepts = self._extract_concepts_from_response(concepts_data)
 
             if not concepts or len(concepts) == 0:
@@ -119,7 +119,7 @@ class ConceptsGenerator(BaseContentGenerator):
                         response_format={"type": "json_object"},
                     )
                     
-                    concepts_data = json.loads(response_content)
+                    concepts_data = parse_llm_json(response_content)
                     concepts = self._extract_concepts_from_response(concepts_data)
                     
                     if not concepts or len(concepts) == 0:

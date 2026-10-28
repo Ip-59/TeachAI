@@ -144,9 +144,13 @@ class ConfigManager:
             file_path (str): Путь для сохранения образца файла
 
         Returns:
-            bool: True если файл создан успешно, иначе False
+            bool: True если файл создан или уже существует, иначе False
         """
         try:
+            if os.path.exists(file_path):
+                # Образец мог быть отредактирован пользователем: не затираем.
+                self.logger.info(f"Образец .env уже есть, не перезаписываем: {file_path}")
+                return True
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write("# Конфигурационный файл для TeachAI\n\n")
                 f.write("# API ключ OpenAI (маршрут direct / proxy)\n")

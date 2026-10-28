@@ -15,11 +15,13 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
         "Урок про установщик и флажок Add Python to PATH.",
     )
     lowered = prompt.lower()
-    assert "как преподаватель" in lowered
+    assert "не сверка фраз с текстом" in lowered
     assert "точной фразы в тексте может не быть" in lowered
     assert "если понятие или термин из вопроса встречается" not in lowered
     assert "не рассматривается в тексте" in lowered
+    assert "scope=lesson" in lowered
     assert "scope=course" in lowered
+    assert "scope=outside" in lowered
     assert "3.15" not in lowered
 
 

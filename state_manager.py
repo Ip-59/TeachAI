@@ -5,6 +5,7 @@
 """
 
 import os
+import shutil
 import json
 import logging
 from pathlib import Path
@@ -95,7 +96,19 @@ class StateManager:
                 return self._create_default_state()
         except Exception as e:
             self.logger.error(f"Ошибка при загрузке состояния: {str(e)}")
+            self._backup_unreadable_state()
             return self._create_default_state()
+
+    def _backup_unreadable_state(self):
+        """Сохраняет нечитаемый state.json рядом, чтобы следующее сохранение его не затёрло."""
+        try:
+            if self.state_file.exists():
+                stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+                backup = self.state_file.with_name(f"{self.state_file.name}.broken-{stamp}")
+                shutil.copy2(self.state_file, backup)
+                self.logger.error(f"Нечитаемый файл состояния сохранён как {backup}")
+        except Exception as backup_error:
+            self.logger.error(f"Не удалось сохранить копию файла состояния: {backup_error}")
 
     def _create_default_state(self):
         """
@@ -162,9 +175,18 @@ class StateManager:
             # Создаем директорию, если она не существует
             self.state_file.parent.mkdir(exist_ok=True, parents=True)
 
-            # Сохраняем состояние в файл
-            with open(self.state_file, "w", encoding="utf-8") as f:
-                json.dump(self.state, f, ensure_ascii=False, indent=2)
+            # Пишем во временный файл и подменяем одним действием: сбой посреди
+            # записи не оставит state.json обрезанным.
+            tmp_file = self.state_file.with_name(self.state_file.name + ".tmp")
+            try:
+                with open(tmp_file, "w", encoding="utf-8") as f:
+                    json.dump(self.state, f, ensure_ascii=False, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_file, self.state_file)
+            finally:
+                if tmp_file.exists():
+                    tmp_file.unlink()
 
             self.logger.debug(f"Состояние успешно сохранено в {self.state_file}")
             return True

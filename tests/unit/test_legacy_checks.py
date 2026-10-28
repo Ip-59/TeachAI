@@ -1,6 +1,6 @@
 """Существующие проверки в корне проекта (*_checks.py) запускаются как есть, но в изолированной среде.
 
-Файлы *_checks.py не двигаем и не правим — только вызываем их функции test_*.
+Файлы *_checks.py не двигаем; если проверка разошлась с кодом, её правят осознанно (так было с relevance_prompt_checks в пакете 2).
 """
 import importlib
 import inspect
@@ -11,11 +11,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 pytestmark = pytest.mark.unit
 
-# Устаревшие проверки (сами проверки правит пакет 2, здесь они помечены xfail).
-STALE = {
-    "relevance_prompt_checks::test_relevance_prompt_is_a_teacher_judgment":
-        "LEGACY: в промпте релевантности больше нет фразы «как преподаватель» (промпт переписан на scope, relevance_checker.py)",
-}
+# Устаревшие проверки: сейчас таких нет. Если проверка разошлась с кодом, правьте её или код,
+# а не добавляйте сюда запись без причины.
+STALE: dict[str, str] = {}
 
 
 def _cases():

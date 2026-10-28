@@ -156,9 +156,12 @@ class AssessmentInterface:
                 )
             except Exception as e:
                 self.logger.error(f"ОШИБКА при генерации вопросов: {str(e)}")
+                shown = str(e)
+                if not shown.startswith("Не удалось сгенерировать вопросы"):
+                    shown = f"Не удалось сгенерировать вопросы для теста: {shown}"
                 return self._create_error_interface(
                     "Ошибка при генерации теста",
-                    f"Не удалось сгенерировать вопросы для теста: {str(e)}",
+                    shown,
                     current_section,
                     current_topic,
                     current_lesson,

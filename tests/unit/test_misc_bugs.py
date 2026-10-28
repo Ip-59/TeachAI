@@ -5,7 +5,6 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="ZAP-02: create_sample_env перезаписывает существующий .env.sample (config.py:139-149)")
 def test_ZAP_02_sample_env_not_overwritten(isolated_project):
     from config import ConfigManager
 
@@ -39,7 +38,6 @@ def test_LSN_06_one_line_example_passes_quality_check():
     )
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="LLM-01: 401 повторяется 3 раза и объясняется «прокси» (content_utils.py:588-632)")
 def test_LLM_01_401_is_not_retried(fake_llm, monkeypatch):
     import time
     from course_plan_generator import CoursePlanGenerator
@@ -53,9 +51,9 @@ def test_LLM_01_401_is_not_retried(fake_llm, monkeypatch):
                       {"role": "user", "content": "x"}])
     assert fake_llm.count("plan") == 1
     assert "прокси" not in str(err.value).lower()
+    assert "ключ" in str(err.value).lower()
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="SEC-04: eval на выводе программы (result_checker.py:358)")
 def test_SEC_04_no_eval_on_program_output():
     from result_checker import extract_numpy_arrays
 

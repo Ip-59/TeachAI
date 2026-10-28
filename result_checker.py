@@ -3,6 +3,7 @@
 Содержит различные типы проверок для контрольных заданий.
 """
 
+import ast
 import math
 import inspect
 import re
@@ -355,7 +356,7 @@ def extract_numpy_arrays(text: str) -> List[Any]:
     arrays = []
     for match in re.finditer(r"\[[^\]]+\]", str(text)):
         try:
-            arrays.append(np.array(eval(match.group(0))))
+            arrays.append(np.array(ast.literal_eval(match.group(0))))
         except Exception:
             continue
     return arrays

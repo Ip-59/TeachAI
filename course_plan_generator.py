@@ -4,7 +4,7 @@
 """
 
 import json
-from content_utils import BaseContentGenerator
+from content_utils import BaseContentGenerator, parse_llm_json
 
 
 class CoursePlanGenerator(BaseContentGenerator):
@@ -69,7 +69,7 @@ class CoursePlanGenerator(BaseContentGenerator):
                 },
             )
 
-            course_plan = json.loads(response_content)
+            course_plan = parse_llm_json(response_content)
 
             self.logger.debug("Ключи плана от LLM: %s", list(course_plan.keys()))
 
@@ -171,8 +171,12 @@ class CoursePlanGenerator(BaseContentGenerator):
         """
         try:
             # Убеждаемся, что есть основные ключи
-            if "id" not in course_plan:
-                course_plan["id"] = course_data.get("id", "course-1")
+            # id слота курса всегда берём из каталога/запроса, а не из ответа модели:
+            # иначе повторный старт курса не найдёт слот и создаст второй.
+            if course_data.get("id"):
+                course_plan["id"] = course_data["id"]
+            elif "id" not in course_plan:
+                course_plan["id"] = "course-1"
 
             if "title" not in course_plan:
                 course_plan["title"] = course_data.get("title", "Курс")

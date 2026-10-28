@@ -5,7 +5,7 @@
 """
 
 import json
-from content_utils import BaseContentGenerator
+from content_utils import BaseContentGenerator, parse_llm_json
 
 
 class RelevanceChecker(BaseContentGenerator):
@@ -120,7 +120,7 @@ class RelevanceChecker(BaseContentGenerator):
                 },
             )
 
-            relevance_data = json.loads(response_content)
+            relevance_data = parse_llm_json(response_content)
             result = self._extract_relevance_from_response(relevance_data)
 
             self.logger.info(
