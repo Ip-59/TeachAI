@@ -171,9 +171,10 @@ class InteractiveCellWidget(CellWidgetBase):
 
         try:
             # Выполняем код студента через логику модуль
-            result, output, success = execute_student_code(
+            result, output, success, images = execute_student_code(
                 student_code, self.execution_namespace
             )
+            self._last_sandbox_images = images
             execution_time_ms = (time.time() - start_time) * 1000
 
             if success:
@@ -235,6 +236,13 @@ class InteractiveCellWidget(CellWidgetBase):
                     self.status_widget, "❌ Ошибка выполнения (см. вывод ниже)", "error"
                 )
                 self._update_stats_display()
+
+            try:
+                from code_sandbox import display_images
+
+                display_images(getattr(self, "_last_sandbox_images", None))
+            except Exception:
+                pass
 
         except Exception as e:
             update_status_widget(

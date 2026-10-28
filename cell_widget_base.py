@@ -109,7 +109,7 @@ class CellWidgetBase(widgets.VBox):
 
     def execute_code(self, code: str) -> Tuple[Any, str, bool]:
         """
-        Выполняет Python код и возвращает результат.
+        Выполняет Python код в дочернем процессе (D9) и возвращает результат.
 
         Args:
             code: Строка с Python кодом для выполнения
@@ -120,82 +120,31 @@ class CellWidgetBase(widgets.VBox):
         if not code.strip():
             return None, "Пустой код", False
 
-        # Захват stdout и stderr
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
+        from code_sandbox import run_student_code
 
-        stdout_capture = io.StringIO()
-        stderr_capture = io.StringIO()
+        if not hasattr(self, "execution_namespace") or self.execution_namespace is None:
+            self.execution_namespace = {}
 
-        result = None
-        success = True
+        sandbox = run_student_code(
+            code,
+            initial_vars=self.execution_namespace,
+            capture_variables=True,
+            eval_last_expression=True,
+        )
+        self._last_sandbox_images = list(sandbox.images or [])
+        if sandbox.timed_out:
+            return None, sandbox.error or "Код выполнялся слишком долго, возможно, бесконечный цикл", False
+        if sandbox.variables:
+            self.execution_namespace.update(sandbox.variables)
 
-        try:
-            # Перенаправляем вывод
-            sys.stdout = stdout_capture
-            sys.stderr = stderr_capture
+        output = sandbox.stdout or ""
+        if sandbox.stderr:
+            output = f"{output}\n{sandbox.stderr}" if output else sandbox.stderr
 
-            # Используем персистентное пространство имен для ячейки
-            if not hasattr(self, "execution_namespace") or not self.execution_namespace:
-                self.execution_namespace = {}
-                # Добавляем основные встроенные функции
-                self.execution_namespace.update(__builtins__)
+        if not sandbox.success:
+            return None, (sandbox.error or output or "Ошибка выполнения"), False
 
-            # Выполняем код в персистентном пространстве имен
-            exec(code, self.execution_namespace, self.execution_namespace)
-
-            # Пытаемся получить результат из последней строки (если это выражение)
-            lines = code.strip().split("\n")
-            if lines:
-                last_line = lines[-1].strip()
-                if (
-                    last_line
-                    and not last_line.startswith(
-                        (
-                            "print",
-                            "import",
-                            "from",
-                            "def",
-                            "class",
-                            "if",
-                            "for",
-                            "while",
-                            "try",
-                            "with",
-                            "#",
-                        )
-                    )
-                    and "=" not in last_line
-                    and not last_line.endswith(":")
-                    and "+=" not in last_line
-                    and "-=" not in last_line
-                    and "*=" not in last_line
-                    and "append(" not in last_line
-                ):
-                    try:
-                        result = eval(last_line, self.execution_namespace)
-                    except:
-                        pass
-
-        except Exception as e:
-            success = False
-            stderr_capture.write(f"Ошибка: {str(e)}\n")
-            stderr_capture.write(traceback.format_exc())
-
-        finally:
-            # Восстанавливаем stdout и stderr
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
-
-        # Получаем захваченный вывод
-        stdout_content = stdout_capture.getvalue()
-        stderr_content = stderr_capture.getvalue()
-
-        output = stdout_content
-        if stderr_content:
-            output += f"\n{stderr_content}" if output else stderr_content
-
-        return result, output, success
+        return sandbox.result, output, True
 
     def display_result(self, result: Any, output: str, success: bool):
         """
@@ -228,6 +177,10 @@ class CellWidgetBase(widgets.VBox):
                 # Выводим все одной командой
                 if result_lines:
                     print("\n".join(result_lines))
+
+            from code_sandbox import display_images
+
+            display_images(getattr(self, "_last_sandbox_images", None))
 
     def clear_output(self):
         """Очищает область вывода результатов."""

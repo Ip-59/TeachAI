@@ -96,22 +96,28 @@ class ExamplesValidation(BaseContentGenerator):
                 self.logger.warning("Пример %s без кода", index)
                 return False
             try:
-                with redirect_stdout(io.StringIO()):
-                    exec(code, {})
-            except ModuleNotFoundError as exc:
-                self.logger.info(
-                    "Пример %s: модуль не установлен (%s) — это не повод для fallback",
-                    index,
-                    exc,
-                )
-                return False
-            except ImportError as exc:
-                self.logger.info(
-                    "Пример %s: ImportError (%s) — покажем код от LLM без exec",
-                    index,
-                    exc,
-                )
-                return False
+                from code_sandbox import run_student_code
+
+                sandbox = run_student_code(code, capture_variables=False)
+                if sandbox.timed_out:
+                    self.logger.warning(
+                        "Пример %s: таймаут (%s)", index, sandbox.error
+                    )
+                    return False
+                if not sandbox.success:
+                    exc_type = sandbox.exception_type or ""
+                    if exc_type in {"ModuleNotFoundError", "ImportError"}:
+                        self.logger.info(
+                            "Пример %s: %s (%s) — покажем код от LLM без exec",
+                            index,
+                            exc_type,
+                            sandbox.error,
+                        )
+                        return False
+                    self.logger.warning(
+                        "Пример %s не выполняется: %s", index, sandbox.error
+                    )
+                    return False
             except Exception as exc:
                 self.logger.warning("Пример %s не выполняется: %s", index, exc)
                 return False

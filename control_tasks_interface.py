@@ -270,37 +270,37 @@ class ControlTasksInterface:
             results_output.children = []
             
             try:
-                from code_sandbox import run_or_raise
+                from code_sandbox import image_widgets, run_or_raise
 
                 full_code = ControlTasksGenerator.resolve_executable_code(
                     task_data.get("task_code", ""), code_input.value
                 )
                 sandbox_result = run_or_raise(full_code, capture_variables=False)
                 output = sandbox_result.stdout or ""
-                
-                # Создаем виджет для отображения результата
+                imgs = image_widgets(sandbox_result.images)
+
                 if output.strip():
                     result_html = widgets.HTML(
                         value=f"<p style='color: green;'>✅ Код выполнен успешно!</p><pre style='background: #f8f9fa; padding: 10px; border-radius: 4px;'>{output}</pre>"
+                    )
+                elif imgs:
+                    result_html = widgets.HTML(
+                        value="<p style='color: green;'>✅ Код выполнен успешно! График ниже.</p>"
                     )
                 else:
                     result_html = widgets.HTML(
                         value=(
                             "<p style='color: green;'>✅ Код выполнен успешно! (без текстового вывода)</p>"
-                            "<p style='color:#666;font-size:14px;'>Если строился график — он появится "
-                            "в области вывода ноутбука выше или ниже этого блока. "
+                            "<p style='color:#666;font-size:14px;'>"
                             "Для проверки задания нажмите «✓ Проверить решение».</p>"
                         )
                     )
-                
-                # Добавляем результат в контейнер
-                results_output.children = [result_html]
-                
+                results_output.children = [result_html, *imgs]
+
             except Exception as e:
                 error_html = widgets.HTML(
                     value=f"<p style='color: red;'>❌ Ошибка выполнения: {str(e)}</p>"
                 )
-                # Добавляем ошибку в контейнер
                 results_output.children = [error_html]
 
         def on_check_button_clicked(b):
@@ -469,7 +469,10 @@ class ControlTasksInterface:
                 retry_buttons = self._create_retry_buttons()
                 result_widgets.extend(retry_buttons)
 
-            # ИСПРАВЛЕНО: Добавляем все виджеты в контейнер результатов
+            # Графики из sandbox (matplotlib → PNG), если ученик их строил.
+            from code_sandbox import image_widgets
+
+            result_widgets.extend(image_widgets(validation_result.get("images") or []))
             results_output.children = result_widgets
 
         except Exception as e:

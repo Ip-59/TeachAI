@@ -9,16 +9,19 @@ from typing import List, Dict, Any, Optional, Tuple
 from IPython.display import display
 import ipywidgets as widgets
 
-# Импорты системы ячеек
-try:
-    from demo_cell_widget import create_demo_cell
-    from interactive_cell_widget import create_interactive_cell
-    from result_checker import check_result
+# ZAP-08/D9: модуля demo_cell_widget в репозитории нет — мёртвый импорт убран.
+# Раньше ImportError из-за него держал CELLS_AVAILABLE=False; сохраняем False,
+# чтобы не включать давно не гонявшийся UI integrate_cells / create_demo_cell.
+# Примеры выполняются через examples_display._create_fallback_code_widget + sandbox.
+CELLS_AVAILABLE = False
 
-    CELLS_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"Система ячеек недоступна: {e}")
-    CELLS_AVAILABLE = False
+try:
+    # Оставлено для прямого использования interactive-ячеек вне adapter.demo-пути.
+    from interactive_cell_widget import create_interactive_cell  # noqa: F401
+    from result_checker import check_result  # noqa: F401
+except ImportError:
+    create_interactive_cell = None  # type: ignore
+    check_result = None  # type: ignore
 
 
 class CellIntegrationAdapter:
@@ -183,36 +186,10 @@ class CellIntegrationAdapter:
         self, code_blocks: List[Dict[str, Any]]
     ) -> List[widgets.Widget]:
         """
-        Создает демонстрационные ячейки из блоков кода (только для Python-кода).
+        Демо-ячейки через отсутствующий demo_cell_widget больше не создаём (ZAP-08).
+        examples_display использует fallback-виджет с code_sandbox.
         """
-        if not self.cells_available:
-            return []
-        demo_cells = []
-        for i, block in enumerate(code_blocks):
-            if not self.is_python_code(block["code"]):
-                continue
-            try:
-                # ИСПРАВЛЕНО: Декодируем HTML-кодировку в коде блока
-                decoded_block_code = (
-                    block["code"].replace("&lt;", "<")
-                    .replace("&gt;", ">")
-                    .replace("&amp;", "&")
-                    .replace("&quot;", '"')
-                    .replace("&#x27;", "'")
-                )
-                
-                cell = create_demo_cell(
-                    code=decoded_block_code,
-                    title=f"Пример кода {i+1}",
-                    description="Запустите код, чтобы увидеть результат",
-                    show_code=True,
-                    auto_run=False,
-                )
-                demo_cells.append(cell)
-                self.logger.info(f"Создана демонстрационная ячейка {i+1}")
-            except Exception as e:
-                self.logger.error(f"Ошибка создания демонстрационной ячейки {i+1}: {e}")
-        return demo_cells
+        return []
 
     def generate_interactive_tasks(
         self, lesson_content: str, lesson_title: str

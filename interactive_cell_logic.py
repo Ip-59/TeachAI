@@ -11,7 +11,7 @@ from control_tasks_logger import log_attempt, get_cell_stats, is_cell_completed
 
 def execute_student_code(
     student_code: str, execution_namespace: Dict[str, Any]
-) -> Tuple[Any, str, bool]:
+) -> Tuple[Any, str, bool, list]:
     """
     Выполняет код студента и возвращает результат.
 
@@ -20,13 +20,20 @@ def execute_student_code(
         execution_namespace: Пространство имен для выполнения
 
     Returns:
-        Кортеж (результат, вывод, успех_выполнения)
+        Кортеж (результат, вывод, успех_выполнения, images_base64)
     """
     try:
-        # Выполняем код студента
-        exec(student_code, execution_namespace)
+        from code_sandbox import run_or_raise
 
-        # Ищем результат в пространстве имен
+        # В дочерний процесс передаём только JSON-сериализуемые значения.
+        sandbox = run_or_raise(
+            student_code,
+            initial_vars=execution_namespace,
+            capture_variables=True,
+        )
+        execution_namespace.clear()
+        execution_namespace.update(sandbox.variables)
+
         result = None
         result_vars = [
             "result",
@@ -38,17 +45,15 @@ def execute_student_code(
             "data",
             "values",
         ]
-
-        # Ищем переменные по имени
         for var_name in result_vars:
             if var_name in execution_namespace:
                 result = execution_namespace[var_name]
                 break
 
-        return result, "", True
+        return result, sandbox.stdout or "", True, list(sandbox.images or [])
 
     except Exception as e:
-        return None, str(e), False
+        return None, str(e), False, []
 
 
 def find_result_in_namespace(

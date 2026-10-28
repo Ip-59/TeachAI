@@ -71,6 +71,31 @@ def test_sandbox_heavy_import_timeout_selection():
     assert choose_timeout("import torch\nx=1") == HEAVY_TIMEOUT_SEC
 
 
+def test_sandbox_examples_path_runs():
+    """Путь примеров: examples_validation.validate_examples_execute через sandbox."""
+    import logging
+
+    from examples_validation import ExamplesValidation
+
+    validator = ExamplesValidation.__new__(ExamplesValidation)
+    validator.logger = logging.getLogger("test_sandbox_examples")
+    ok = validator.validate_examples_execute(
+        [{"title": "t", "description": "d", "code": "print('ok-example')"}]
+    )
+    assert ok is True
+
+
+def test_sandbox_examples_path_rejects_bad_code():
+    import logging
+
+    from examples_validation import ExamplesValidation
+
+    validator = ExamplesValidation.__new__(ExamplesValidation)
+    validator.logger = logging.getLogger("test_sandbox_examples_bad")
+    ok = validator.validate_examples_execute(
+        [{"title": "t", "description": "d", "code": "raise ValueError('boom')"}]
+    )
+    assert ok is False
 
 
 def test_sandbox_stdin_closed():
@@ -79,3 +104,60 @@ def test_sandbox_stdin_closed():
     result = run_student_code("input('> ')")
     assert not result.success
     assert result.exception_type == "EOFError"
+
+def test_sandbox_matplotlib_figure_captured():
+    pytest.importorskip("matplotlib")
+    from code_sandbox import run_student_code
+
+    result = run_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2, 3], [1, 4, 9])
+plt.show()
+print('ok')
+"""
+    )
+    assert result.success
+    assert "ok" in (result.stdout or "")
+    assert len(result.images) == 1
+    assert result.images[0].startswith("iVBOR")
+    assert "FigureCanvasAgg" not in (result.stderr or "")
+
+
+def test_sandbox_no_images_without_matplotlib_import():
+    from code_sandbox import run_student_code
+
+    result = run_student_code("print(123)")
+    assert result.success
+    assert result.images == []
+
+
+def test_sandbox_matplotlib_figure_count_cap():
+    pytest.importorskip("matplotlib")
+    from code_sandbox import MAX_SANDBOX_FIGURES, run_student_code
+
+    lines = ["import matplotlib.pyplot as plt"]
+    for i in range(MAX_SANDBOX_FIGURES + 5):
+        lines.append("plt.figure()")
+        lines.append(f"plt.plot([0, 1], [0, {i}])")
+    lines.append("print('drawn')")
+    result = run_student_code("\n".join(lines))
+    assert result.success
+    assert len(result.images) == MAX_SANDBOX_FIGURES
+    assert "Часть графиков не показана" in (result.stdout or "")
+
+
+def test_sandbox_image_widgets_helper():
+    pytest.importorskip("matplotlib")
+    ipywidgets = pytest.importorskip("ipywidgets")
+    from code_sandbox import image_widgets, run_student_code
+
+    result = run_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2], [3, 4])
+"""
+    )
+    widgets_list = image_widgets(result.images)
+    assert len(widgets_list) == 1
+    assert widgets_list[0].format == "png"
+    assert len(image_widgets([])) == 0
+    assert len(image_widgets(None)) == 0

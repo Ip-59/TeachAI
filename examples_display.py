@@ -37,7 +37,7 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
     )
     # Не widgets.Output: его поток в Jupyter дописывается по числу активных
     # областей вывода, и один щелчок печатает результат несколько раз.
-    result = widgets.HTML(value="")
+    result_box = widgets.VBox()
     busy_until = {"t": 0.0}
 
     def _on_run(_button: widgets.Button) -> None:
@@ -45,24 +45,31 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
         if now < busy_until["t"]:
             return
         busy_until["t"] = now + 1.0
-        buffer = io.StringIO()
         try:
-            with redirect_stdout(buffer):
-                exec(code_area.value, {})
-            text = buffer.getvalue()
+            from code_sandbox import image_widgets, run_or_raise
+
+            sandbox = run_or_raise(code_area.value, capture_variables=False)
+            text = sandbox.stdout or ""
             body = text if text.strip() else "Код выполнен успешно."
-            result.value = (
-                "<pre style='white-space:pre-wrap;margin:8px 0;'>"
-                f"{html.escape(body)}</pre>"
+            html_w = widgets.HTML(
+                value=(
+                    "<pre style='white-space:pre-wrap;margin:8px 0;'>"
+                    f"{html.escape(body)}</pre>"
+                )
             )
+            result_box.children = (html_w, *image_widgets(sandbox.images))
         except Exception as exc:
-            result.value = (
-                "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
-                f"{html.escape(str(exc))}</pre>"
+            result_box.children = (
+                widgets.HTML(
+                    value=(
+                        "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
+                        f"{html.escape(str(exc))}</pre>"
+                    )
+                ),
             )
 
     run_button.on_click(_on_run)
-    return widgets.VBox([code_area, run_button, result])
+    return widgets.VBox([code_area, run_button, result_box])
 
 
 def _create_code_widget(code: str, cell_adapter: Any) -> widgets.Widget | None:

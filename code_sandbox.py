@@ -20,7 +20,12 @@ from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
 DEFAULT_TIMEOUT_SEC = 10
 HEAVY_TIMEOUT_SEC = 60
 MAX_OUTPUT_CHARS = 100_000
+MAX_SANDBOX_FIGURES = 10
+MAX_SANDBOX_IMAGES_BYTES = 5 * 1024 * 1024  # ~5 МБ суммарно
 TIMEOUT_MESSAGE = "Код выполнялся слишком долго, возможно, бесконечный цикл"
+IMAGES_TRUNCATED_NOTE = (
+    "Часть графиков не показана: слишком много фигур или превышен лимит размера."
+)
 
 HEAVY_IMPORT_ROOTS = frozenset(
     {
@@ -92,6 +97,7 @@ class SandboxResult:
     stderr: str = ""
     variables: Dict[str, Any] = field(default_factory=dict)
     result: Any = None
+    images: list = field(default_factory=list)  # base64 PNG
     success: bool = False
     timed_out: bool = False
     error: Optional[str] = None
@@ -135,6 +141,8 @@ def build_child_env(base: Optional[Mapping[str, str]] = None) -> Dict[str, str]:
             env[key] = value
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONDONTWRITEBYTECODE"] = "1"
+    # Agg: графики без GUI; PNG забираем из фигур после exec (этап 4б).
+    env["MPLBACKEND"] = "Agg"
     # Не протаскиваем PYTHONPATH/VIRTUAL_ENV — ребёнок стартует тем же
     # sys.executable, site-packages подтянутся сами.
     return env
@@ -249,11 +257,26 @@ def _truncate(text: str, limit: int = MAX_OUTPUT_CHARS) -> str:
 
 
 _WORKER_CODE = r'''
+import base64
+import io
 import json
+import os
 import sys
 import traceback
+import warnings
 from contextlib import redirect_stdout, redirect_stderr
-import io
+
+os.environ.setdefault("MPLBACKEND", "Agg")
+warnings.filterwarnings(
+    "ignore",
+    message=r".*FigureCanvasAgg is non-interactive.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*non-interactive.*cannot be shown.*",
+    category=UserWarning,
+)
 
 def encode_value(value, depth=0):
     if depth > 8:
@@ -327,9 +350,65 @@ def decode_value(value):
         return value.get("repr", "")
     return value
 
+
+def _patch_pyplot_show():
+    plt = sys.modules.get("matplotlib.pyplot")
+    if plt is None or getattr(plt, "_teachai_show_patched", False):
+        return
+    plt.show = lambda *a, **k: None
+    plt._teachai_show_patched = True
+
+
+_real_import = __import__
+
+def _teachai_import(name, globals=None, locals=None, fromlist=(), level=0):
+    mod = _real_import(name, globals, locals, fromlist, level)
+    if name == "matplotlib.pyplot" or name.startswith("matplotlib."):
+        _patch_pyplot_show()
+    elif name == "matplotlib" and fromlist:
+        _patch_pyplot_show()
+    return mod
+
+
+def capture_matplotlib_images(max_figures, max_total_bytes):
+    images = []
+    truncated = False
+    if "matplotlib.pyplot" not in sys.modules:
+        return images, truncated
+    plt = sys.modules.get("matplotlib.pyplot")
+    if plt is None:
+        return images, truncated
+    _patch_pyplot_show()
+    total = 0
+    try:
+        fignums = list(plt.get_fignums())
+    except Exception:
+        return images, truncated
+    for idx, num in enumerate(fignums):
+        if idx >= max_figures:
+            truncated = True
+            break
+        try:
+            fig = plt.figure(num)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            data = buf.getvalue()
+        except Exception:
+            continue
+        if total + len(data) > max_total_bytes:
+            truncated = True
+            break
+        total += len(data)
+        images.append(base64.b64encode(data).decode("ascii"))
+    try:
+        plt.close("all")
+    except Exception:
+        pass
+    return images, truncated
+
+
 def main():
     job_path = sys.argv[1]
-
     result_path = sys.argv[2]
     with open(job_path, "r", encoding="utf-8") as f:
         job = json.load(f)
@@ -338,6 +417,14 @@ def main():
     capture_variables = bool(job.get("capture_variables", True))
     eval_last = bool(job.get("eval_last_expression", False))
     max_out = int(job.get("max_output_chars") or 100000)
+    max_figures = int(job.get("max_figures") or 10)
+    max_images_bytes = int(job.get("max_images_bytes") or (5 * 1024 * 1024))
+
+    try:
+        import builtins
+        builtins.__import__ = _teachai_import
+    except Exception:
+        pass
 
     local_vars = {}
     for k, v in initial_vars.items():
@@ -350,6 +437,8 @@ def main():
         "stderr": "",
         "variables": {},
         "result": None,
+        "images": [],
+        "images_truncated": False,
         "success": False,
         "error": None,
         "exception_type": None,
@@ -383,8 +472,21 @@ def main():
         payload["error"] = "%s: %s" % (type(exc).__name__, exc)
         traceback.print_exc(file=stderr_buf)
 
+    try:
+        images, truncated = capture_matplotlib_images(max_figures, max_images_bytes)
+        payload["images"] = images
+        payload["images_truncated"] = truncated
+    except Exception:
+        payload["images"] = []
+        payload["images_truncated"] = False
+
     out = stdout_buf.getvalue()
     err = stderr_buf.getvalue()
+    if payload.get("images_truncated"):
+        note = (
+            "Часть графиков не показана: слишком много фигур или превышен лимит размера."
+        )
+        out = (out + "\n" + note) if out else note
     if len(out) > max_out:
         out = out[:max_out] + "\n...[truncated %d chars]" % (len(out) - max_out)
     if len(err) > max_out:
@@ -399,7 +501,6 @@ def main():
                 continue
             if name in ("__builtins__",):
                 continue
-            # пропускаем модули и callables (кроме простых данных)
             if isinstance(value, type(sys)):
                 continue
             if callable(value) and not (
@@ -419,6 +520,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 '''
 
 
@@ -480,6 +582,8 @@ def run_student_code(
         "capture_variables": capture_variables,
         "eval_last_expression": eval_last_expression,
         "max_output_chars": MAX_OUTPUT_CHARS,
+        "max_figures": MAX_SANDBOX_FIGURES,
+        "max_images_bytes": MAX_SANDBOX_IMAGES_BYTES,
     }
     try:
         with open(job_path, "w", encoding="utf-8") as f:
@@ -542,11 +646,13 @@ def run_student_code(
             k: _decode_value(v) for k, v in (payload.get("variables") or {}).items()
         }
         result_val = _decode_value(payload.get("result"))
+        images = list(payload.get("images") or [])
         return SandboxResult(
             stdout=_truncate(payload.get("stdout") or ""),
             stderr=_truncate(payload.get("stderr") or ""),
             variables=variables,
             result=result_val,
+            images=images,
             success=bool(payload.get("success")),
             timed_out=False,
             error=payload.get("error"),
@@ -584,3 +690,43 @@ def run_or_raise(
         msg = result.error or result.stderr or "Ошибка выполнения кода"
         raise RuntimeError(msg)
     return result
+
+
+def image_widgets(images):
+    """Список ipywidgets.Image из base64 PNG (для VBox в интерфейсе)."""
+    import base64
+
+    import ipywidgets as widgets
+
+    out = []
+    for b64 in images or []:
+        try:
+            raw = base64.b64decode(b64)
+        except Exception:
+            continue
+        if not raw:
+            continue
+        out.append(
+            widgets.Image(
+                value=raw,
+                format="png",
+                layout=widgets.Layout(max_width="100%", margin="4px 0"),
+            )
+        )
+    return out
+
+
+def display_images(images) -> None:
+    """Показать PNG через IPython.display.Image (для Output-области ячеек)."""
+    import base64
+
+    from IPython.display import Image, display
+
+    for b64 in images or []:
+        try:
+            raw = base64.b64decode(b64)
+        except Exception:
+            continue
+        if raw:
+            display(Image(data=raw))
+

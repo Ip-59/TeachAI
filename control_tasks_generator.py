@@ -1075,13 +1075,19 @@ validation_mode: всегда "llm".
 
         student_stdout = ""
         local_vars: Dict[str, Any] = {}
+        student_images: list = []
         execution_error: Optional[str] = None
 
         try:
+            from code_sandbox import run_or_raise
+
             full_code = self.resolve_executable_code(task_code, user_code)
-            student_stdout, local_vars = self.execute_code(
-                self.stabilize_sklearn_code(full_code)
+            sandbox = run_or_raise(
+                self.stabilize_sklearn_code(full_code), capture_variables=True
             )
+            student_stdout = (sandbox.stdout or "").strip()
+            local_vars = sandbox.variables
+            student_images = list(sandbox.images or [])
         except Exception as exc:
             execution_error = str(exc)
             student_stdout = ""
@@ -1153,4 +1159,5 @@ validation_mode: всегда "llm".
             "failure_reason": failure_reason,
             "feedback": feedback,
             "validation_method": validation_method,
+            "images": student_images,
         }
