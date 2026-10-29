@@ -5,10 +5,6 @@
 
 import ipywidgets as widgets
 from IPython.display import display, clear_output
-import sys
-import io
-import traceback
-from contextlib import redirect_stdout, redirect_stderr
 from typing import Any, Optional, Dict, Tuple
 
 

@@ -270,23 +270,35 @@ class ControlTasksInterface:
             results_output.children = []
             
             try:
-                from code_sandbox import image_widgets, run_or_raise
+                from code_sandbox import image_widgets, run_student_code
 
                 full_code = ControlTasksGenerator.resolve_executable_code(
                     task_data.get("task_code", ""), code_input.value
                 )
-                sandbox_result = run_or_raise(full_code, capture_variables=False)
+                sandbox_result = run_student_code(full_code, capture_variables=False)
                 output = sandbox_result.stdout or ""
                 imgs = image_widgets(sandbox_result.images)
 
-                if output.strip():
+                if sandbox_result.timed_out or not sandbox_result.success:
+                    msg = (
+                        sandbox_result.error
+                        or sandbox_result.stderr
+                        or "Ошибка выполнения кода"
+                    )
+                    error_html = widgets.HTML(
+                        value=f"<p style='color: red;'>❌ Ошибка выполнения: {msg}</p>"
+                    )
+                    results_output.children = [error_html, *imgs]
+                elif output.strip():
                     result_html = widgets.HTML(
                         value=f"<p style='color: green;'>✅ Код выполнен успешно!</p><pre style='background: #f8f9fa; padding: 10px; border-radius: 4px;'>{output}</pre>"
                     )
+                    results_output.children = [result_html, *imgs]
                 elif imgs:
                     result_html = widgets.HTML(
                         value="<p style='color: green;'>✅ Код выполнен успешно! График ниже.</p>"
                     )
+                    results_output.children = [result_html, *imgs]
                 else:
                     result_html = widgets.HTML(
                         value=(
@@ -295,7 +307,7 @@ class ControlTasksInterface:
                             "Для проверки задания нажмите «✓ Проверить решение».</p>"
                         )
                     )
-                results_output.children = [result_html, *imgs]
+                    results_output.children = [result_html]
 
             except Exception as e:
                 error_html = widgets.HTML(

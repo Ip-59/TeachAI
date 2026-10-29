@@ -6,9 +6,7 @@
 """
 
 import ast
-import io
 import logging
-from contextlib import redirect_stdout
 from typing import Dict, List
 
 from content_utils import BaseContentGenerator

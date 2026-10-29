@@ -23,16 +23,22 @@ def execute_student_code(
         Кортеж (результат, вывод, успех_выполнения, images_base64)
     """
     try:
-        from code_sandbox import run_or_raise
+        from code_sandbox import run_student_code
 
         # В дочерний процесс передаём только JSON-сериализуемые значения.
-        sandbox = run_or_raise(
+        sandbox = run_student_code(
             student_code,
             initial_vars=execution_namespace,
             capture_variables=True,
         )
-        execution_namespace.clear()
-        execution_namespace.update(sandbox.variables)
+        images = list(sandbox.images or [])
+        if sandbox.variables:
+            execution_namespace.clear()
+            execution_namespace.update(sandbox.variables)
+
+        if sandbox.timed_out or not sandbox.success:
+            msg = sandbox.error or sandbox.stderr or "Ошибка выполнения кода"
+            return None, msg, False, images
 
         result = None
         result_vars = [
@@ -50,7 +56,7 @@ def execute_student_code(
                 result = execution_namespace[var_name]
                 break
 
-        return result, sandbox.stdout or "", True, list(sandbox.images or [])
+        return result, sandbox.stdout or "", True, images
 
     except Exception as e:
         return None, str(e), False, []

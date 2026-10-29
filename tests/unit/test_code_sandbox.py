@@ -161,3 +161,104 @@ plt.plot([1, 2], [3, 4])
     assert widgets_list[0].format == "png"
     assert len(image_widgets([])) == 0
     assert len(image_widgets(None)) == 0
+def test_sandbox_two_show_calls_two_images():
+    """plt.show() сохраняет и закрывает фигуры — два show → два PNG."""
+    pytest.importorskip("matplotlib")
+    from code_sandbox import run_student_code
+
+    result = run_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2], [1, 2])
+plt.show()
+plt.plot([1, 4, 9])
+plt.show()
+print("done")
+"""
+    )
+    assert result.success
+    assert len(result.images) == 2
+    assert all(img.startswith("iVBOR") for img in result.images)
+
+
+def test_sandbox_figure_without_show_captured_at_end():
+    pytest.importorskip("matplotlib")
+    from code_sandbox import run_student_code
+
+    result = run_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2, 3])
+print("noshow")
+"""
+    )
+    assert result.success
+    assert len(result.images) == 1
+
+
+def test_sandbox_no_duplicate_after_show():
+    pytest.importorskip("matplotlib")
+    from code_sandbox import run_student_code
+
+    result = run_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2])
+plt.show()
+print("only_one")
+"""
+    )
+    assert result.success
+    assert len(result.images) == 1
+
+
+def test_sandbox_figure_plus_exception_returns_image():
+    pytest.importorskip("matplotlib")
+    from code_sandbox import SandboxExecutionError, run_or_raise, run_student_code
+
+    result = run_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2])
+1 / 0
+"""
+    )
+    assert not result.success
+    assert result.exception_type == "ZeroDivisionError"
+    assert len(result.images) == 1
+
+    with pytest.raises(SandboxExecutionError) as ei:
+        run_or_raise(
+            """import matplotlib.pyplot as plt
+plt.plot([1, 2])
+1 / 0
+"""
+        )
+    assert len(ei.value.images) == 1
+
+
+def test_sandbox_error_paths_expose_images_to_display_helpers():
+    """Сайты отображения: image_widgets на ошибке; interactive_cell_logic возвращает images."""
+    pytest.importorskip("matplotlib")
+    ipywidgets = pytest.importorskip("ipywidgets")
+    from code_sandbox import image_widgets, run_student_code
+    from interactive_cell_logic import execute_student_code
+
+    result = run_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2])
+1 / 0
+"""
+    )
+    widgets_list = image_widgets(result.images)
+    assert len(widgets_list) == 1
+    assert widgets_list[0].format == "png"
+
+    ns: dict = {}
+    _res, output, success, images = execute_student_code(
+        """import matplotlib.pyplot as plt
+plt.plot([1, 2])
+1 / 0
+""",
+        ns,
+    )
+    assert success is False
+    assert "ZeroDivision" in output or "division" in output.lower()
+    assert len(images) == 1
+    assert len(image_widgets(images)) == 1

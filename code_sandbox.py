@@ -91,6 +91,15 @@ class SandboxTimeoutError(TimeoutError):
         super().__init__(message)
 
 
+class SandboxExecutionError(RuntimeError):
+    """Ошибка в коде ученика; сохраняет SandboxResult (в т.ч. images)."""
+
+    def __init__(self, message: str, result: "SandboxResult") -> None:
+        super().__init__(message)
+        self.result = result
+        self.images = list(result.images or [])
+
+
 @dataclass
 class SandboxResult:
     stdout: str = ""
@@ -351,12 +360,65 @@ def decode_value(value):
     return value
 
 
-def _patch_pyplot_show():
-    plt = sys.modules.get("matplotlib.pyplot")
-    if plt is None or getattr(plt, "_teachai_show_patched", False):
+# Накопитель PNG за весь прогон (лимиты на весь run).
+_FIG_STATE = {
+    "images": [],
+    "truncated": False,
+    "total_bytes": 0,
+    "max_figures": 10,
+    "max_bytes": 5 * 1024 * 1024,
+}
+
+
+def _capture_open_figures():
+    """Сохранить открытые фигуры в _FIG_STATE и закрыть их (семантика plt.show)."""
+    if "matplotlib.pyplot" not in sys.modules:
         return
-    plt.show = lambda *a, **k: None
-    plt._teachai_show_patched = True
+    plt = sys.modules.get("matplotlib.pyplot")
+    if plt is None:
+        return
+    try:
+        fignums = list(plt.get_fignums())
+    except Exception:
+        return
+    for num in fignums:
+        if len(_FIG_STATE["images"]) >= _FIG_STATE["max_figures"]:
+            _FIG_STATE["truncated"] = True
+            break
+        try:
+            fig = plt.figure(num)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            data = buf.getvalue()
+        except Exception:
+            continue
+        if _FIG_STATE["total_bytes"] + len(data) > _FIG_STATE["max_bytes"]:
+            _FIG_STATE["truncated"] = True
+            break
+        _FIG_STATE["total_bytes"] += len(data)
+        _FIG_STATE["images"].append(base64.b64encode(data).decode("ascii"))
+    try:
+        plt.close("all")
+    except Exception:
+        pass
+
+
+def _patched_show(*a, **k):
+    """Как inline-backend Jupyter: показать (=захватить PNG) и закрыть фигуры."""
+    _capture_open_figures()
+
+
+def _patch_pyplot_show():
+    """Ставить наш show; пропускать, пока pyplot ещё грузится без атрибута show."""
+    plt = sys.modules.get("matplotlib.pyplot")
+    if plt is None:
+        return
+    current = getattr(plt, "show", None)
+    if current is None:
+        return
+    if getattr(current, "__name__", None) == "_patched_show":
+        return
+    plt.show = _patched_show
 
 
 _real_import = __import__
@@ -368,43 +430,6 @@ def _teachai_import(name, globals=None, locals=None, fromlist=(), level=0):
     elif name == "matplotlib" and fromlist:
         _patch_pyplot_show()
     return mod
-
-
-def capture_matplotlib_images(max_figures, max_total_bytes):
-    images = []
-    truncated = False
-    if "matplotlib.pyplot" not in sys.modules:
-        return images, truncated
-    plt = sys.modules.get("matplotlib.pyplot")
-    if plt is None:
-        return images, truncated
-    _patch_pyplot_show()
-    total = 0
-    try:
-        fignums = list(plt.get_fignums())
-    except Exception:
-        return images, truncated
-    for idx, num in enumerate(fignums):
-        if idx >= max_figures:
-            truncated = True
-            break
-        try:
-            fig = plt.figure(num)
-            buf = io.BytesIO()
-            fig.savefig(buf, format="png", bbox_inches="tight", dpi=100)
-            data = buf.getvalue()
-        except Exception:
-            continue
-        if total + len(data) > max_total_bytes:
-            truncated = True
-            break
-        total += len(data)
-        images.append(base64.b64encode(data).decode("ascii"))
-    try:
-        plt.close("all")
-    except Exception:
-        pass
-    return images, truncated
 
 
 def main():
@@ -419,6 +444,11 @@ def main():
     max_out = int(job.get("max_output_chars") or 100000)
     max_figures = int(job.get("max_figures") or 10)
     max_images_bytes = int(job.get("max_images_bytes") or (5 * 1024 * 1024))
+    _FIG_STATE["images"] = []
+    _FIG_STATE["truncated"] = False
+    _FIG_STATE["total_bytes"] = 0
+    _FIG_STATE["max_figures"] = max_figures
+    _FIG_STATE["max_bytes"] = max_images_bytes
 
     try:
         import builtins
@@ -472,13 +502,14 @@ def main():
         payload["error"] = "%s: %s" % (type(exc).__name__, exc)
         traceback.print_exc(file=stderr_buf)
 
+    # Оставшиеся фигуры (без plt.show) + после исключения; уже показанные закрыты.
     try:
-        images, truncated = capture_matplotlib_images(max_figures, max_images_bytes)
-        payload["images"] = images
-        payload["images_truncated"] = truncated
+        _capture_open_figures()
+        payload["images"] = list(_FIG_STATE["images"])
+        payload["images_truncated"] = bool(_FIG_STATE["truncated"])
     except Exception:
-        payload["images"] = []
-        payload["images_truncated"] = False
+        payload["images"] = list(_FIG_STATE.get("images") or [])
+        payload["images_truncated"] = bool(_FIG_STATE.get("truncated"))
 
     out = stdout_buf.getvalue()
     err = stderr_buf.getvalue()
@@ -688,7 +719,7 @@ def run_or_raise(
         raise SandboxTimeoutError(result.error or TIMEOUT_MESSAGE)
     if not result.success:
         msg = result.error or result.stderr or "Ошибка выполнения кода"
-        raise RuntimeError(msg)
+        raise SandboxExecutionError(msg, result)
     return result
 
 

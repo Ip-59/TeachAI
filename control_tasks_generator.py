@@ -4,12 +4,10 @@
 Создает практические задачи с эталонным кодом для проверки знаний.
 """
 
-import io
 import logging
 import json
 import os
 import re
-from contextlib import redirect_stdout
 from typing import Dict, List, Any, Optional, Tuple
 
 from content_utils import BaseContentGenerator
@@ -1079,15 +1077,22 @@ validation_mode: всегда "llm".
         execution_error: Optional[str] = None
 
         try:
-            from code_sandbox import run_or_raise
+            from code_sandbox import run_student_code
 
             full_code = self.resolve_executable_code(task_code, user_code)
-            sandbox = run_or_raise(
+            sandbox = run_student_code(
                 self.stabilize_sklearn_code(full_code), capture_variables=True
             )
-            student_stdout = (sandbox.stdout or "").strip()
-            local_vars = sandbox.variables
             student_images = list(sandbox.images or [])
+            if sandbox.timed_out or not sandbox.success:
+                execution_error = (
+                    sandbox.error or sandbox.stderr or "Ошибка выполнения кода"
+                )
+                student_stdout = (sandbox.stdout or "").strip()
+                local_vars = sandbox.variables or {}
+            else:
+                student_stdout = (sandbox.stdout or "").strip()
+                local_vars = sandbox.variables
         except Exception as exc:
             execution_error = str(exc)
             student_stdout = ""

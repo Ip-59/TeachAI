@@ -8,9 +8,7 @@ HTML-парсинг полностью удалён: код приходит и�
 from __future__ import annotations
 
 import html
-import io
 import time
-from contextlib import redirect_stdout
 from typing import Any, Dict, List
 
 import ipywidgets as widgets
@@ -46,18 +44,29 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
             return
         busy_until["t"] = now + 1.0
         try:
-            from code_sandbox import image_widgets, run_or_raise
+            from code_sandbox import image_widgets, run_student_code
 
-            sandbox = run_or_raise(code_area.value, capture_variables=False)
-            text = sandbox.stdout or ""
-            body = text if text.strip() else "Код выполнен успешно."
-            html_w = widgets.HTML(
-                value=(
-                    "<pre style='white-space:pre-wrap;margin:8px 0;'>"
-                    f"{html.escape(body)}</pre>"
+            sandbox = run_student_code(code_area.value, capture_variables=False)
+            imgs = image_widgets(sandbox.images)
+            if sandbox.timed_out or not sandbox.success:
+                msg = sandbox.error or sandbox.stderr or "Ошибка выполнения кода"
+                html_w = widgets.HTML(
+                    value=(
+                        "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
+                        f"{html.escape(msg)}</pre>"
+                    )
                 )
-            )
-            result_box.children = (html_w, *image_widgets(sandbox.images))
+                result_box.children = (html_w, *imgs)
+            else:
+                text = sandbox.stdout or ""
+                body = text if text.strip() else "Код выполнен успешно."
+                html_w = widgets.HTML(
+                    value=(
+                        "<pre style='white-space:pre-wrap;margin:8px 0;'>"
+                        f"{html.escape(body)}</pre>"
+                    )
+                )
+                result_box.children = (html_w, *imgs)
         except Exception as exc:
             result_box.children = (
                 widgets.HTML(
