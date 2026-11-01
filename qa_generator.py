@@ -4,7 +4,8 @@
 ИСПРАВЛЕНО: Красивое форматирование ответов на вопросы
 """
 
-from content_utils import BaseContentGenerator, ContentUtils
+from communication_style import ContentUtils
+from llm_api_base import BaseContentGenerator
 
 
 class QAGenerator(BaseContentGenerator):

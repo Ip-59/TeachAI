@@ -6,7 +6,8 @@
 import json
 import re
 import random
-from content_utils import BaseContentGenerator, parse_llm_json
+from llm_api_base import BaseContentGenerator
+from llm_json import parse_llm_json
 
 
 class AssessmentFormatError(Exception):

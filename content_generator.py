@@ -19,7 +19,7 @@ from assessment_generator import AssessmentGenerator
 from qa_generator import QAGenerator
 from concepts_generator import ConceptsGenerator
 from relevance_checker import RelevanceChecker
-from content_utils import append_question_reminder
+from qa_response_utils import append_question_reminder
 from loading_indicators import displayed_loading
 
 

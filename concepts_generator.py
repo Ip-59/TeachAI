@@ -5,7 +5,8 @@
 
 import json
 import re
-from content_utils import BaseContentGenerator, parse_llm_json
+from llm_api_base import BaseContentGenerator
+from llm_json import parse_llm_json
 from student_content import render_student_content
 
 
@@ -315,7 +316,7 @@ class ConceptsGenerator(BaseContentGenerator):
         Returns:
             str: Промпт для API
         """
-        from content_utils import ContentUtils
+        from communication_style import ContentUtils
 
         style_description = ContentUtils.COMMUNICATION_STYLES.get(
             communication_style, ContentUtils.COMMUNICATION_STYLES["friendly"]

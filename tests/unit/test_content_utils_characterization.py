@@ -1,4 +1,4 @@
-"""Характеризация публичного API content_utils до/после сплита (пакет 6)."""
+"""Характеризация API после сплита content_utils (пакет 6)."""
 from __future__ import annotations
 
 import pytest
@@ -7,13 +7,13 @@ pytestmark = pytest.mark.unit
 
 
 def test_parse_llm_json_plain_object():
-    from content_utils import parse_llm_json
+    from llm_json import parse_llm_json
 
     assert parse_llm_json('{"a": 1, "b": [2]}') == {"a": 1, "b": [2]}
 
 
 def test_parse_llm_json_fenced_and_surrounding_text():
-    from content_utils import parse_llm_json
+    from llm_json import parse_llm_json
 
     fenced = """```json
 {"ok": true, "n": 3}
@@ -24,27 +24,26 @@ def test_parse_llm_json_fenced_and_surrounding_text():
 
 
 def test_parse_llm_json_rejects_garbage():
-    from content_utils import parse_llm_json
+    from llm_json import parse_llm_json
 
     with pytest.raises(ValueError):
         parse_llm_json("это не json")
 
 
 def test_communication_styles_and_get_style_prefix():
-    from content_utils import ContentUtils
+    from communication_style import COMMUNICATION_STYLES, ContentUtils, get_style_prefix
 
-    styles = ContentUtils.COMMUNICATION_STYLES
-    assert set(styles) >= {"formal", "friendly", "casual", "brief"}
+    assert set(COMMUNICATION_STYLES) >= {"formal", "friendly", "casual", "brief"}
     utils = ContentUtils()
     examples = utils.get_style_prefix("friendly", "examples")
     assert "пример" in examples.lower() or "Примеры" in examples or "примеров" in examples.lower()
-    qa = utils.get_style_prefix("brief", "qa")
+    qa = get_style_prefix("brief", "qa")
     assert "Краткий" in qa or "кратк" in qa.lower()
-    assert utils.get_style_prefix("friendly", "unknown_type") == ""
+    assert get_style_prefix("friendly", "unknown_type") == ""
 
 
 def test_append_question_reminder_threshold():
-    from content_utils import append_question_reminder
+    from qa_response_utils import append_question_reminder
 
     base = "<p>ответ</p>"
     assert append_question_reminder(base, 3) == base
@@ -54,7 +53,7 @@ def test_append_question_reminder_threshold():
 
 
 def test_non_retryable_api_error_by_status_and_quota():
-    from content_utils import non_retryable_api_error
+    from llm_api_base import non_retryable_api_error
 
     class Exc(Exception):
         def __init__(self, code=None, msg="err"):
@@ -71,7 +70,7 @@ def test_non_retryable_api_error_by_status_and_quota():
 
 
 def test_extract_lesson_headers_order_and_strip_tags():
-    from content_utils import BaseContentGenerator
+    from llm_api_base import BaseContentGenerator
 
     gen = BaseContentGenerator.__new__(BaseContentGenerator)
     html = "<h2>A</h2><p>x</p><h3><b>B</b></h3><h2>A</h2>"
@@ -80,7 +79,7 @@ def test_extract_lesson_headers_order_and_strip_tags():
 
 
 def test_prepare_lesson_text_for_analysis_strips_breadcrumb():
-    from content_utils import BaseContentGenerator
+    from llm_api_base import BaseContentGenerator
 
     gen = BaseContentGenerator.__new__(BaseContentGenerator)
     html = (
@@ -105,3 +104,20 @@ def test_prepare_lesson_text_for_analysis_strips_breadcrumb():
     assert "alert" not in text
     assert "color:red" not in text
     assert not text.lower().startswith("курс python")
+
+
+def test_content_utils_shim_still_reexports():
+    """Старые импорты из content_utils не должны ломаться."""
+    from content_utils import (
+        BaseContentGenerator,
+        ContentUtils,
+        append_question_reminder,
+        parse_llm_json,
+    )
+    from llm_api_base import BaseContentGenerator as BCG
+    from communication_style import ContentUtils as CU
+
+    assert BaseContentGenerator is BCG
+    assert ContentUtils is CU
+    assert parse_llm_json('{"z": 1}') == {"z": 1}
+    assert append_question_reminder("<p>a</p>", 1) == "<p>a</p>"

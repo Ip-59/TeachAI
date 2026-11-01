@@ -347,13 +347,13 @@ def test_LLM_05_fenced_json_for_relevance(fake_llm):
     ],
 )
 def test_LLM_05_parse_llm_json_variants(text):
-    from content_utils import parse_llm_json
+    from llm_json import parse_llm_json
 
     assert parse_llm_json(text) == {"a": 1}
 
 
 def test_LLM_05_parse_llm_json_rejects_garbage():
-    from content_utils import parse_llm_json
+    from llm_json import parse_llm_json
 
     with pytest.raises(ValueError):
         parse_llm_json("это не json")

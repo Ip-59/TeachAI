@@ -7,7 +7,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from fake_llm import FakeLLM  # noqa: E402
 
-import content_utils  # noqa: E402  (грузится из копии проекта — рабочая папка ядра)
+import llm_api_base  # noqa: E402  — сюда BaseContentGenerator и create_openai_client
+import content_utils  # noqa: E402  — устаревший фасад; FakeLLM патчит оба
 
 FAKE = FakeLLM(log_path=Path(os.environ["TEACHAI_FAKE_LOG"]))
 FAKE.install()

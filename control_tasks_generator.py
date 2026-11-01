@@ -10,7 +10,7 @@ import os
 import re
 from typing import Dict, List, Any, Optional, Tuple
 
-from content_utils import BaseContentGenerator
+from llm_api_base import BaseContentGenerator
 from examples_code_fixes import sanitize_example_code
 from result_checker import ResultChecker, values_equal, stdout_outputs_equal
 

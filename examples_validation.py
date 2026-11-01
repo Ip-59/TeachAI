@@ -9,7 +9,7 @@ import ast
 import logging
 from typing import Dict, List
 
-from content_utils import BaseContentGenerator
+from llm_api_base import BaseContentGenerator
 from examples_code_fixes import sanitize_examples
 from examples_html_utils import (
     executable_examples,

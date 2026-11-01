@@ -8,7 +8,8 @@
 import json
 from typing import Any, Dict, List
 
-from content_utils import BaseContentGenerator, ContentUtils
+from communication_style import ContentUtils
+from llm_api_base import BaseContentGenerator
 from examples_html_utils import (
     interpret_examples_payload,
     is_examples_notice,

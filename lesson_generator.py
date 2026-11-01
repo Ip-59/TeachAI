@@ -4,7 +4,8 @@
 ИСПРАВЛЕНО: Убраны неуместные прощания в конце урока
 """
 
-from content_utils import BaseContentGenerator, ContentUtils
+from communication_style import ContentUtils
+from llm_api_base import BaseContentGenerator
 from content_formatter_final import ContentFormatterFinal
 
 
