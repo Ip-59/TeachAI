@@ -85,6 +85,20 @@ def test_sandbox_examples_path_runs():
     assert ok is True
 
 
+def test_example_run_html_shows_print_value_and_empty():
+    from examples_display import format_example_run_html
+
+    printed = format_example_run_html("30 1.8\n", "", None)
+    assert "Результат запуска" in printed
+    assert "30 1.8" in printed
+
+    value = format_example_run_html("", "", 42)
+    assert "42" in value
+
+    empty = format_example_run_html("   ", "", None)
+    assert "вывода нет" in empty
+
+
 def test_sandbox_examples_path_rejects_bad_code():
     import logging
 
@@ -161,6 +175,8 @@ plt.plot([1, 2], [3, 4])
     assert widgets_list[0].format == "png"
     assert len(image_widgets([])) == 0
     assert len(image_widgets(None)) == 0
+
+
 def test_sandbox_two_show_calls_two_images():
     """plt.show() сохраняет и закрывает фигуры — два show → два PNG."""
     pytest.importorskip("matplotlib")

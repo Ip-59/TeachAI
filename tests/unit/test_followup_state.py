@@ -158,6 +158,59 @@ def test_CRS_10_plan_id_other_than_catalog_stays_one_slot(fake_llm, monkeypatch)
     assert fake_llm.count("plan") == 1, "повторный старт сгенерировал план заново"
     assert list(sm.state["courses"]) == [COURSE["id"]]
     assert sm.state["active_course_id"] == COURSE["id"]
+    stored = sm.state["courses"][COURSE["id"]]["course_plan"]
+    assert stored["total_study_hours"] == 3
+    assert stored["lesson_duration_minutes"] == 30
+
+
+def test_course_time_is_not_copied_onto_the_next_course(fake_llm, monkeypatch):
+    """Часы и длительность занятия живут в слоте курса, профиль их не подменяет."""
+    import course_selection_ui
+    from content_generator import ContentGenerator
+    from helpers import load_plan
+    from state_manager import StateManager
+
+    plan = load_plan()
+    fake_llm.use("plan", plan, plan)
+    monkeypatch.setattr(course_selection_ui, "_open_lesson_after_plan", lambda *_a, **_k: None)
+    monkeypatch.setattr(course_selection_ui, "display", lambda *_a, **_k: None)
+    sm = StateManager()
+    sm.state["user"]["total_study_hours"] = 3
+    sm.state["user"]["lesson_duration_minutes"] = 30
+    setup = SimpleNamespace(
+        state_manager=sm,
+        content_generator=ContentGenerator("sk-test-not-a-real-key"),
+        system_logger=SimpleNamespace(log_activity=lambda **_k: None),
+        utils=SimpleNamespace(
+            create_styled_message=lambda text, *_a, **_k: text,
+            format_api_error=lambda exc, context="": f"{context}: {exc}",
+        ),
+    )
+    other = {
+        "id": "python-ml",
+        "title": "Машинное обучение",
+        "description": "Тест",
+        "source": "catalog",
+    }
+
+    course_selection_ui._start_course(
+        setup, COURSE, {"total_study_hours": 4, "lesson_duration_minutes": 20}
+    )
+    course_selection_ui._start_course(
+        setup, other, {"total_study_hours": 12, "lesson_duration_minutes": 50}
+    )
+
+    first = sm.state["courses"][COURSE["id"]]["course_plan"]
+    second = sm.state["courses"]["python-ml"]["course_plan"]
+    assert first["total_study_hours"] == 4
+    assert first["lesson_duration_minutes"] == 20
+    assert first["total_duration_minutes"] == 4 * 60
+    assert second["total_study_hours"] == 12
+    assert second["lesson_duration_minutes"] == 50
+    assert second["total_duration_minutes"] == 12 * 60
+    assert sm.state["user"]["total_study_hours"] == 3
+    assert sm.state["user"]["lesson_duration_minutes"] == 30
+    assert sm.state["course_plan"]["lesson_duration_minutes"] == 50
 
 
 def test_LLM_04_broken_json_is_a_clear_error(fake_llm):
@@ -192,16 +245,15 @@ def test_LLM_04_broken_json_is_a_clear_error(fake_llm):
     fake_llm.use("subject", "это не json")
     assert classify_lesson_subject(api, lesson_title="Урок", lesson_content="текст")
     fake_llm.use("task_matches", "это не json")
-    assert (
-        task_matches_lesson(
-            api,
-            task={"title": "Сумма", "task_code": "a = 1"},
-            lesson_title="Урок",
-            lesson_content="текст",
-            lesson_subject="основы Python",
-        )
-        is False
+    matched, reason = task_matches_lesson(
+        api,
+        task={"title": "Сумма", "task_code": "a = 1"},
+        lesson_title="Урок",
+        lesson_content="текст",
+        lesson_subject="основы Python",
     )
+    assert matched is False
+    assert reason == ""
     fake_llm.use("domain", "это не json")
     verdict = classify_course_topic("Курс кройки и шитья", generator=api)
     assert verdict.status == "error"
@@ -255,13 +307,15 @@ def test_LLM_05_fenced_json_for_judge_and_domain(fake_llm):
 
     api = ContentGenerator("sk-test-not-a-real-key").lesson_gen
     fake_llm.use("task_matches", _fenced({"matches": True, "reason": "По теме."}))
-    assert task_matches_lesson(
+    matched, reason = task_matches_lesson(
         api,
         task={"title": "Сумма"},
         lesson_title="Урок",
         lesson_content="текст",
         lesson_subject="основы Python",
     )
+    assert matched is True
+    assert reason == "По теме."
     fake_llm.use("domain", _fenced({"in_domain": False, "reason": "Не Python."}))
     assert classify_course_topic("Кройка", generator=api).status == "out"
 

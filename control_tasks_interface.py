@@ -143,8 +143,9 @@ class ControlTasksInterface:
         elif validation_mode == "llm" or validation_criteria:
             parts.append(
                 "<p style='margin:0 0 8px 0;line-height:1.6;'>"
-                "Решение проверяет <strong>нейросеть</strong> по смыслу: "
-                "важна правильность логики и результата, а не дословное совпадение текста."
+                "Решение проверяет <strong>нейросеть</strong>: важны шаги и критерии задания. "
+                "Лишние пробелы и запись чисел вроде 1.8 / 1.80 ошибкой не считаются, "
+                "других требований к оформлению нет."
                 "</p>"
             )
             if check_variables:

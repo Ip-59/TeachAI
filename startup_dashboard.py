@@ -330,9 +330,10 @@ class StartupDashboard:
             else:
                 days_since_last = 0
             
-            # Общее время обучения (примерная оценка)
-            user_profile = state.get("user", {})
-            lesson_duration = user_profile.get("lesson_duration_minutes", 30)
+            # Длительность занятия — у активного курса, не из общего профиля.
+            from course_portfolio import active_lesson_duration_minutes
+
+            lesson_duration = active_lesson_duration_minutes(state)
             # D1: время только по реально пройденным.
             progress = self.state_manager.learning_progress.calculate_course_progress()
             estimated_total_time = progress["completed"] * lesson_duration
