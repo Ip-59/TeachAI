@@ -30,9 +30,11 @@ def build_course_selection(setup) -> widgets.VBox:
         description = widgets.HTML(
             value=(
                 scope_banner_html()
-                + "<p>Каталог — курсы Python и AI/ML. Своё название можно ввести, "
-                "если это тема той же области (например «Основы pandas для аналитика»). "
-                "Текущий курс не удаляется: его можно снова открыть с дашборда.</p>"
+                + "<p>Сначала тема курса, затем общее время именно этого курса, "
+                "затем длительность одного занятия. Эти два числа не переносятся "
+                "на следующий курс. Каталог — Python и AI/ML; своё название тоже "
+                "должно быть из этой области. Уже начатый курс открывается с дашборда "
+                "или кнопкой «Продолжить» — его время не спрашивается заново.</p>"
             )
         )
 
@@ -87,15 +89,31 @@ def build_course_selection(setup) -> widgets.VBox:
             )
 
         def _refresh_start_label() -> None:
-            from course_portfolio import has_course
+            from course_portfolio import has_course, schedule_of
 
             catalog_id = course_dropdown.value
-            if source_radio.value == "catalog" and has_course(
+            continuing = source_radio.value == "catalog" and has_course(
                 setup.state_manager.state, catalog_id
-            ):
+            )
+            if continuing:
                 start_button.description = "Продолжить этот курс"
+                schedule_box.layout.display = "none"
+                saved = schedule_of(setup.state_manager.state, catalog_id)
+                if saved:
+                    saved_schedule.value = (
+                        "<p style='margin:8px 0;color:#495057;'>"
+                        f"У этого курса уже задано: {saved['total_study_hours']} ч, "
+                        f"занятие {saved['lesson_duration_minutes']} мин.</p>"
+                    )
+                else:
+                    saved_schedule.value = (
+                        "<p style='margin:8px 0;color:#495057;'>"
+                        "Этот курс уже начат. Время для него не меняется.</p>"
+                    )
             else:
                 start_button.description = "Начать курс"
+                schedule_box.layout.display = "flex"
+                saved_schedule.value = ""
 
         def on_course_change(change):
             course = next((c for c in courses if c["id"] == change["new"]), None)
@@ -112,8 +130,31 @@ def build_course_selection(setup) -> widgets.VBox:
             catalog_box.layout.display = "none" if custom else "flex"
             _refresh_start_label()
 
-        user_profile = setup.state_manager.get_user_profile()
-        settings_widget = setup._create_settings_display(user_profile)
+        hours_widget = widgets.IntSlider(
+            value=10,
+            min=1,
+            max=100,
+            step=1,
+            description="Общее время курса (часов):",
+            continuous_update=False,
+            style={"description_width": "initial"},
+            layout=widgets.Layout(width="520px"),
+        )
+        duration_widget = widgets.IntSlider(
+            value=30,
+            min=5,
+            max=120,
+            step=5,
+            description="Длительность занятия (минут):",
+            continuous_update=False,
+            style={"description_width": "initial"},
+            layout=widgets.Layout(width="520px"),
+        )
+        schedule_box = widgets.VBox(
+            [hours_widget, duration_widget],
+            layout=widgets.Layout(display="flex", gap="8px"),
+        )
+        saved_schedule = widgets.HTML(value="")
 
         start_button = widgets.Button(
             description="Начать курс",
@@ -145,6 +186,10 @@ def build_course_selection(setup) -> widgets.VBox:
                 )
                 if course is None:
                     return
+                schedule = {
+                    "total_study_hours": int(hours_widget.value),
+                    "lesson_duration_minutes": int(duration_widget.value),
+                }
                 if source_radio.value == "custom":
                     from course_domain_ui import gate_custom_course
 
@@ -154,14 +199,14 @@ def build_course_selection(setup) -> widgets.VBox:
                     gate_custom_course(
                         setup,
                         course,
-                        user_profile,
+                        schedule,
                         _start_course,
                         _switch_to_catalog,
                         status_box=status_box,
                     )
                     return
                 clear_output(wait=True)
-                _start_course(setup, course, user_profile)
+                _start_course(setup, course, schedule)
             finally:
                 # После ухода с экрана кнопка уже не видна; на предупреждении
                 # снова можно нажать «Начать» / сменить тему.
@@ -179,7 +224,8 @@ def build_course_selection(setup) -> widgets.VBox:
                 source_radio,
                 catalog_box,
                 custom_box,
-                settings_widget,
+                schedule_box,
+                saved_schedule,
                 start_button,
                 status_box,
             ],
@@ -300,7 +346,7 @@ def _resume_course(setup, course: dict) -> None:
     _open_lesson_after_plan(setup, course)
 
 
-def _start_course(setup, course: dict, user_profile: dict) -> None:
+def _start_course(setup, course: dict, schedule: dict) -> None:
     try:
         from course_portfolio import begin_new_course, has_course
 
@@ -317,8 +363,8 @@ def _start_course(setup, course: dict, user_profile: dict) -> None:
         )
         course_plan = setup.content_generator.generate_course_plan(
             course_data=course,
-            total_study_hours=user_profile["total_study_hours"],
-            lesson_duration_minutes=user_profile["lesson_duration_minutes"],
+            total_study_hours=int(schedule["total_study_hours"]),
+            lesson_duration_minutes=int(schedule["lesson_duration_minutes"]),
         )
         if course.get("source"):
             course_plan["source"] = course["source"]
@@ -334,8 +380,8 @@ def _start_course(setup, course: dict, user_profile: dict) -> None:
                 "course_id": course["id"],
                 "course_title": course["title"],
                 "source": course.get("source", "catalog"),
-                "total_study_hours": user_profile["total_study_hours"],
-                "lesson_duration_minutes": user_profile["lesson_duration_minutes"],
+                "total_study_hours": int(schedule["total_study_hours"]),
+                "lesson_duration_minutes": int(schedule["lesson_duration_minutes"]),
             },
         )
 

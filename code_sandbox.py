@@ -113,6 +113,55 @@ class SandboxResult:
     exception_type: Optional[str] = None
 
 
+NAME_ERROR_HINT_RU = (
+    "Каждый запуск выполняется с нуля: переменные из прошлых запусков "
+    "не сохраняются. Вставьте в ячейку весь нужный код."
+)
+
+
+def name_error_student_hint(error: str | None) -> str:
+    """Подсказка ученику при NameError; иначе пустая строка.
+
+    Идемпотентно: если подсказка уже есть в тексте, не возвращаем её снова.
+    """
+    text = (error or "").strip()
+    if not text or NAME_ERROR_HINT_RU in text:
+        return ""
+    first = text.splitlines()[0].strip()
+    if first.startswith("NameError:") or first == "NameError":
+        return NAME_ERROR_HINT_RU
+    return ""
+
+
+def with_name_error_hint(error: str) -> str:
+    """Текст ошибки + подсказка (для print / plain)."""
+    hint = name_error_student_hint(error)
+    if not hint:
+        return error
+    return f"{error}\n\n{hint}"
+
+
+def format_execution_error_html(error: str) -> str:
+    """HTML ошибки выполнения: текст + серая подсказка при NameError.
+
+    Единая точка для всех сайтов показа (КЗ, примеры, ячейки).
+    """
+    import html as html_module
+
+    body = html_module.escape(error or "")
+    hint = name_error_student_hint(error)
+    parts = [
+        "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
+        f"{body}</pre>"
+    ]
+    if hint:
+        parts.append(
+            "<p style='color:#6c757d;margin:0 0 8px 0;font-size:14px;line-height:1.45;'>"
+            f"{html_module.escape(hint)}</p>"
+        )
+    return "".join(parts)
+
+
 def choose_timeout(code: str, override: Optional[int] = None) -> int:
     """10 с по умолчанию; 60 с, если AST видит тяжёлый импорт (KZ-27)."""
     if override is not None:

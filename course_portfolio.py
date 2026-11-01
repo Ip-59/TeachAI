@@ -271,3 +271,60 @@ def mark_active_completed(state: dict) -> None:
 
 def has_course(state: dict, course_id: str) -> bool:
     return course_id in (state.get("courses") or {})
+
+
+def _first_lesson_duration_minutes(plan: dict) -> int | None:
+    """Длительность первого урока в плане — запасной источник для старых слотов."""
+    for section in plan.get("sections") or []:
+        for topic in section.get("topics") or []:
+            for lesson in topic.get("lessons") or []:
+                minutes = lesson.get("duration_minutes")
+                if minutes:
+                    return int(minutes)
+    return None
+
+
+def schedule_of(state: dict, course_id: str) -> dict[str, int] | None:
+    """Часы и длительность занятия, сохранённые в слоте этого курса.
+
+    Для планов до поля total_study_hours / lesson_duration_minutes:
+    часы = total_duration_minutes // 60 (минимум 1, если total > 0),
+    минуты занятия = lesson_duration_minutes или длительность первого урока
+    или 30. Если восстановить нельзя — None (UI пишет «не задано»).
+    """
+    slot = (state.get("courses") or {}).get(course_id) or {}
+    plan = slot.get("course_plan") or {}
+    hours = plan.get("total_study_hours")
+    minutes = plan.get("lesson_duration_minutes")
+
+    if not minutes:
+        minutes = _first_lesson_duration_minutes(plan) or 30
+    else:
+        minutes = int(minutes)
+
+    if not hours:
+        total_mins = plan.get("total_duration_minutes")
+        if total_mins:
+            hours = max(1, int(total_mins) // 60)
+        else:
+            return None
+    else:
+        hours = int(hours)
+
+    return {
+        "total_study_hours": hours,
+        "lesson_duration_minutes": int(minutes),
+    }
+
+
+def active_lesson_duration_minutes(state: dict) -> int:
+    """Длительность занятия активного курса, не общая настройка профиля."""
+    plan = state.get("course_plan") or {}
+    minutes = plan.get("lesson_duration_minutes")
+    if minutes:
+        return int(minutes)
+    inferred = _first_lesson_duration_minutes(plan)
+    if inferred:
+        return inferred
+    user = state.get("user") or {}
+    return int(user.get("lesson_duration_minutes") or 30)

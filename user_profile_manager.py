@@ -140,11 +140,10 @@ class UserProfileManager:
             profile = self.state_manager.state["user"]
             missing_fields = []
 
-            # Проверяем обязательные поля
+            # Имя и стиль — общие. Часы и длительность занятия задаются
+            # на экране курса и в профиле могут быть 0.
             required_fields = {
                 "name": str,
-                "total_study_hours": int,
-                "lesson_duration_minutes": int,
                 "communication_style": str,
             }
 
@@ -152,13 +151,6 @@ class UserProfileManager:
                 value = profile.get(field)
                 if value is None or value == "" or not isinstance(value, field_type):
                     missing_fields.append(field)
-
-            # Проверяем разумные границы значений
-            if profile.get("total_study_hours", 0) <= 0:
-                missing_fields.append("total_study_hours (должно быть > 0)")
-
-            if profile.get("lesson_duration_minutes", 0) <= 0:
-                missing_fields.append("lesson_duration_minutes (должно быть > 0)")
 
             valid_styles = ["formal", "friendly", "casual", "brief"]
             if profile.get("communication_style") not in valid_styles:

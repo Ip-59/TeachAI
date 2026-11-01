@@ -73,7 +73,7 @@ def _set_status(status_box: widgets.Box | None, widget: Any | None) -> None:
 def gate_custom_course(
     setup: Any,
     course: dict,
-    user_profile: dict,
+    schedule: dict,
     start_course: Callable,
     switch_to_catalog: Callable[[], None],
     status_box: widgets.Box | None = None,
@@ -85,8 +85,8 @@ def gate_custom_course(
     Args:
         setup: SetupInterface.
         course: объект своего курса.
-        user_profile: профиль ученика.
-        start_course: ``_start_course(setup, course, profile)``.
+        schedule: часы и длительность занятия этого курса.
+        start_course: ``_start_course(setup, course, schedule)``.
         switch_to_catalog: переключить UI на каталог.
         status_box: ``VBox`` под формой выбора (предпочтительно).
         output: устаревший параметр; если передан без status_box — игнор
@@ -128,7 +128,7 @@ def gate_custom_course(
     if verdict.status == "in":
         show(None)
         clear_output(wait=True)
-        start_course(setup, course, user_profile)
+        start_course(setup, course, schedule)
         return
 
     force_btn = widgets.Button(
@@ -153,7 +153,7 @@ def gate_custom_course(
                 "warning",
             )
         )
-        start_course(setup, course, user_profile)
+        start_course(setup, course, schedule)
 
     def on_other(_b) -> None:
         switch_to_catalog()

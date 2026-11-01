@@ -38,8 +38,11 @@ def test_TST_07_sixty_percent_passes_but_does_not_complete(lesson):
 
 def test_ZAP_01_no_debug_output_on_course_start(nb):
     nb.start_teachai()
-    nb.set_value("Имя", "Тест"); nb.set_value("Общее время", 3); nb.set_value("Длительность урока", 30)
-    out = nb.click("Сохранить настройки") + nb.click("Начать курс")
+    nb.set_value("Имя", "Тест")
+    out = nb.click("Сохранить настройки")
+    nb.set_value("Общее время курса", 3)
+    nb.set_value("Длительность занятия", 30)
+    out = out + nb.click("Начать курс")
     assert "ОТЛАДКА" not in out
     assert "Ключи" not in out
 
@@ -136,11 +139,13 @@ def test_LSN_15_back_to_courses_works_after_repeat_lesson(lesson):
 
 def _start_custom_out_of_domain(nb):
     nb.start_teachai()
-    nb.set_value("Имя", "Тест"); nb.set_value("Общее время", 3); nb.set_value("Длительность урока", 30)
+    nb.set_value("Имя", "Тест")
     nb.click("Сохранить настройки")
     nb.choose("Своё название курса")
     nb.llm_use("domain", "domain_out")
     nb.set_value("Название", "Курс кройки и шитья")
+    nb.set_value("Общее время курса", 3)
+    nb.set_value("Длительность занятия", 30)
     nb.click("Начать курс")
 
 

@@ -77,6 +77,9 @@ class CoursePlanGenerator(BaseContentGenerator):
             course_plan = self._validate_and_fix_course_plan(
                 course_plan, course_data, total_study_hours, lesson_duration_minutes
             )
+            course_plan["total_study_hours"] = int(total_study_hours)
+            course_plan["lesson_duration_minutes"] = int(lesson_duration_minutes)
+            course_plan["total_duration_minutes"] = int(total_study_hours) * 60
 
             if not course_plan.get("sections"):
                 self.logger.warning("После валидации в плане нет разделов")

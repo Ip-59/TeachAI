@@ -143,8 +143,9 @@ class ControlTasksInterface:
         elif validation_mode == "llm" or validation_criteria:
             parts.append(
                 "<p style='margin:0 0 8px 0;line-height:1.6;'>"
-                "Решение проверяет <strong>нейросеть</strong> по смыслу: "
-                "важна правильность логики и результата, а не дословное совпадение текста."
+                "Решение проверяет <strong>нейросеть</strong>: важны шаги и критерии задания. "
+                "Лишние пробелы и запись чисел вроде 1.8 / 1.80 ошибкой не считаются, "
+                "других требований к оформлению нет."
                 "</p>"
             )
             if check_variables:
@@ -270,7 +271,11 @@ class ControlTasksInterface:
             results_output.children = []
             
             try:
-                from code_sandbox import image_widgets, run_student_code
+                from code_sandbox import (
+                    format_execution_error_html,
+                    image_widgets,
+                    run_student_code,
+                )
 
                 full_code = ControlTasksGenerator.resolve_executable_code(
                     task_data.get("task_code", ""), code_input.value
@@ -286,7 +291,10 @@ class ControlTasksInterface:
                         or "Ошибка выполнения кода"
                     )
                     error_html = widgets.HTML(
-                        value=f"<p style='color: red;'>❌ Ошибка выполнения: {msg}</p>"
+                        value=(
+                            "<p style='color: red;'>❌ Ошибка выполнения:</p>"
+                            f"{format_execution_error_html(msg)}"
+                        )
                     )
                     results_output.children = [error_html, *imgs]
                 elif output.strip():
@@ -310,8 +318,13 @@ class ControlTasksInterface:
                     results_output.children = [result_html]
 
             except Exception as e:
+                from code_sandbox import format_execution_error_html
+
                 error_html = widgets.HTML(
-                    value=f"<p style='color: red;'>❌ Ошибка выполнения: {str(e)}</p>"
+                    value=(
+                        "<p style='color: red;'>❌ Ошибка выполнения:</p>"
+                        f"{format_execution_error_html(str(e))}"
+                    )
                 )
                 results_output.children = [error_html]
 

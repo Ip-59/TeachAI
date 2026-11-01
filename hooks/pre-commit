@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Отклоняет commit, если в индексе есть похожие на секреты строки.
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+exec python "$ROOT/scripts/check_secrets.py"

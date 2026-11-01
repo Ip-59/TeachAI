@@ -17,6 +17,25 @@ _JSON_OBJECT = re.compile(r"\{[\s\S]*\}")
 
 _DEFAULT_SUBJECT = "программирование на Python"
 
+# Судья отличает чужую тему от того же приёма с другими данными.
+MATCH_RULES_RU = (
+    "matches=true, если задание тренирует приёмы ИМЕННО этого урока. "
+    "Другие имена переменных и другие числа или строки, чем в примерах урока, "
+    "заданию не мешают. Имена параметров библиотеки из урока "
+    "(например color, linestyle, linewidth, title, plot) — это тема урока, "
+    "а не признак чужого задания.\n"
+    "matches=false только в одном из случаев:\n"
+    "- другая тема, чем в уроке (установка Python, sys.version, age/status, "
+    "если урок не об этом);\n"
+    "- нужен терминал ОС, shell или python --version вместо кода Python "
+    "в редакторе TeachAI;\n"
+    "- задание целиком повторяет готовый пример урока: тот же код, те же имена "
+    "переменных и те же литералы, ученику нечего менять.\n"
+    "Похожий график и те же параметры настройки сами по себе не делают задание чужим. "
+    "Если matches=false, reason называет, какой из этих случаев сработал, "
+    "одним-двумя предложениями на русском."
+)
+
 
 def _parse_json_object(raw: str) -> dict:
     text = (raw or "").strip()
@@ -199,6 +218,27 @@ def lesson_requires_editor_code(
         return None, ""
 
 
+def student_reject_reason(judge_reason: str) -> str:
+    """Текст ученику, если судья дважды не принял задание.
+
+    Args:
+        judge_reason: Поле reason из ответа судьи. Пустая строка — без выдуманной темы.
+
+    Returns:
+        Короткое объяснение, почему контрольного нет.
+    """
+    reason = (judge_reason or "").strip()
+    if not reason:
+        return (
+            "По этому уроку не собралось задание, которое выполняется в редакторе. "
+            "Повторите попытку позже."
+        )
+    return (
+        "По этому уроку не собралось задание, которое выполняется в редакторе. "
+        f"Причина: {reason}"
+    )
+
+
 def task_matches_lesson(
     generator: Any,
     *,
@@ -206,17 +246,18 @@ def task_matches_lesson(
     lesson_title: str,
     lesson_content: str,
     lesson_subject: str,
-) -> bool:
+) -> tuple[bool, str]:
     """
     Спрашивает LLM: относится ли сгенерированное КЗ к этому уроку.
 
     Returns:
-        True — относится; False — нет или ошибка API (безопаснее перегенерировать).
+        (True, причина) — относится.
+        (False, причина) — нет или ошибка API. Пустая причина, если ответа не было.
     """
     if generator is None or not hasattr(generator, "make_api_request"):
-        return False
+        return False, ""
     if not isinstance(task, dict):
-        return False
+        return False, ""
 
     body = (lesson_content or "").strip()
     if len(body) > 6000:
@@ -236,15 +277,7 @@ def task_matches_lesson(
         f"Предметная область урока (ранее): {lesson_subject}\n\n"
         f"Текст урока (фрагмент):\n{body}\n\n"
         f"Контрольное задание (JSON):\n{json.dumps(task_summary, ensure_ascii=False)}\n\n"
-        "Критерии matches=false (НЕ относится / плохое задание):\n"
-        "- другая тема, чем в уроке (напр. установка Python / sys.version, "
-        "если урок не об этом);\n"
-        "- «основы» age/status вместо библиотек/концепций урока;\n"
-        "- требует терминал ОС, shell, python --version в командной строке "
-        "вместо кода Python в редакторе TeachAI;\n"
-        "- буквально копирует код/примеры из текста урока: те же имена "
-        "переменных и те же литералы (строки, числа), что в примерах урока — "
-        "это тоже matches=false; нужны другие имена и значения той же идеи.\n"
+        f"{MATCH_RULES_RU}\n"
         "Ответь ТОЛЬКО JSON: "
         '{"matches": true или false, "reason": "кратко на русском"}.'
     )
@@ -273,13 +306,14 @@ def task_matches_lesson(
             )
         data = _parse_json_object(raw)
         matched = _bool_field(data, "matches")
+        reason = str(data.get("reason") or "").strip()
         logger.info(
             "LLM matches для «%s»: %s (%s)",
             lesson_title,
             matched,
-            data.get("reason", ""),
+            reason,
         )
-        return matched
+        return matched, reason
     except Exception as exc:
         logger.warning("task_matches_lesson не удался: %s", exc)
-        return False
+        return False, ""

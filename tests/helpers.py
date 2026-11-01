@@ -28,3 +28,17 @@ def make_state(plan_id: str = "python-basics"):
     sm.state["learning"]["current_lesson"] = "lesson-1-1-1"
     sm.save_state()
     return sm
+
+
+def start_catalog_course(nb, *, name="Тест", hours=3, minutes=30):
+    """Профиль (имя) -> экран курса (часы/занятие) -> «Начать курс».
+
+    Время больше не на форме профиля: слайдеры на экране выбора курса.
+    Подстроки description: «Общее время курса (часов):», «Длительность занятия (минут):».
+    """
+    nb.set_value("Имя", name)
+    nb.click("Сохранить настройки")
+    nb.set_value("Общее время курса", hours)
+    nb.set_value("Длительность занятия", minutes)
+    nb.click("Начать курс")
+

@@ -105,3 +105,8 @@ replace.txt
 # doc и docs в репозитории целиком, несмотря на правила картинок и json выше
 !doc/**
 !docs/**
+
+# Резервные копии и сырые логи чатов (md-логи коммитим выборочно)
+*.bak_*
+docs/chat_logs/raw/
+docs/Grok_bot_chat.txt

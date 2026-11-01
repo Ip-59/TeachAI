@@ -22,6 +22,46 @@ from examples_html_utils import (
 )
 
 
+def format_example_run_html(stdout: str, stderr: str, result: Any) -> str:
+    """HTML блока «Результат запуска» под кнопкой примера.
+
+    Args:
+        stdout: Текст, который программа напечатала.
+        stderr: Предупреждения, если выполнение само не упало.
+        result: Значение последней строки, как в ячейке Jupyter. None — не показывать.
+
+    Returns:
+        Фрагмент HTML. Пустой вывод тоже занимает место на экране.
+    """
+    chunks: List[str] = []
+    out = (stdout or "").strip()
+    err = (stderr or "").strip()
+    if out:
+        chunks.append(
+            "<pre style='white-space:pre-wrap;margin:8px 0;'>"
+            f"{html.escape(out)}</pre>"
+        )
+    if result is not None:
+        shown = result if isinstance(result, str) else repr(result)
+        chunks.append(
+            "<pre style='white-space:pre-wrap;margin:8px 0;'>"
+            f"{html.escape(shown)}</pre>"
+        )
+    if err:
+        chunks.append(
+            "<pre style='white-space:pre-wrap;margin:8px 0;color:#6c757d;'>"
+            f"{html.escape(err)}</pre>"
+        )
+    if not chunks:
+        chunks.append("<p style='margin:8px 0;'>Код выполнен, вывода нет.</p>")
+    return (
+        "<div style='background:#f8f9fa;border:1px solid #dee2e6;"
+        "border-radius:6px;padding:10px;margin:8px 0;'>"
+        "<strong>Результат запуска</strong>"
+        f"{''.join(chunks)}</div>"
+    )
+
+
 def _create_fallback_code_widget(code: str) -> widgets.VBox:
     """Интерактивная ячейка, если demo_cell_widget недоступен."""
     code_area = widgets.Textarea(
@@ -35,7 +75,10 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
     )
     # Не widgets.Output: его поток в Jupyter дописывается по числу активных
     # областей вывода, и один щелчок печатает результат несколько раз.
-    result_box = widgets.VBox()
+    # Текст пишем в .value виджета, который уже стоит в дереве: так блок
+    # не пропадает, в отличие от подмены children пустого контейнера.
+    result_html = widgets.HTML(value="")
+    images_box = widgets.VBox()
     busy_until = {"t": 0.0}
 
     def _on_run(_button: widgets.Button) -> None:
@@ -44,41 +87,44 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
             return
         busy_until["t"] = now + 1.0
         try:
-            from code_sandbox import image_widgets, run_student_code
+            from code_sandbox import (
+                format_execution_error_html,
+                image_widgets,
+                run_student_code,
+            )
 
-            sandbox = run_student_code(code_area.value, capture_variables=False)
-            imgs = image_widgets(sandbox.images)
+            sandbox = run_student_code(
+                code_area.value,
+                capture_variables=False,
+                eval_last_expression=True,
+            )
+            imgs = tuple(image_widgets(sandbox.images))
             if sandbox.timed_out or not sandbox.success:
                 msg = sandbox.error or sandbox.stderr or "Ошибка выполнения кода"
-                html_w = widgets.HTML(
-                    value=(
-                        "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
-                        f"{html.escape(msg)}</pre>"
-                    )
+                result_html.value = (
+                    "<div style='background:#f8d7da;border:1px solid #f5c6cb;"
+                    "border-radius:6px;padding:10px;margin:8px 0;'>"
+                    "<strong>Результат запуска</strong>"
+                    f"{format_execution_error_html(msg)}</div>"
                 )
-                result_box.children = (html_w, *imgs)
             else:
-                text = sandbox.stdout or ""
-                body = text if text.strip() else "Код выполнен успешно."
-                html_w = widgets.HTML(
-                    value=(
-                        "<pre style='white-space:pre-wrap;margin:8px 0;'>"
-                        f"{html.escape(body)}</pre>"
-                    )
+                result_html.value = format_example_run_html(
+                    sandbox.stdout, sandbox.stderr, sandbox.result
                 )
-                result_box.children = (html_w, *imgs)
+            images_box.children = imgs
         except Exception as exc:
-            result_box.children = (
-                widgets.HTML(
-                    value=(
-                        "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
-                        f"{html.escape(str(exc))}</pre>"
-                    )
-                ),
+            from code_sandbox import format_execution_error_html
+
+            images_box.children = ()
+            result_html.value = (
+                "<div style='background:#f8d7da;border:1px solid #f5c6cb;"
+                "border-radius:6px;padding:10px;margin:8px 0;'>"
+                "<strong>Результат запуска</strong>"
+                f"{format_execution_error_html(str(exc))}</div>"
             )
 
     run_button.on_click(_on_run)
-    return widgets.VBox([code_area, run_button, result_box])
+    return widgets.VBox([code_area, run_button, result_html, images_box])
 
 
 def _create_code_widget(code: str, cell_adapter: Any) -> widgets.Widget | None:

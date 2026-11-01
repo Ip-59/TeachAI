@@ -1,4 +1,5 @@
 import pytest
+from helpers import start_catalog_course
 from nbdriver import NotebookSession
 
 
@@ -16,9 +17,5 @@ def nb(tmp_path):
 def lesson(nb):
     """Профиль сохранён, курс «Основы Python» начат, открыт урок 1 (LLM: plan, lesson, concepts)."""
     nb.start_teachai()
-    nb.set_value("Имя", "Тест")
-    nb.set_value("Общее время", 3)
-    nb.set_value("Длительность урока", 30)
-    nb.click("Сохранить настройки")
-    nb.click("Начать курс")
+    start_catalog_course(nb)
     return nb

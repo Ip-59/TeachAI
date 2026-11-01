@@ -174,11 +174,14 @@ class ControlTasksGenerator(BaseContentGenerator):
         local_vars: Dict[str, Any],
     ) -> List[str]:
         """Определяет переменные для структурной проверки."""
-        explicit = task_data.get("check_variables") or []
-        if isinstance(explicit, str):
-            explicit = [explicit] if explicit else []
-        if task_data.get("check_variable"):
-            explicit.append(task_data["check_variable"])
+        raw = task_data.get("check_variables") or []
+        if isinstance(raw, str):
+            explicit = [raw] if raw else []
+        else:
+            explicit = list(raw)
+        extra = task_data.get("check_variable")
+        if extra and extra not in explicit:
+            explicit.append(extra)
 
         candidates: List[str] = []
         for name in explicit:
@@ -287,8 +290,10 @@ class ControlTasksGenerator(BaseContentGenerator):
             criteria.append("Код должен выполняться без ошибок и соответствовать шагам задания.")
 
         criteria.append(
-            "Проверка выполняется нейросетью по смыслу решения: "
-            "важна логика и корректность результата, а не дословное совпадение текста."
+            "Решение проверяет нейросеть: важно, чтобы были выполнены все шаги "
+            "и критерии задания, а вывод по содержанию совпадал с указанным форматом. "
+            "Лишние пробелы и запись чисел вроде 1.8 / 1.80 ошибкой не считаются, "
+            "других требований к оформлению нет."
         )
         return criteria
 
@@ -433,13 +438,12 @@ stdout:
 {json.dumps(self.build_variables_snapshot(student_vars, check_variables), ensure_ascii=False, indent=2)}
 
 === ПРАВИЛА ОЦЕНКИ ===
-1. is_correct=true ТОЛЬКО если решение полностью выполняет ВСЕ шаги задания.
-2. Оценивай СМЫСЛ и КОРРЕКТНОСТЬ, а не дословное совпадение print/пробелов.
-3. Для sklearn/ML при random_state=42 численные результаты должны быть эквивалентны эталону.
-4. Если в задании указаны конкретные имена переменных — они обязательны.
-5. Если код не выполняется или студент не дописал решение — is_correct=false.
-6. Неверный алгоритм, не те данные, пропущенный шаг — is_correct=false.
-7. feedback — кратко и по-русски, конструктивно; failure_reason — конкретная причина отказа.
+1. Требования к решению — это шаги, критерии и формат вывода из задания. Других требований нет. Эталон (solution_code и его stdout) нужен, чтобы понять ожидаемые значения. Его раскладка print, подписи, вспомогательные переменные и стиль для студента не обязательны.
+2. Проверь каждый шаг по смыслу: делает ли код то, что в шаге сказано. Код из заготовки засчитывается, а студент должен дописать то, чего заготовка не делает. Если шаг требует вычислить, обучить или вывести переменные, результат должен получаться этим действием в коде. Вписанный готовый ответ шаг не выполняет: литерал в print вместо переменных, скопированный массив вместо предсказаний модели, отсутствие fit. Совпавший вывод не отменяет пропущенный шаг.
+3. Проверь критерии: имена и значения переменных, формат вывода. Формат вывода сравнивай по содержанию: те же значения в том же порядке и те же слова. Лишние пробелы, пустая строка в конце и запись числа (1.8 и 1.80) — не ошибка. Для sklearn/ML при random_state=42 числа должны быть эквивалентны эталону.
+4. is_correct=false, если код завершился ошибкой, студент ничего не дописал, не выполнен хотя бы один шаг или нарушен хотя бы один критерий. Иначе is_correct=true.
+5. failure_reason называет конкретный невыполненный шаг или критерий из задания и объясняет, что именно в коде или выводе ему не соответствует. Если такой пункт назвать нельзя, отказ необоснован: ставь is_correct=true. Проверка «по смыслу» не даёт права добавлять свои требования: вывод в столбик, подписи, кавычки и любое оформление, которого нет в задании.
+6. score от 0 до 100 согласован с is_correct. feedback — кратко, по-русски, конструктивно.
 
 Верни ТОЛЬКО JSON:
 {{
@@ -491,7 +495,12 @@ stdout:
                 "content": (
                     "Ты — строгий, но справедливый преподаватель Python и машинного обучения. "
                     "Проверяешь контрольные задания по смыслу решения. "
-                    "Отвечай только валидным JSON на русском языке в полях feedback и failure_reason."
+                    "Требования к решению — только то, что явно написано в шагах, "
+                    "критериях и формате вывода задания. "
+                    "Эталонное решение — пример одного правильного способа, "
+                    "а не источник дополнительных требований. "
+                    "Отвечай только валидным JSON; поля feedback и failure_reason "
+                    "пиши на русском языке."
                 ),
             },
             {"role": "user", "content": prompt},
@@ -678,8 +687,12 @@ stdout:
         *,
         lesson_title: str = "",
         lesson_content: str = "",
-    ) -> bool:
-        """Относится ли КЗ к уроку — только запросом к LLM."""
+    ) -> tuple[bool, str]:
+        """Относится ли КЗ к уроку — только запросом к LLM.
+
+        Returns:
+            Пара (подходит, причина судьи).
+        """
         from control_task_llm_judge import task_matches_lesson
 
         return task_matches_lesson(
@@ -791,22 +804,27 @@ stdout:
 
             need_retry = False
             retry_extra = ""
-            if not self._task_matches_subject(
+            reject_reason = ""
+            matched, judge_reason = self._task_matches_subject(
                 task_data,
                 course_subject,
                 lesson_title=lesson_title,
                 lesson_content=content_for_prompt,
-            ):
+            )
+            if not matched:
                 need_retry = True
+                reject_reason = judge_reason
                 retry_extra = (
-                    f"\n\nПОВТОР: задание НЕ относится к уроку «{lesson_title}» "
-                    f"(область: {course_subject}). Сделай практику строго по "
-                    "полному тексту ЭТОГО урока. Запрещено подменять тему "
-                    "(установка Python, чужие модули курса и т.п.)."
+                    f"\n\nПОВТОР. Судья отклонил задание"
+                    f"{': ' + judge_reason if judge_reason else ''}. "
+                    f"Урок — «{lesson_title}» ({course_subject}). "
+                    "Оставь приёмы этого урока. Другие имена и значения — можно. "
+                    "Другую тему, терминал и дословную копию примера урока — нельзя."
                 )
                 self.logger.warning(
-                    "LLM: КЗ не относится к уроку «%s» — повтор",
+                    "LLM: КЗ не принято для «%s» — повтор (%s)",
                     lesson_title,
+                    judge_reason,
                 )
             # Готовый код после маркера — структурный факт о строке task_code,
             # не угадывание темы (можно срезать/перегенерировать без словарей).
@@ -837,17 +855,21 @@ stdout:
                 task_data = self._parse_control_task_response(response, lesson_data)
                 task_data = self._sanitize_task_starter(task_data)
 
-            # Терминал / копипаста / чужая тема — снова только LLM-судья.
-            still_bad = not self._task_matches_subject(
+            # Терминал / дословная копия / чужая тема — снова только LLM-судья.
+            from control_task_llm_judge import student_reject_reason
+
+            still_ok, still_reason = self._task_matches_subject(
                 task_data,
                 course_subject,
                 lesson_title=lesson_title,
                 lesson_content=content_for_prompt,
             )
-            if still_bad:
+            if not still_ok:
+                shown = still_reason or reject_reason
                 self.logger.error(
-                    "КЗ отклонено после повтора для «%s»",
+                    "КЗ отклонено после повтора для «%s»: %s",
                     lesson_title,
+                    shown,
                 )
                 task_data = {
                     "title": lesson_title,
@@ -857,11 +879,7 @@ stdout:
                     "solution_code": "",
                     "is_needed": False,
                     "unavailable": "not_applicable",
-                    "skip_reason": (
-                        "По этому уроку не собралось задание, которое выполняется "
-                        "в редакторе и остаётся в теме урока. Код из другой темы "
-                        "подставлять не будем."
-                    ),
+                    "skip_reason": student_reject_reason(shown),
                     "student_steps": [],
                     "validation_mode": "llm",
                     "check_variables": [],

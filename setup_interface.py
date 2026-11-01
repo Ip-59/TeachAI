@@ -64,34 +64,18 @@ class SetupInterface:
 
         header = self.utils.create_header(f"Настройка профиля {PROJECT_NAME}")
         scope_banner = widgets.HTML(value=scope_banner_html())
-        description = widgets.HTML(value="<p>Пожалуйста, заполните следующие поля:</p>")
+        description = widgets.HTML(
+            value=(
+                "<p>Имя и стиль общения — общие. Тему курса, общее время "
+                "и длительность занятия вы зададите на следующем шаге, "
+                "отдельно для каждого курса.</p>"
+            )
+        )
 
         # Создаем форму с полями ввода
         name_widget = widgets.Text(
             description="Имя:",
             placeholder="Введите ваше имя",
-            style=_SETUP_FIELD_STYLE,
-            layout=_SETUP_FIELD_LAYOUT,
-        )
-
-        total_hours_widget = widgets.IntSlider(
-            value=10,
-            min=1,
-            max=100,
-            step=1,
-            description="Общее время (часов):",
-            continuous_update=False,
-            style=_SETUP_FIELD_STYLE,
-            layout=_SETUP_FIELD_LAYOUT,
-        )
-
-        lesson_duration_widget = widgets.IntSlider(
-            value=30,
-            min=5,
-            max=120,
-            step=5,
-            description="Длительность урока (минут):",
-            continuous_update=False,
             style=_SETUP_FIELD_STYLE,
             layout=_SETUP_FIELD_LAYOUT,
         )
@@ -136,11 +120,12 @@ class SetupInterface:
                     )
                     return
 
-                # Сохраняем данные пользователя
+                # Время курса здесь не спрашиваем: оно задаётся на экране курса.
+                current = self.state_manager.get_user_profile()
                 success = self.state_manager.update_user_profile(
                     name=name,
-                    total_study_hours=total_hours_widget.value,
-                    lesson_duration_minutes=lesson_duration_widget.value,
+                    total_study_hours=current.get("total_study_hours") or 0,
+                    lesson_duration_minutes=current.get("lesson_duration_minutes") or 0,
                     communication_style=communication_style_widget.value,
                 )
 
@@ -156,8 +141,6 @@ class SetupInterface:
                         action_type="user_profile_created",
                         details={
                             "name": name,
-                            "total_study_hours": total_hours_widget.value,
-                            "lesson_duration_minutes": lesson_duration_widget.value,
                             "communication_style": communication_style_widget.value,
                         },
                     )
@@ -198,8 +181,6 @@ class SetupInterface:
                 widgets.VBox(
                     [
                         name_widget,
-                        total_hours_widget,
-                        lesson_duration_widget,
                         communication_style_widget,
                     ],
                     layout=widgets.Layout(gap="10px"),
@@ -238,9 +219,8 @@ class SetupInterface:
         <div style="padding: 15px; background-color: #e9ecef; border-radius: 8px; margin: 15px 0; border: 1px solid #adb5bd;">
             <h3 style="margin-top: 0; color: #495057;">Настройки обучения</h3>
             <p><strong>Имя:</strong> {user_profile['name']}</p>
-            <p><strong>Общее время обучения:</strong> {user_profile['total_study_hours']} часов</p>
-            <p><strong>Длительность занятия:</strong> {user_profile['lesson_duration_minutes']} минут</p>
             <p><strong>Стиль общения:</strong> {user_profile['communication_style'].capitalize()}</p>
+            <p>Общее время и длительность занятия задаются отдельно для каждого курса.</p>
         </div>
         """
         return widgets.HTML(value=settings_html)

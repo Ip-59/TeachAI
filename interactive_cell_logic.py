@@ -37,8 +37,10 @@ def execute_student_code(
             execution_namespace.update(sandbox.variables)
 
         if sandbox.timed_out or not sandbox.success:
+            from code_sandbox import with_name_error_hint
+
             msg = sandbox.error or sandbox.stderr or "Ошибка выполнения кода"
-            return None, msg, False, images
+            return None, with_name_error_hint(msg), False, images
 
         result = None
         result_vars = [
@@ -59,7 +61,9 @@ def execute_student_code(
         return result, sandbox.stdout or "", True, images
 
     except Exception as e:
-        return None, str(e), False, []
+        from code_sandbox import with_name_error_hint
+
+        return None, with_name_error_hint(str(e)), False, []
 
 
 def find_result_in_namespace(
