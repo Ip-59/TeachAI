@@ -1,0 +1,417 @@
+"""Базовый генератор контента: клиент LLM, retries, подготовка текста урока."""
+from __future__ import annotations
+
+import json
+import logging
+import os
+import re
+from datetime import datetime
+
+from llm_route import chat_extra_body, create_openai_client, describe_llm_route
+
+
+_NON_RETRYABLE_STATUS = {400: "Запрос отклонён сервером (400).", 401: "Неверный API-ключ или нет доступа (401). Проверьте ключ в .env.",
+                         403: "Доступ запрещён (403). Проверьте ключ, регион и маршрут.", 404: "Модель или адрес API не найдены (404)."}
+
+
+def non_retryable_api_error(exc: Exception) -> str:
+    """Русское пояснение для ошибок, которые не лечатся повтором; "" — повторять можно.
+
+    401/403/404/400 и нехватка квоты не пройдут со второй попытки.
+    Таймауты, обрывы связи, 429 и 5xx повторяются как раньше.
+    """
+    status = getattr(exc, "status_code", None)
+    if status is None:
+        match = re.search(r"Error code:\s*(\d{3})", str(exc))
+        status = int(match.group(1)) if match else None
+    if status in _NON_RETRYABLE_STATUS:
+        return _NON_RETRYABLE_STATUS[status]
+    if "insufficient_quota" in str(exc).lower():
+        return "Недостаточно средств или превышена квота API."
+    return ""
+
+
+class BaseContentGenerator:
+    """Базовый класс для всех генераторов контента."""
+
+    def __init__(self, api_key, debug_dir="debug_responses"):
+        """
+        Инициализация базового генератора.
+
+        Args:
+            api_key (str): API ключ OpenAI
+            debug_dir (str): Директория для отладочных файлов
+        """
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.api_key = api_key
+        self.debug_dir = debug_dir
+        self.model = os.getenv("LLM_MODEL", "gpt-4o-mini")
+        self.llm_meta: dict = {}
+
+        try:
+            self.client, self.http_client, self.llm_meta = create_openai_client(
+                self.api_key
+            )
+            self.logger.info(
+                "%s: %s, модель %s",
+                self.__class__.__name__,
+                describe_llm_route(),
+                self.model,
+            )
+        except Exception as e:
+            self.logger.error(f"Ошибка при инициализации LLM-клиента: {str(e)}")
+            raise
+
+        os.makedirs(self.debug_dir, exist_ok=True)
+
+    def save_debug_response(
+        self, response_type, prompt, response_content, additional_data=None
+    ):
+        """
+        Сохраняет ответ API в файл для отладки.
+
+        Args:
+            response_type (str): Тип запроса (course_plan, lesson, assessment, etc.)
+            prompt (str): Отправленный промпт
+            response_content (str): Ответ от API
+            additional_data (dict): Дополнительные данные для сохранения
+        """
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{response_type}_{timestamp}.json"
+            filepath = os.path.join(self.debug_dir, filename)
+
+            debug_data = {
+                "timestamp": timestamp,
+                "response_type": response_type,
+                "prompt": (
+                    prompt[:500] + "..." if len(prompt) > 500 else prompt
+                ),  # Сокращаем длинные промпты
+                "response_content": response_content,
+                "additional_data": additional_data or {},
+            }
+
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(debug_data, f, ensure_ascii=False, indent=2)
+
+            self.logger.info(f"Отладочный ответ сохранен: {filepath}")
+
+        except Exception as e:
+            self.logger.error(f"Ошибка при сохранении отладочного ответа: {str(e)}")
+
+    def clean_lesson_html_for_analysis(self, content):
+        """Готовит HTML урока для анализа LLM: чистит шум и теги.
+
+        Что удаляется ДО снятия тегов (важно):
+        - блоки ``<style>...</style>`` и ``<script>...</script>``
+          вместе с содержимым (иначе CSS-/JS-текст утекает в анализ как
+          «материал урока» и забивает контекст);
+        - HTML-комментарии ``<!-- ... -->``.
+
+        Затем снимаются теги и схлопываются пробельные последовательности.
+
+        Args:
+            content (str): Исходный HTML-фрагмент урока.
+
+        Returns:
+            str: Чистый текст урока, пригодный для отправки в LLM.
+        """
+        if not content:
+            return ""
+        cleaned = re.sub(
+            r"<style\b[^>]*>[\s\S]*?</style>", " ", content, flags=re.IGNORECASE
+        )
+        cleaned = re.sub(
+            r"<script\b[^>]*>[\s\S]*?</script>", " ", cleaned, flags=re.IGNORECASE
+        )
+        cleaned = re.sub(r"<!--[\s\S]*?-->", " ", cleaned)
+        cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+        cleaned = re.sub(r"&[a-zA-Z]+;", " ", cleaned)
+        cleaned = re.sub(r"&#\d+;", " ", cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned
+
+    def extract_lesson_headers(self, content):
+        """Извлекает заголовки h1–h4 из HTML урока.
+
+        Args:
+            content (str): HTML-содержание урока.
+
+        Returns:
+            list[str]: Заголовки в порядке появления.
+        """
+        if not content:
+            return []
+        headers = re.findall(
+            r"<h[1-4][^>]*>\s*([\s\S]*?)\s*</h[1-4]>", content, flags=re.IGNORECASE
+        )
+        result = []
+        for header in headers:
+            text = re.sub(r"<[^>]+>", " ", header)
+            text = re.sub(r"\s+", " ", text).strip()
+            if text and text not in result:
+                result.append(text)
+        return result
+
+    def strip_plain_text_breadcrumb(
+        self, text, course_context=None, lesson_title=None
+    ):
+        """Срезает ведущие названия курса/раздела/темы/урока из plain text.
+
+        После ``clean_lesson_html_for_analysis`` breadcrumb часто остаётся
+        первым абзацem текста («Введение в ML Основы Python ...»).
+
+        Args:
+            text (str): Очищенный текст урока.
+            course_context (dict | None): Контекст курса.
+            lesson_title (str | None): Название урока.
+
+        Returns:
+            str: Текст без ведущих breadcrumb-фрагментов.
+        """
+        if not text:
+            return text
+
+        titles = []
+        if isinstance(course_context, dict):
+            for key in ("course_title", "section_title", "topic_title"):
+                title = (course_context.get(key) or "").strip()
+                if title:
+                    titles.append(title)
+        if lesson_title:
+            title = str(lesson_title).strip()
+            if title and title not in titles:
+                titles.append(title)
+
+        result = text.lstrip()
+        changed = True
+        while changed and result:
+            changed = False
+            for title in titles:
+                if result.lower().startswith(title.lower()):
+                    result = result[len(title) :].lstrip(" ,:;—.-")
+                    changed = True
+        return result.strip()
+
+    def prepare_lesson_text_for_analysis(
+        self, content, course_context=None, max_chars=6000, lesson_title=None
+    ):
+        """Готовит текст урока для LLM-анализа (релевантность, понятия, QA).
+
+        Последовательность: срез breadcrumb-шапки → удаление style/script →
+        снятие HTML-тегов → срез plain-text breadcrumb → ограничение длины.
+
+        Args:
+            content (str): HTML или markdown урока.
+            course_context (dict | None): Контекст курса для среза шапки.
+            max_chars (int): Максимальная длина возвращаемого текста.
+            lesson_title (str | None): Название урока для среза plain-text шапки.
+
+        Returns:
+            str: Чистый текст для промпта.
+        """
+        if not content:
+            return ""
+        stripped = self.strip_lesson_breadcrumb(content, course_context)
+        clean = self.clean_lesson_html_for_analysis(stripped)
+        clean = self.strip_plain_text_breadcrumb(
+            clean, course_context, lesson_title=lesson_title
+        )
+        if max_chars and len(clean) > max_chars:
+            return clean[:max_chars]
+        return clean
+
+    def strip_lesson_breadcrumb(self, content, course_context):
+        """Срезает ведущие <h1>/<h2>/<h3>/<h4> с названиями курса/раздела/темы.
+
+        LLM при генерации урока часто помещает в начало шапку с названиями
+        курса, раздела и темы. Такая шапка не относится к телу конкретного
+        урока, но при последующих запросах (генерация ключевых понятий,
+        проверка релевантности, QA и т.п.) она затеняет содержание урока
+        и сбивает LLM на общую тему курса.
+
+        Удаляются ровно те идущие подряд заголовки в начале документа,
+        текст которых совпадает (без учёта регистра и крайних пробелов)
+        с одним из значений ``course_title / section_title / topic_title``
+        в ``course_context``. Заголовки внутри тела урока не трогаются.
+
+        Args:
+            content (str): Исходный HTML урока.
+            course_context (dict | None): Контекст курса.
+
+        Returns:
+            str: HTML без ведущей breadcrumb-шапки.
+        """
+        if not content or not isinstance(course_context, dict):
+            return content
+
+        breadcrumb_titles = [
+            (course_context.get(key) or "").strip()
+            for key in ("course_title", "section_title", "topic_title")
+        ]
+        breadcrumb_titles = [t for t in breadcrumb_titles if t]
+        if not breadcrumb_titles:
+            return content
+
+        normalized_set = {t.lower() for t in breadcrumb_titles}
+
+        # «Шум» допустимый ПЕРЕД breadcrumb-заголовком — это типичная служебная
+        # обвязка от генератора урока: <style>, <script>, HTML-комментарии,
+        # пробелы и переносы строк. Заголовки идут уже после неё.
+        leading_noise_re = re.compile(
+            r"(?:<style\b[^>]*>[\s\S]*?</style>"
+            r"|<script\b[^>]*>[\s\S]*?</script>"
+            r"|<!--[\s\S]*?-->"
+            r"|\s+)+",
+            re.IGNORECASE,
+        )
+        header_re = re.compile(
+            r"<h[1-4][^>]*>\s*([\s\S]*?)\s*</h[1-4]>",
+            re.IGNORECASE,
+        )
+
+        stripped = content
+        while True:
+            noise = leading_noise_re.match(stripped)
+            offset = noise.end() if noise else 0
+            header = header_re.match(stripped, offset)
+            if not header:
+                break
+            header_text = re.sub(r"<[^>]+>", "", header.group(1)).strip().lower()
+            if header_text in normalized_set:
+                # Удаляем только сам заголовок, ведущий шум (style/script)
+                # оставляем как был — clean_lesson_html_for_analysis уберёт
+                # его дальше.
+                stripped = stripped[:header.start()] + stripped[header.end():]
+                continue
+            break
+
+        return stripped
+
+    def clean_markdown_code_blocks(self, text):
+        """
+        Снимает одну внешнюю обёртку ``` вокруг всего ответа.
+
+        Внутренние блоки кода не удаляет (раньше снимались все fences).
+        """
+        try:
+            from student_content import unwrap_outer_fence
+
+            text = unwrap_outer_fence(text)
+            import textwrap
+
+            # Безопасный dedent внутри <pre><code>: снимает только общий
+            # лидирующий пробельный префикс. Если у хотя бы одной строки
+            # его нет — структура цикла/условия сохраняется как есть.
+            code_pattern = r"<pre><code>([\s\S]*?)</code></pre>"
+
+            def dedent_code_block(match):
+                code_content = match.group(1).strip("\n")
+                dedented = textwrap.dedent(code_content)
+                return f"<pre><code>{dedented}</code></pre>"
+
+            text = re.sub(code_pattern, dedent_code_block, text)
+
+            return text
+
+        except Exception as e:
+            self.logger.warning(
+                f"Ошибка при очистке markdown меток и отступов: {str(e)}"
+            )
+            return text
+
+    def make_api_request(
+        self,
+        messages,
+        temperature=0.7,
+        max_tokens=3500,
+        response_format=None,
+        model=None,
+    ):
+        """
+        Выполняет запрос к OpenAI API с едиными настройками.
+
+        Args:
+            messages (list): Список сообщений для API
+            temperature (float): Температура генерации
+            max_tokens (int): Максимальное количество токенов
+            response_format (dict): Формат ответа (например, {"type": "json_object"})
+            model (str): Модель; если не указана — self.model
+
+        Returns:
+            str: Ответ от API
+
+        Raises:
+            Exception: При ошибке API
+        """
+        try:
+            kwargs = {
+                "model": model or self.model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+
+            if response_format:
+                kwargs["response_format"] = response_format
+
+            extra = chat_extra_body(getattr(self, "llm_meta", None))
+            if extra:
+                kwargs["extra_body"] = extra
+
+            response = self.client.chat.completions.create(**kwargs)
+            return response.choices[0].message.content
+
+        except Exception as e:
+            self.logger.error(f"Ошибка при запросе к LLM API: {str(e)}")
+            raise
+
+    def make_api_request_with_retries(
+        self,
+        messages,
+        temperature=0.7,
+        max_tokens=3500,
+        response_format=None,
+        model=None,
+        retries=3,
+        backoff_factor=2,
+        initial_delay=2,
+    ):
+        """Выполняет запрос к OpenAI API с повторными попытками для ошибок сети."""
+        last_exception = None
+        delay = initial_delay
+
+        for attempt in range(1, retries + 1):
+            try:
+                return self.make_api_request(
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format=response_format,
+                    model=model,
+                )
+            except Exception as e:
+                last_exception = e
+                fatal = non_retryable_api_error(e)
+                if fatal:
+                    # Повтор не поможет: ключ, права или запрос не изменятся.
+                    self.logger.error(f"Запрос к LLM не повторяется: {str(e)}")
+                    raise Exception(f"{fatal} Исходная ошибка: {str(e)}") from e
+                self.logger.warning(
+                    f"Попытка {attempt}/{retries} неудачна: {str(e)}. "
+                    f"Повтор через {delay} сек..."
+                )
+
+                if attempt == retries:
+                    break
+
+                import time
+
+                time.sleep(delay)
+                delay *= backoff_factor
+
+        raise Exception(
+            "Сервер не отвечает. Попробуйте повторить запрос через несколько секунд. "
+            f"Если ошибка сохраняется, проверьте подключение и настройки прокси. "
+            f"Исходная ошибка: {str(last_exception)}"
+        )

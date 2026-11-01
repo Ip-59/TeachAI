@@ -127,7 +127,13 @@ class FakeLLM:
         return self.client(), None, meta
 
     def install(self) -> None:
-        """Подменяет единственную точку создания клиента: content_utils.create_openai_client."""
+        """Подменяет создание клиента там, где его вызывает BaseContentGenerator.
+
+        После сплита класс живёт в llm_api_base и читает create_openai_client
+        из глобалов ЭТОГО модуля. Патч только content_utils не действует.
+        """
         import content_utils
+        import llm_api_base
 
         content_utils.create_openai_client = self.create_openai_client
+        llm_api_base.create_openai_client = self.create_openai_client
