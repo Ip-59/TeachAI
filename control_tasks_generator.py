@@ -687,7 +687,7 @@ stdout:
         *,
         lesson_title: str = "",
         lesson_content: str = "",
-    ) -> bool:
+    ) -> tuple[bool, str]:
         """Относится ли КЗ к уроку — только запросом к LLM.
 
         Returns:

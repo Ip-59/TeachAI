@@ -87,7 +87,11 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
             return
         busy_until["t"] = now + 1.0
         try:
-            from code_sandbox import image_widgets, run_student_code
+            from code_sandbox import (
+                format_execution_error_html,
+                image_widgets,
+                run_student_code,
+            )
 
             sandbox = run_student_code(
                 code_area.value,
@@ -101,8 +105,7 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
                     "<div style='background:#f8d7da;border:1px solid #f5c6cb;"
                     "border-radius:6px;padding:10px;margin:8px 0;'>"
                     "<strong>Результат запуска</strong>"
-                    "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
-                    f"{html.escape(msg)}</pre></div>"
+                    f"{format_execution_error_html(msg)}</div>"
                 )
             else:
                 result_html.value = format_example_run_html(
@@ -110,13 +113,14 @@ def _create_fallback_code_widget(code: str) -> widgets.VBox:
                 )
             images_box.children = imgs
         except Exception as exc:
+            from code_sandbox import format_execution_error_html
+
             images_box.children = ()
             result_html.value = (
                 "<div style='background:#f8d7da;border:1px solid #f5c6cb;"
                 "border-radius:6px;padding:10px;margin:8px 0;'>"
                 "<strong>Результат запуска</strong>"
-                "<pre style='white-space:pre-wrap;margin:8px 0;color:#721c24;'>"
-                f"{html.escape(str(exc))}</pre></div>"
+                f"{format_execution_error_html(str(exc))}</div>"
             )
 
     run_button.on_click(_on_run)

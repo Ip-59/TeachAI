@@ -138,7 +138,13 @@ class CellWidgetBase(widgets.VBox):
             output = f"{output}\n{sandbox.stderr}" if output else sandbox.stderr
 
         if not sandbox.success:
-            return None, (sandbox.error or output or "Ошибка выполнения"), False
+            from code_sandbox import with_name_error_hint
+
+            return (
+                None,
+                with_name_error_hint(sandbox.error or output or "Ошибка выполнения"),
+                False,
+            )
 
         return sandbox.result, output, True
 

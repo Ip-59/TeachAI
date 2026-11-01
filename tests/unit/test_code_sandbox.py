@@ -278,3 +278,24 @@ plt.plot([1, 2])
     assert "ZeroDivision" in output or "division" in output.lower()
     assert len(images) == 1
     assert len(image_widgets(images)) == 1
+
+
+def test_name_error_hint_for_student():
+    from code_sandbox import (
+        NAME_ERROR_HINT_RU,
+        format_execution_error_html,
+        name_error_student_hint,
+        with_name_error_hint,
+    )
+
+    msg = "NameError: name 'my_var' is not defined"
+    assert name_error_student_hint(msg) == NAME_ERROR_HINT_RU
+    assert "с нуля" in with_name_error_hint(msg)
+    assert name_error_student_hint("ValueError: x") == ""
+    html = format_execution_error_html(msg)
+    assert "#6c757d" in html
+    assert "my_var" in html
+    assert NAME_ERROR_HINT_RU in html
+    # идемпотентность
+    assert name_error_student_hint(with_name_error_hint(msg)) == ""
+
