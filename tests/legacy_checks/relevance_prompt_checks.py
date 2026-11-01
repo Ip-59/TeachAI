@@ -31,6 +31,7 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     assert "scope=outside" in lowered
     assert "близких конструкций" in lowered
     assert "в основном опирается" in lowered
+    assert "в тексте или коде" in lowered
     assert "которую этот урок не вводит" in lowered
     assert "понятия, операторы, синтаксис" not in lowered
     assert "3.15" not in lowered
