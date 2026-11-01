@@ -10,12 +10,10 @@ pytestmark = pytest.mark.scenario
 
 
 def _open_first_lesson(nb: NotebookSession) -> None:
+    from helpers import start_catalog_course
+
     nb.start_teachai()
-    nb.set_value("Имя", "Тест")
-    nb.set_value("Общее время", 3)
-    nb.set_value("Длительность урока", 30)
-    nb.click("Сохранить настройки")
-    nb.click("Начать курс")
+    start_catalog_course(nb)
 
 
 def test_TST_05_double_submit_records_one_attempt(lesson):
