@@ -16,13 +16,18 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     )
     lowered = prompt.lower()
     assert "не сверка фраз с текстом" in lowered
-    assert "точной фразы в тексте может не быть" in lowered
+    assert "точной фразы вопроса в тексте нет" in lowered
     assert "если понятие или термин из вопроса встречается" not in lowered
     assert "не рассматривается в тексте" in lowered
     assert "scope=lesson" in lowered
     assert "scope=course" in lowered
     assert "scope=outside" in lowered
+    assert "близких конструкций" in lowered
+    assert "в основном опирается" in lowered
+    assert "которую этот урок не вводит" in lowered
+    assert "понятия, операторы, синтаксис" not in lowered
     assert "3.15" not in lowered
+    assert "= и ==" not in lowered
 
 
 def main() -> None:
