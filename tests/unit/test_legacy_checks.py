@@ -1,6 +1,8 @@
-"""Существующие проверки в корне проекта (*_checks.py) запускаются как есть, но в изолированной среде.
+"""Legacy *_checks.py из tests/legacy_checks/ — как есть, в изолированной среде.
 
-Файлы *_checks.py не двигаем; если проверка разошлась с кодом, её правят осознанно (так было с relevance_prompt_checks в пакете 2).
+Файлы не оставляем в корне; если проверка разошлась с кодом, правят её или код.
+Запуск одного файла из корня репозитория:
+  PYTHONPATH=. python tests/legacy_checks/course_portfolio_checks.py
 """
 import importlib
 import inspect
@@ -8,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+LEGACY = Path(__file__).resolve().parents[1] / "legacy_checks"
 pytestmark = pytest.mark.unit
 
 # Устаревшие проверки: сейчас таких нет. Если проверка разошлась с кодом, правьте её или код,
@@ -17,14 +19,20 @@ STALE: dict[str, str] = {}
 
 
 def _cases():
-    for path in sorted(ROOT.glob("*_checks.py")):
-        mod = importlib.import_module(path.stem)
+    for path in sorted(LEGACY.glob("*_checks.py")):
+        mod = importlib.import_module(f"tests.legacy_checks.{path.stem}")
         for name, fn in inspect.getmembers(mod, inspect.isfunction):
-            if name.startswith("test_") and fn.__module__ == path.stem:
+            if name.startswith("test_") and fn.__module__ == mod.__name__:
                 case_id = f"{path.stem}::{name}"
                 marks = []
                 if case_id in STALE:
-                    marks.append(pytest.mark.xfail(strict=True, raises=AssertionError, reason=STALE[case_id]))
+                    marks.append(
+                        pytest.mark.xfail(
+                            strict=True,
+                            raises=AssertionError,
+                            reason=STALE[case_id],
+                        )
+                    )
                 yield pytest.param(fn, id=case_id, marks=marks)
 
 
