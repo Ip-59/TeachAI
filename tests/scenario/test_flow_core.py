@@ -119,6 +119,10 @@ def test_LSN_10_outside_question_not_counted_as_answered(lesson):
     assert "qa" not in lesson.llm_calls()
     assert lesson.state()["learning"]["questions_count"].get(L1, 0) == 0
     assert lesson.state()["learning"]["offtopic_count"].get(L1, 0) == 1
+    page = " ".join(lesson.html_texts())
+    assert "Вопрос вне курса" in page
+    assert "Это 1-й вопрос не в тему" in page
+    assert "Это уже" not in page
 
 
 def test_LSN_08_relevant_question_is_answered_and_counted(lesson):

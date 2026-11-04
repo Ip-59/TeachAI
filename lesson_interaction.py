@@ -466,7 +466,7 @@ class LessonInteraction:
                             <h4>Вопрос вне курса</h4>
                             <p><strong>Ваш вопрос:</strong> {safe_question}</p>
                             <p>{safe_reason}</p>
-                            <p>Это уже {n}-й вопрос не в тему урока и не в тему курса.</p>
+                            <p>Это {n}-й вопрос не в тему урока и не в тему курса.</p>
                         </div>
                         """
                         return

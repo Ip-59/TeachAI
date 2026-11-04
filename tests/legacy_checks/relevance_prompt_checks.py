@@ -36,6 +36,8 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     assert "понятия, операторы, синтаксис" not in lowered
     assert "3.15" not in lowered
     assert "= и ==" not in lowered
+    assert "вне тем курса" in lowered
+    assert "не относится к курсу целиком" in lowered
 
 
 def main() -> None:
