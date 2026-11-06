@@ -27,7 +27,7 @@ RULES: list[tuple[str, str, str | None]] = [
     ("examples", r"Сначала реши, есть ли у этого урока", None),
     ("examples_repair", r"генерируешь только JSON с рабочими Python-примерами", None),
     ("assessment", r"создающий тесты для проверки знаний", None),
-    ("relevance", r"scope=lesson, если вопрос", None),
+    ("relevance", r"scope=lesson — вопрос про материал этого урока", None),
     ("qa", r"отвечает на вопросы студентов", None),
     ("task_gen", r"Создавай однозначные контрольные задания", None),
     ("task_validate", r"Проверяешь контрольные задания по смыслу решения", None),
