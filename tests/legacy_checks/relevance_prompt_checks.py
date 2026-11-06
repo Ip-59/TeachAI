@@ -33,12 +33,15 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     assert "в основном опирается" in lowered
     assert "в тексте или коде" in lowered
     assert "предметной области этого курса" in lowered
+    assert "библиотеки" in lowered
+    assert "фреймворки" in lowered
     assert "понятия, операторы, синтаксис" not in lowered
     assert "3.15" not in lowered
     assert "= и ==" not in lowered
     assert "вне предмета этого курса" in lowered
-    assert "запрещено писать про" in lowered
-    assert "если вопрос всё ещё про предмет курса" in lowered
+    assert "название текущего урока" in lowered
+    assert "поставь scope=course" in lowered
+    assert "включая его библиотеки" in lowered
 
 
 def main() -> None:
