@@ -23,7 +23,7 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/your-username/TeachAI.git
+git clone https://github.com/Ip-59/TeachAI.git
 cd TeachAI
 ```
 
@@ -208,7 +208,7 @@ TeachAI/
 
 ## 📞 Поддержка
 
-Для сообщения об ошибках и предложений используйте [Issues](https://github.com/your-username/TeachAI/issues)
+Для сообщения об ошибках и предложений используйте [Issues](https://github.com/Ip-59/TeachAI/issues)
 
 ---
 
