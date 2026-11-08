@@ -431,9 +431,9 @@ class LessonInteraction:
                     )
 
                     # Проверяем релевантность вопроса.
-                    # Передаём course_context, чтобы из тела урока была срезана
-                    # breadcrumb-шапка и LLM учитывал именно материал урока
-                    # (а не название курса/раздела).
+                    # course_context срезает breadcrumb из тела урока и отдельно
+                    # передаёт название курса и описание плана. Название темы
+                    # за предмет курса не выдаётся.
                     relevance_result = self.lesson_interface.content_generator.check_question_relevance(
                         question,
                         self.lesson_interface.current_lesson_content,

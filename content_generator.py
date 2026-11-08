@@ -406,9 +406,11 @@ class ContentGenerator:
             user_question (str): Вопрос пользователя.
             lesson_content (str): Содержание урока.
             lesson_data (dict): Метаданные урока.
-            course_context (dict | None): Контекст курса (course_title,
-                section_title, topic_title) для удаления breadcrumb-шапки
-                из текста перед анализом.
+            course_context (dict | None): Контекст курса. course_title,
+                section_title и topic_title срезают breadcrumb из текста урока.
+                Предмет курса в промпт берётся из course_title и из строки
+                course_plan["description"] (или course_description, если она есть).
+                Название темы за название курса не выдаётся.
             lesson_raw_content (str | None): Сырой текст урока до форматирования.
 
         Returns:

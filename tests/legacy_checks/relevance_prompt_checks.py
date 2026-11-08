@@ -40,8 +40,12 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     assert "= и ==" not in lowered
     assert "вне предмета этого курса" in lowered
     assert "название текущего урока" in lowered
-    assert "поставь scope=course" in lowered
+    # Упоминание урока в reason больше не предписывает scope=course.
+    assert "поставь scope=course" not in lowered
+    assert "это scope=course, не outside" not in lowered
     assert "включая его библиотеки" in lowered
+    assert "не указано" in lowered
+    assert "python и ai/ml" not in lowered
 
 
 def main() -> None:
