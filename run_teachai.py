@@ -76,20 +76,43 @@ def reload_project_modules() -> None:
                 logger.warning("Не удалось перезагрузить %s: %s", name, exc)
 
 
-def start_jupyter(*, reload_modules: bool = False) -> Optional[Any]:
+def start_jupyter(
+    *,
+    reload_modules: bool = False,
+    api_route: str | None = None,
+) -> Optional[Any]:
     """Запускает TeachAI в Jupyter и отображает интерактивный интерфейс.
 
     Args:
         reload_modules: Перезагружать ли уже импортированные модули проекта.
             По умолчанию False — безопаснее для kernel (reload + виджеты
             часто вызывают зависание). True — только при активной разработке.
+        api_route: Явный маршрут из ноутбука: ``direct``, ``gptunnel``,
+            ``proxy`` или None. None оставляет .env, окружение, preference
+            и значение по умолчанию. В .env и preference не пишется.
 
     Returns:
         Виджет интерфейса (VBox) или None при ошибке запуска.
     """
-    load_dotenv(override=True)
+    from llm_route import (
+        apply_notebook_api_route,
+        release_notebook_api_route,
+        validate_llm_credentials,
+    )
 
-    from config import apply_openai_connection_environment, describe_openai_connection
+    release_notebook_api_route()
+    load_dotenv(override=True)
+    try:
+        apply_notebook_api_route(api_route)
+    except ValueError as exc:
+        print(f"❌ {exc}", flush=True)
+        return None
+
+    from config import (
+        ConfigManager,
+        apply_openai_connection_environment,
+        describe_openai_connection,
+    )
 
     apply_openai_connection_environment()
 
@@ -97,6 +120,11 @@ def start_jupyter(*, reload_modules: bool = False) -> Optional[Any]:
 
     print("⏳ Запуск TeachAI...", flush=True)
     print(f"🌐 OpenAI: {describe_openai_connection()}", flush=True)
+    if ConfigManager().check_env_file():
+        ok, err = validate_llm_credentials()
+        if not ok:
+            print(f"❌ {err}", flush=True)
+            return None
     print(f"🕐 {mark_stage('старт')}", flush=True)
 
     if reload_modules:

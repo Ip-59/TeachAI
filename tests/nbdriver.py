@@ -115,11 +115,15 @@ class NotebookSession:
         return json.loads(text.split(MARK, 1)[1])
 
     def start_teachai(self) -> str:
-        """Выполняет ячейку TeachAI.ipynb: from run_teachai import start_jupyter; start_jupyter()"""
+        """Выполняет кодовые ячейки TeachAI.ipynb по порядку, включая настройку маршрута."""
         import nbformat
         nb = nbformat.read(self.proj / "TeachAI.ipynb", as_version=4)
-        code = next(c.source for c in nb.cells if c.cell_type == "code")
-        return self.run(code)
+        outputs: list[str] = []
+        for cell in nb.cells:
+            if cell.cell_type != "code":
+                continue
+            outputs.append(self.run(cell.source))
+        return "".join(outputs)
 
     # --- виджеты ------------------------------------------------------------
     def buttons(self, text: str = "") -> list[dict]:

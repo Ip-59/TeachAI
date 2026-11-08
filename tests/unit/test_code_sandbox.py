@@ -280,6 +280,90 @@ plt.plot([1, 2])
     assert len(image_widgets(images)) == 1
 
 
+def test_stdout_html_shows_type_print_as_text():
+    from code_sandbox import format_execution_stdout_html
+
+    raw = "<class 'int'>\n<class 'float'>\n<class 'str'>\n<class 'bool'>"
+    html = format_execution_stdout_html(raw)
+    assert "<class " not in html
+    assert "&lt;class" in html
+    assert "int" in html
+    assert "float" in html
+    assert "str" in html
+    assert "bool" in html
+    assert "pre-wrap" in html
+
+
+def test_control_execute_shows_type_print(monkeypatch):
+    """Кнопка «Выполнить код»: <class 'int'> остаётся видимым текстом."""
+    import logging
+    from types import SimpleNamespace
+
+    from code_sandbox import SandboxResult
+    from control_tasks_interface import ControlTasksInterface
+
+    ui = ControlTasksInterface.__new__(ControlTasksInterface)
+    ui.logger = logging.getLogger("test_control_stdout")
+    ui.lesson_interface = SimpleNamespace(current_course_info={})
+    ui._solution_revealed = False
+    monkeypatch.setattr(
+        "code_sandbox.run_student_code",
+        lambda code, capture_variables=False: SandboxResult(
+            stdout="<class 'int'>\n<class 'float'>\n<class 'str'>\n<class 'bool'>\n",
+            success=True,
+        ),
+    )
+    box = ui._create_task_interface(
+        {"title": "Типы", "task_code": "a = 7", "hints": []}
+    )
+
+    def buttons(node):
+        found = []
+        if type(node).__name__ == "Button":
+            found.append(node)
+        for child in getattr(node, "children", ()) or ():
+            found.extend(buttons(child))
+        return found
+
+    run = next(b for b in buttons(box) if "Выполнить" in b.description)
+    run.click()
+    shown = box.children[-1].children[0].value
+    assert "Код выполнен успешно" in shown
+    assert "<class " not in shown
+    assert "&lt;class" in shown
+    assert "bool" in shown
+
+
+def test_check_panel_shows_type_print():
+    """«Ваш вывод» после проверки тоже не прячет <class '...'>."""
+    import logging
+    from types import SimpleNamespace
+
+    import ipywidgets as widgets
+
+    from control_tasks_interface import ControlTasksInterface
+
+    ui = ControlTasksInterface.__new__(ControlTasksInterface)
+    ui.logger = logging.getLogger("test_control_check_stdout")
+    ui.is_checking = False
+    ui._solution_revealed = False
+    ui._save_task_result = lambda *_a, **_k: None
+    ui._create_success_buttons = lambda: []
+    ui.tasks_generator = SimpleNamespace(
+        validate_task_execution=lambda *_a, **_k: {
+            "is_correct": True,
+            "actual_output": "<class 'int'>",
+            "feedback": "",
+        }
+    )
+    out = widgets.VBox()
+    ui._check_solution("print(type(1))", {}, out)
+    shown = out.children[0].value
+    assert "Ваш вывод" in shown
+    assert "<class " not in shown
+    assert "int" in shown
+
+
 def test_name_error_hint_for_student():
     from code_sandbox import (
         NAME_ERROR_HINT_RU,

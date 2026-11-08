@@ -273,6 +273,7 @@ class ControlTasksInterface:
             try:
                 from code_sandbox import (
                     format_execution_error_html,
+                    format_execution_stdout_html,
                     image_widgets,
                     run_student_code,
                 )
@@ -299,7 +300,10 @@ class ControlTasksInterface:
                     results_output.children = [error_html, *imgs]
                 elif output.strip():
                     result_html = widgets.HTML(
-                        value=f"<p style='color: green;'>✅ Код выполнен успешно!</p><pre style='background: #f8f9fa; padding: 10px; border-radius: 4px;'>{output}</pre>"
+                        value=(
+                            "<p style='color: green;'>✅ Код выполнен успешно!</p>"
+                            f"{format_execution_stdout_html(output)}"
+                        )
                     )
                     results_output.children = [result_html, *imgs]
                 elif imgs:
@@ -403,6 +407,15 @@ class ControlTasksInterface:
             # Создаем все виджеты для отображения
             result_widgets = []
 
+            import html as html_lib
+
+            from code_sandbox import format_execution_stdout_html
+
+            actual_output = (
+                validation_result.get("actual_output") or "Нет вывода"
+            )
+            actual_html = format_execution_stdout_html(str(actual_output))
+
             if validation_result["is_correct"]:
                 # Успех
                 feedback = validation_result.get("feedback", "")
@@ -420,8 +433,8 @@ class ControlTasksInterface:
                     "<h3 style='color: #155724; margin: 0;'>🎉 Задание выполнено правильно!</h3>"
                     "<p style='color: #155724; margin: 10px 0;'>Отличная работа! Решение принято.</p>"
                     f"{feedback_html}"
-                    f"<p style='color: #155724; margin: 10px 0;'><strong>Ваш вывод:</strong> "
-                    f"{validation_result.get('actual_output', 'Нет вывода') or 'Нет вывода'}</p>"
+                    f"<p style='color: #155724; margin: 10px 0;'><strong>Ваш вывод:</strong></p>"
+                    f"{actual_html}"
                     "</div>"
                 )
                 result_widgets.append(success_html)
@@ -447,7 +460,7 @@ class ControlTasksInterface:
                 if failure_reason:
                     error_details = (
                         f"<p style='color: #721c24; margin: 10px 0;'>"
-                        f"<strong>Причина:</strong> {failure_reason}</p>"
+                        f"<strong>Причина:</strong> {html_lib.escape(str(failure_reason))}</p>"
                     )
                 if feedback and feedback != failure_reason:
                     from student_content import render_student_content
@@ -462,11 +475,13 @@ class ControlTasksInterface:
                 if task_data.get("validation_mode") == "stdout":
                     expected_hint = (
                         f"<p style='color: #721c24; margin: 10px 0;'>"
-                        f"<strong>Ожидаемый вывод:</strong> "
-                        f"{task_data.get('expected_output', 'Не указан')}</p>"
+                        f"<strong>Ожидаемый вывод:</strong></p>"
+                        f"{format_execution_stdout_html(str(task_data.get('expected_output') or 'Не указан'))}"
                     )
                 elif check_variables:
-                    vars_list = ", ".join(f"<code>{v}</code>" for v in check_variables)
+                    vars_list = ", ".join(
+                        f"<code>{html_lib.escape(str(v))}</code>" for v in check_variables
+                    )
                     expected_hint = (
                         f"<p style='color: #721c24; margin: 10px 0;'>"
                         f"<strong>Проверяемые переменные:</strong> {vars_list}</p>"
@@ -476,8 +491,8 @@ class ControlTasksInterface:
                         value="<div style='background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 15px; margin: 10px 0;'>"
                         "<h3 style='color: #721c24; margin: 0;'>❌ Задание выполнено неправильно</h3>"
                         "<p style='color: #721c24; margin: 10px 0;'>Проверьте шаги задания и попробуйте ещё раз.</p>"
-                    f"<p style='color: #721c24; margin: 10px 0;'><strong>Ваш вывод:</strong> "
-                    f"{validation_result.get('actual_output', 'Нет вывода') or 'Нет вывода'}</p>"
+                    f"<p style='color: #721c24; margin: 10px 0;'><strong>Ваш вывод:</strong></p>"
+                    f"{actual_html}"
                     f"{expected_hint}"
                     f"{error_details}"
                         "</div>"

@@ -1,8 +1,9 @@
 """
-Маршрут LLM для TeachAI: прямой OpenAI или шлюз GPTunnel.
+Маршрут LLM для TeachAI: прямой OpenAI, шлюз GPTunnel или HTTP-прокси.
 
-Источник истины — ``OPENAI_API_ROUTE`` в .env (или сессионный override).
-Кнопка на дашборде только переключает маршрут до инициализации клиентов.
+Приоритет: явный маршрут ноутбука, иначе ``OPENAI_API_ROUTE``,
+иначе файл preference, иначе совместимые переменные, иначе ``direct``.
+Явный маршрут ноутбука не пишется в .env и не сохраняет preference.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 import httpx
 from openai import OpenAI
@@ -36,6 +37,18 @@ _PROXY_ENV_KEYS_TO_CLEAR = _PROXY_ENV_KEYS + (
     "NO_PROXY",
     "no_proxy",
 )
+_ROUTE_ENV_KEYS = (
+    "OPENAI_API_ROUTE",
+    "OPENAI_CONNECTION_MODE",
+    "OPENAI_USE_PROXY",
+    *_PROXY_ENV_KEYS_TO_CLEAR,
+)
+_NOTEBOOK_ROUTES = ("direct", "gptunnel", "proxy")
+
+# Явный маршрут текущего запуска из ноутбука и окружение до него.
+# None значит «как без ноутбука»: .env, окружение, preference, default.
+_explicit_notebook_route: str | None = None
+_notebook_env_snapshot: dict[str, str | None] | None = None
 
 
 def _read_proxy_url() -> str | None:
@@ -46,13 +59,31 @@ def _read_proxy_url() -> str | None:
     return None
 
 
+def _capture_route_env() -> dict[str, str | None]:
+    """Снимок переменных, которые меняет установка маршрута."""
+    return {key: os.environ.get(key) for key in _ROUTE_ENV_KEYS}
+
+
+def _restore_route_env(snapshot: dict[str, str | None]) -> None:
+    """Возвращает переменные маршрута к снимку."""
+    for key, value in snapshot.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+
+
 def get_llm_route() -> LlmRoute:
     """
     Активный маршрут к LLM.
 
-    Приоритет: ``OPENAI_API_ROUTE`` → совместимость с ``OPENAI_CONNECTION_MODE``
-    (``proxy`` / ``gptunnel``) → иначе ``direct``.
+    Приоритет: явный маршрут ноутбука → ``OPENAI_API_ROUTE`` →
+    совместимость с ``OPENAI_USE_PROXY`` / ``OPENAI_CONNECTION_MODE``
+    → иначе ``direct``.
     """
+    if _explicit_notebook_route in _NOTEBOOK_ROUTES:
+        return _explicit_notebook_route  # type: ignore[return-value]
+
     raw = (os.getenv("OPENAI_API_ROUTE") or "").strip().lower()
     if raw in ("direct", "openai", "vpn"):
         return "direct"
@@ -114,6 +145,43 @@ def set_llm_route(route: str, *, persist: bool = True) -> LlmRoute:
     return normalized  # type: ignore[return-value]
 
 
+def release_notebook_api_route() -> None:
+    """Сбрасывает явный маршрут прошлого запуска из ноутбука.
+
+    Восстанавливает окружение, каким оно было до этого маршрута.
+    Вызывать до ``load_dotenv(override=True)``, чтобы следующий запуск
+    с ``None`` снова читал .env, окружение и preference.
+    """
+    global _explicit_notebook_route, _notebook_env_snapshot
+    if _notebook_env_snapshot is not None:
+        _restore_route_env(_notebook_env_snapshot)
+    _notebook_env_snapshot = None
+    _explicit_notebook_route = None
+
+
+def apply_notebook_api_route(api_route: str | None) -> None:
+    """Применяет явный маршрут ноутбука после загрузки .env.
+
+    Args:
+        api_route: ``None`` не меняет загруженную настройку. Иначе ровно
+            ``direct``, ``gptunnel`` или ``proxy``.
+
+    Raises:
+        ValueError: значение не ``None`` и не одно из трёх имён.
+            Текст ошибки не содержит переданное значение.
+    """
+    global _explicit_notebook_route, _notebook_env_snapshot
+    if api_route is None:
+        return
+    if api_route not in _NOTEBOOK_ROUTES:
+        raise ValueError(
+            "API_ROUTE: допустимы только None, direct, gptunnel или proxy."
+        )
+    _notebook_env_snapshot = _capture_route_env()
+    _explicit_notebook_route = api_route
+    set_llm_route(api_route, persist=False)
+
+
 def save_route_preference(route: str) -> None:
     """Пишет выбранный маршрут на диск (между запусками Jupyter)."""
     try:
@@ -142,8 +210,11 @@ def apply_saved_route_preference() -> LlmRoute:
     """
     Если в .env нет явного OPENAI_API_ROUTE — подставить preference с диска.
 
-    Явный .env всегда побеждает.
+    Явный маршрут ноутбука побеждает и .env, и preference.
+    Без него явный .env побеждает preference.
     """
+    if _explicit_notebook_route in _NOTEBOOK_ROUTES:
+        return set_llm_route(_explicit_notebook_route, persist=False)
     if (os.getenv("OPENAI_API_ROUTE") or "").strip():
         return get_llm_route()
     saved = load_route_preference()
@@ -201,7 +272,7 @@ def validate_llm_credentials() -> tuple[bool, str]:
 
 
 def describe_llm_route() -> str:
-    """Краткое описание маршрута для консоли и дашборда."""
+    """Краткое описание маршрута для консоли до учебного интерфейса."""
     route = get_llm_route()
     if route == "gptunnel":
         host = get_gptunnel_base_url().replace("https://", "").replace("http://", "")
@@ -277,55 +348,3 @@ def chat_extra_body(meta: dict[str, Any] | None) -> dict[str, Any] | None:
     if meta and meta.get("use_wallet_balance"):
         return {"useWalletBalance": True}
     return None
-
-
-def make_route_selector_widget(
-    on_change: Callable[[str], None] | None = None,
-):
-    """
-    RadioButtons выбора маршрута для дашборда.
-
-    Returns:
-        ipywidgets.VBox с подписью и RadioButtons (атрибут ``.route_radio``).
-    """
-    import ipywidgets as widgets
-
-    current = get_llm_route()
-    # proxy в UI не предлагаем по умолчанию — редкий режим
-    options = [
-        ("Напрямую OpenAI (дома / VPN)", "direct"),
-        ("Через шлюз GPTunnel (работа / мобильный)", "gptunnel"),
-    ]
-    radio = widgets.RadioButtons(
-        options=options,
-        value=current if current in ("direct", "gptunnel") else "gptunnel",
-        description="",
-        layout=widgets.Layout(width="100%", margin="4px 0"),
-    )
-    hint = widgets.HTML(
-        value=(
-            "<div style='margin:8px 0 4px 0;color:#495057;'>"
-            "<strong>Маршрут API:</strong> на этом ПК при блокировке OpenAI "
-            "выбирайте GPTunnel. Дома можно снова «напрямую»."
-            f"<br><span style='color:#6c757d;font-size:13px;'>"
-            f"Сейчас: {describe_llm_route()}</span></div>"
-        )
-    )
-
-    def _handle(change):
-        if change.get("name") == "value" and change.get("new"):
-            set_llm_route(change["new"], persist=True)
-            hint.value = (
-                "<div style='margin:8px 0 4px 0;color:#495057;'>"
-                "<strong>Маршрут API:</strong> на этом ПК при блокировке OpenAI "
-                "выбирайте GPTunnel. Дома можно снова «напрямую»."
-                f"<br><span style='color:#6c757d;font-size:13px;'>"
-                f"Сейчас: {describe_llm_route()}</span></div>"
-            )
-            if on_change:
-                on_change(change["new"])
-
-    radio.observe(_handle, names="value")
-    box = widgets.VBox([hint, radio])
-    box.route_radio = radio  # type: ignore[attr-defined]
-    return box

@@ -139,8 +139,8 @@ class ExamplesGeneration(BaseContentGenerator):
             cause = str(e.__cause__ or e)
             if "401" in cause or "invalid_api_key" in cause or "Incorrect API key" in cause:
                 raise Exception(
-                    "Модель отклонила ключ доступа. Если на дашборде меняли маршрут, "
-                    "перезапустите ядро и откройте урок заново."
+                    "Модель отклонила ключ доступа. "
+                    "Проверьте ключ в .env и перезапустите ядро."
                 ) from e
             raise Exception(
                 "Не получилось запросить примеры у модели. Повторите попытку."

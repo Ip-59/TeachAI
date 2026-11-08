@@ -11,7 +11,7 @@ from llm_route import chat_extra_body, create_openai_client, describe_llm_route
 
 
 _NON_RETRYABLE_STATUS = {400: "Запрос отклонён сервером (400).", 401: "Неверный API-ключ или нет доступа (401). Проверьте ключ в .env.",
-                         403: "Доступ запрещён (403). Проверьте ключ, регион и маршрут.", 404: "Модель или адрес API не найдены (404)."}
+                         403: "Доступ запрещён (403). Проверьте ключ и регион.", 404: "Модель или адрес API не найдены (404)."}
 
 
 def non_retryable_api_error(exc: Exception) -> str:

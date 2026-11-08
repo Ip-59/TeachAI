@@ -141,6 +141,28 @@ def with_name_error_hint(error: str) -> str:
     return f"{error}\n\n{hint}"
 
 
+def format_execution_stdout_html(output: str) -> str:
+    """HTML успешного вывода студента.
+
+    ``print(type(x))`` печатает ``<class 'int'>``. Без экранирования браузер
+    прячет это как неизвестный тег, и блок вывода выглядит пустым.
+
+    Args:
+        output: stdout как обычный текст, не как HTML.
+
+    Returns:
+        ``<pre>`` с экранированным текстом и переносами строк.
+    """
+    import html as html_module
+
+    safe = html_module.escape(output or "")
+    return (
+        "<pre style='white-space:pre-wrap;margin:8px 0;background:#f8f9fa;"
+        "padding:10px;border-radius:4px;'>"
+        f"{safe}</pre>"
+    )
+
+
 def format_execution_error_html(error: str) -> str:
     """HTML ошибки выполнения: текст + серая подсказка при NameError.
 

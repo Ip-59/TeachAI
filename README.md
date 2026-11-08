@@ -35,9 +35,13 @@ cp .env.sample .env   # если образец создан ConfigManager
 
 **Рекомендуемый способ** — notebook `TeachAI.ipynb`:
 
+Маршрут API задаётся в `TeachAI.ipynb` до запуска, аргументом `api_route`. `None` оставляет текущую настройку: `.env`, окружение, сохранённый выбор или `direct`, если ничего из этого нет. Строка `direct`, `gptunnel` или `proxy` побеждает эти источники и не записывается ни в `.env`, ни в сохранённый выбор. Учебный интерфейс маршрут не показывает и не переключает.
+
 ```python
+API_ROUTE = None  # либо "direct", "gptunnel" или "proxy"
+
 from run_teachai import start_jupyter
-start_jupyter()
+start_jupyter(api_route=API_ROUTE)
 ```
 
 **Альтернатива** — CLI:
