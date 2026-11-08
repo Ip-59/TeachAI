@@ -65,42 +65,42 @@ if interface_element:
     display(interface_element)
 ```
 
-Или используйте предготовленный ноутбук [TeachAI.ipynb](TeachAI.ipynb)
+Или используйте предготовленный ноутбук [TeachAI.ipynb](../TeachAI.ipynb)
 
 ## 📋 Архитектура проекта
 
 ### Основные компоненты
 
-- **[engine.py](engine.py)** - главный класс системы, координирует все компоненты
-- **[config.py](config.py)** - управление конфигурацией и переменными окружения
-- **[state_manager.py](state_manager.py)** - сохранение и загрузка состояния системы
-- **[content_generator.py](content_generator.py)** - фасад для генерации контента через OpenAI
-- **[interface.py](interface.py)** - создание интерактивного UI с ipywidgets
-- **[assessment.py](assessment.py)** - модуль проверки знаний и оценивания
-- **[startup_dashboard.py](startup_dashboard.py)** - дашборд статистики обучения
+- **[engine.py](../engine.py)** - главный класс системы, координирует все компоненты
+- **[config.py](../config.py)** - управление конфигурацией и переменными окружения
+- **[state_manager.py](../state_manager.py)** - сохранение и загрузка состояния системы
+- **[content_generator.py](../content_generator.py)** - фасад для генерации контента через OpenAI
+- **[interface.py](../interface.py)** - создание интерактивного UI с ipywidgets
+- **[assessment.py](../assessment.py)** - модуль проверки знаний и оценивания
+- **[startup_dashboard.py](../startup_dashboard.py)** - дашборд статистики обучения
 
 ### Специализированные генераторы
 
-- **[course_plan_generator.py](course_plan_generator.py)** - генерация плана курса
-- **[lesson_generator.py](lesson_generator.py)** - создание содержания уроков
-- **[examples_generator.py](examples_generator.py)** - генерация примеров кода
-- **[assessment_generator.py](assessment_generator.py)** - создание тестовых вопросов
-- **[qa_generator.py](qa_generator.py)** - генерация вопросов и ответов
-- **[concepts_generator.py](concepts_generator.py)** - выделение ключевых концепций
-- **[control_tasks_generator.py](control_tasks_generator.py)** - создание контрольных заданий
+- **[course_plan_generator.py](../course_plan_generator.py)** - генерация плана курса
+- **[lesson_generator.py](../lesson_generator.py)** - создание содержания уроков
+- **[examples_generator.py](../examples_generator.py)** - генерация примеров кода
+- **[assessment_generator.py](../assessment_generator.py)** - создание тестовых вопросов
+- **[qa_generator.py](../qa_generator.py)** - генерация вопросов и ответов
+- **[concepts_generator.py](../concepts_generator.py)** - выделение ключевых концепций
+- **[control_tasks_generator.py](../control_tasks_generator.py)** - создание контрольных заданий
 
 ### Менеджеры состояния
 
-- **[user_profile_manager.py](user_profile_manager.py)** - управление профилем пользователя
-- **[learning_progress_manager.py](learning_progress_manager.py)** - отслеживание прогресса обучения
-- **[course_data_manager.py](course_data_manager.py)** - управление данными курса
+- **[user_profile_manager.py](../user_profile_manager.py)** - управление профилем пользователя
+- **[learning_progress_manager.py](../learning_progress_manager.py)** - отслеживание прогресса обучения
+- **[course_data_manager.py](../course_data_manager.py)** - управление данными курса
 
 ### UI интерфейсы
 
-- **[setup_interface.py](setup_interface.py)** - интерфейс первоначальной настройки
-- **[lesson_interface.py](lesson_interface.py)** - отображение урока
-- **[assessment_interface.py](assessment_interface.py)** - интерфейс теста
-- **[completion_interface.py](completion_interface.py)** - экран завершения
+- **[setup_interface.py](../setup_interface.py)** - интерфейс первоначальной настройки
+- **[lesson_interface.py](../lesson_interface.py)** - отображение урока
+- **[assessment_interface.py](../assessment_interface.py)** - интерфейс теста
+- **[completion_interface.py](../completion_interface.py)** - экран завершения
 
 ## 🔧 Конфигурация
 
@@ -172,14 +172,14 @@ TeachAI/
 - `python-dotenv` - управление переменными окружения
 - `jupyter` - Jupyter Notebook/Lab
 
-Полный список см. в [requirements.txt](requirements.txt)
+Полный список см. в [requirements.txt](../requirements.txt)
 
 ## 📚 Документация
 
 ### Основная документация
 
-- **[ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md](ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md)** - подробное описание проекта, архитектуры и реализации (1000+ строк)
-- **[ОТВЕТ_КУРАТОРУ.md](ОТВЕТ_КУРАТОРУ.md)** - объяснение подхода к разработке и использования GPT без дообучения
+- **[ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md](../ОПИСАНИЕ_ПРОЕКТА_TEACHAI.md)** - подробное описание проекта, архитектуры и реализации (1000+ строк)
+- **[ОТВЕТ_КУРАТОРУ.md](../ОТВЕТ_КУРАТОРУ.md)** - объяснение подхода к разработке и использования GPT без дообучения
 
 ### Дополнительные материалы
 
