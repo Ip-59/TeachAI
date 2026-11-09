@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -129,8 +130,6 @@ def test_none_without_env_or_preference_uses_direct(
     isolated_project, monkeypatch, started
 ):
     monkeypatch.delenv("OPENAI_API_ROUTE", raising=False)
-    monkeypatch.delenv("OPENAI_USE_PROXY", raising=False)
-    monkeypatch.delenv("OPENAI_CONNECTION_MODE", raising=False)
     _write_env(isolated_project, f"OPENAI_API_KEY={FAKE_KEY}\n")
 
     from run_teachai import start_jupyter
@@ -168,8 +167,6 @@ def test_none_uses_preference_when_env_route_absent(
     isolated_project, monkeypatch, started
 ):
     monkeypatch.delenv("OPENAI_API_ROUTE", raising=False)
-    monkeypatch.delenv("OPENAI_USE_PROXY", raising=False)
-    monkeypatch.delenv("OPENAI_CONNECTION_MODE", raising=False)
     monkeypatch.setenv("OPENAI_PROXY", PROXY_URL)
     _write_env(
         isolated_project,
@@ -189,7 +186,6 @@ def test_none_uses_preference_when_env_route_absent(
 
 def test_none_uses_legacy_use_proxy_flag(isolated_project, monkeypatch, started):
     monkeypatch.delenv("OPENAI_API_ROUTE", raising=False)
-    monkeypatch.delenv("OPENAI_CONNECTION_MODE", raising=False)
     monkeypatch.setenv("OPENAI_USE_PROXY", "true")
     monkeypatch.setenv("OPENAI_PROXY", PROXY_URL)
     _write_env(
@@ -253,8 +249,6 @@ def test_dotenv_override_does_not_beat_explicit_route(
     assert get_llm_route() == "gptunnel"
     apply_openai_connection_environment()
     assert get_llm_route() == "gptunnel"
-    import os
-
     assert os.environ["OPENAI_API_ROUTE"] == "gptunnel"
     facts = _client_facts()
     assert facts["route"] == "gptunnel"
@@ -340,8 +334,6 @@ def test_second_start_builds_client_for_new_route(
 
 def test_none_after_explicit_drops_stale_route(isolated_project, monkeypatch, started):
     monkeypatch.delenv("OPENAI_API_ROUTE", raising=False)
-    monkeypatch.delenv("OPENAI_USE_PROXY", raising=False)
-    monkeypatch.delenv("OPENAI_CONNECTION_MODE", raising=False)
     monkeypatch.setenv("OPENAI_PROXY", PROXY_URL)
     monkeypatch.setenv("GPTUNNEL_API_KEY", GT_KEY)
     _write_env(

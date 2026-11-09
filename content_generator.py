@@ -19,7 +19,6 @@ from assessment_generator import AssessmentGenerator
 from qa_generator import QAGenerator
 from concepts_generator import ConceptsGenerator
 from relevance_checker import RelevanceChecker
-from qa_response_utils import append_question_reminder
 from loading_indicators import displayed_loading
 
 
@@ -433,81 +432,6 @@ class ContentGenerator:
                 course_context=course_context,
                 lesson_raw_content=lesson_raw_content,
             )
-
-    def generate_non_relevant_response(self, user_question, suggestions):
-        """
-        НОВЫЙ: Генерирует вежливый ответ для нерелевантного вопроса.
-
-        Args:
-            user_question (str): Вопрос пользователя
-            suggestions (list): Предложения альтернативных источников
-
-        Returns:
-            str: Стилизованный ответ
-        """
-        return self.relevance_checker.generate_non_relevant_response(
-            user_question, suggestions
-        )
-
-    def generate_multiple_questions_warning(self, questions_count):
-        """
-        НОВЫЙ: Генерирует предупреждение о большом количестве вопросов.
-
-        Args:
-            questions_count (int): Количество заданных вопросов
-
-        Returns:
-            str: Стилизованное предупреждение
-        """
-        return self.relevance_checker.generate_multiple_questions_warning(
-            questions_count
-        )
-
-    def get_formatted_answer_with_relevance(
-        self,
-        user_question: str,
-        lesson_content: str,
-        lesson_data: dict,
-        course: str,
-        section: str,
-        topic: str,
-        lesson: str,
-        user_name: str,
-        communication_style: str,
-        questions_count: int,
-    ) -> str:
-        """
-        Проверяет релевантность вопроса и возвращает стилизованный HTML-ответ (или нерелевантный с рекомендациями),
-        добавляет напоминание после 3-го вопроса.
-        """
-        # Собираем course_context из позиционных полей, чтобы LLM не учитывал
-        # breadcrumb-шапку с названиями курса/раздела/темы как тело урока.
-        course_context = {
-            "course_title": course,
-            "section_title": section,
-            "topic_title": topic,
-        }
-        relevance_result = self.check_question_relevance(
-            user_question, lesson_content, lesson_data, course_context=course_context
-        )
-        if not relevance_result["is_relevant"]:
-            answer_html = self.generate_non_relevant_response(
-                user_question, relevance_result["suggestions"]
-            )
-        else:
-            answer_html = self.answer_question(
-                course=course,
-                section=section,
-                topic=topic,
-                lesson=lesson,
-                user_question=user_question,
-                lesson_content=lesson_content,
-                user_name=user_name,
-                communication_style=communication_style,
-            )
-        # Добавляем напоминание, если нужно
-        answer_html = append_question_reminder(answer_html, questions_count)
-        return answer_html
 
     # ========================================
     # МЕТОДЫ ДЛЯ СОВМЕСТИМОСТИ СО СТАРЫМ КОДОМ

@@ -131,10 +131,10 @@
 
 **`relevance_checker.py` — вы правы по назначению**
 
-- Используется для **вопросов студента к уроку**: `check_question_relevance()` → при нерелевантности `generate_non_relevant_response()`, иначе `answer_question()`.
+- Используется для **вопросов студента к уроку**: `check_question_relevance()` → при нерелевантности обработчики сами формируют ответ, иначе `answer_question()`.
 - Точки входа: `lesson_interactive_handlers.py` (обработчик поля вопроса), `lesson_interaction.py` (альтернативный поток Q&A).
 - Проверка — **отдельный вызов LLM** (JSON-ответ, `temperature=0.2`), по метаданным урока (название, описание, ключевые слова), не по полному тексту урока в промпте.
-- Методы `generate_multiple_questions_warning` / `get_formatted_answer_with_relevance` в `content_generator.py` **нигде больше не вызываются**; напоминание после нескольких вопросов даёт `append_question_reminder()` в обработчиках.
+- Функция `append_question_reminder()` есть в модуле `qa_response_utils`, но в текущем потоке вопросов не подключена (нигде в рабочем коде не вызывается).
 
 **Прочий контроль качества (для полноты слайда 4, устно)**
 
