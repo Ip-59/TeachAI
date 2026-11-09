@@ -42,16 +42,6 @@ def test_communication_styles_and_get_style_prefix():
     assert get_style_prefix("friendly", "unknown_type") == ""
 
 
-def test_append_question_reminder_threshold():
-    from qa_response_utils import append_question_reminder
-
-    base = "<p>ответ</p>"
-    assert append_question_reminder(base, 3) == base
-    with_note = append_question_reminder(base, 4)
-    assert with_note.startswith(base)
-    assert "продолжим обучение" in with_note
-
-
 def test_non_retryable_api_error_by_status_and_quota():
     from llm_api_base import non_retryable_api_error
 
@@ -111,7 +101,6 @@ def test_content_utils_shim_still_reexports():
     from content_utils import (
         BaseContentGenerator,
         ContentUtils,
-        append_question_reminder,
         parse_llm_json,
     )
     from llm_api_base import BaseContentGenerator as BCG
@@ -120,4 +109,3 @@ def test_content_utils_shim_still_reexports():
     assert BaseContentGenerator is BCG
     assert ContentUtils is CU
     assert parse_llm_json('{"z": 1}') == {"z": 1}
-    assert append_question_reminder("<p>a</p>", 1) == "<p>a</p>"

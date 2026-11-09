@@ -406,7 +406,7 @@ graph LR
 |--------|----------|
 | `content_generator.py` | **Фасад** для всех генераторов контента |
 | `llm_api_base.py` | `BaseContentGenerator`, `make_api_request`, retry логика |
-| `content_utils.py` | Фасад совместимости: реэкспорт в `llm_json`, `llm_api_base`, `communication_style`, `qa_response_utils` и клиент из `llm_route` |
+| `content_utils.py` | Фасад совместимости: реэкспорт в `llm_json`, `llm_api_base`, `communication_style` и клиент из `llm_route` |
 | `course_plan_generator.py` | Генерация планов курсов |
 | `lesson_generator.py` | Генерация содержания уроков |
 | `examples_generator.py` | Генерация практических примеров |

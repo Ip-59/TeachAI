@@ -408,7 +408,7 @@ Button handler in `LessonInteraction.setup_enhanced_qa_container`. Counter is no
 |--------|-------------|
 | `content_generator.py` | **Facade** for all content generators |
 | `llm_api_base.py` | `BaseContentGenerator`, `make_api_request`, retry logic |
-| `content_utils.py` | Compatibility facade: re-exports to `llm_json`, `llm_api_base`, `communication_style`, `qa_response_utils` and client from `llm_route` |
+| `content_utils.py` | Compatibility facade: re-exports to `llm_json`, `llm_api_base`, `communication_style` and client from `llm_route` |
 | `course_plan_generator.py` | Course plan generation |
 | `lesson_generator.py` | Lesson content generation |
 | `examples_generator.py` | Practical example generation |

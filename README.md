@@ -162,7 +162,7 @@ TeachAI.ipynb / run_teachai.py
 | `content_generator.py`, `*_generator.py` | Запросы к модели, фасад генераторов |
 | `relevance_checker.py` | Уровни `lesson` / `course` / `outside` для вопроса |
 | `course_domain.py` | Проверка темы своего курса |
-| `content_utils.py` | Фасад совместимости: старые импорты переадресуются в `llm_json`, `llm_api_base`, `communication_style`, `qa_response_utils` и клиент из `llm_route` |
+| `content_utils.py` | Фасад совместимости: старые импорты переадресуются в `llm_json`, `llm_api_base`, `communication_style` и клиент из `llm_route` |
 | `content_formatter_final.py`, `content_renderer.py` | HTML/Markdown/LaTeX |
 | `code_sandbox.py` | Запуск кода ученика в дочернем процессе |
 | `state_manager.py`, `*_manager.py` | Состояние и прогресс |
