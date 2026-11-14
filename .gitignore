@@ -43,6 +43,7 @@ data/
 !model_benchmark/scenarios/*.json
 !model_benchmark/results/lesson_benchmark_*.json
 !tests/fixtures/llm/*.json
+!tests/eval/*.json
 
 # Byte-код Python
 __pycache__/

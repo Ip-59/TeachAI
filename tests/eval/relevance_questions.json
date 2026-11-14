@@ -1,0 +1,409 @@
+{
+  "course": {
+    "id": "data-analysis",
+    "title": "Анализ данных с Python",
+    "description": "Курс по анализу данных с использованием Python и его основных библиотек. Вы научитесь работать с Pandas, NumPy, Matplotlib и другими инструментами для обработки, анализа и визуализации данных."
+  },
+  "questions": [
+    {
+      "id": 1,
+      "lesson_id": "lesson-install",
+      "lesson_title": "Установка Python и необходимых библиотек",
+      "question": "Как установить Python?",
+      "expected_scope": "lesson",
+      "rationale": "Прямой вопрос о теме урока"
+    },
+    {
+      "id": 2,
+      "lesson_id": "lesson-install",
+      "lesson_title": "Установка Python и необходимых библиотек",
+      "question": "Как установить pandas через pip?",
+      "expected_scope": "lesson",
+      "rationale": "Установка библиотек — тема урока"
+    },
+    {
+      "id": 3,
+      "lesson_id": "lesson-constructs",
+      "lesson_title": "Основные конструкции языка Python",
+      "question": "Что такое переменная?",
+      "expected_scope": "lesson",
+      "rationale": "Базовая конструкция Python из урока"
+    },
+    {
+      "id": 4,
+      "lesson_id": "lesson-constructs",
+      "lesson_title": "Основные конструкции языка Python",
+      "question": "Как работает цикл for?",
+      "expected_scope": "lesson",
+      "rationale": "Циклы — часть основных конструкций Python"
+    },
+    {
+      "id": 5,
+      "lesson_id": "lesson-jupyter",
+      "lesson_title": "Работа с Jupyter Notebook",
+      "question": "Как создать новую ячейку в Jupyter?",
+      "expected_scope": "lesson",
+      "rationale": "Работа с Jupyter — тема урока"
+    },
+    {
+      "id": 6,
+      "lesson_id": "lesson-numpy",
+      "lesson_title": "NumPy: Основы работы с массивами",
+      "question": "Как создать массив NumPy?",
+      "expected_scope": "lesson",
+      "rationale": "Создание массивов — основа урока о NumPy"
+    },
+    {
+      "id": 7,
+      "lesson_id": "lesson-pandas",
+      "lesson_title": "Pandas: Работа с датафреймами",
+      "question": "Как прочитать CSV файл в pandas?",
+      "expected_scope": "lesson",
+      "rationale": "Чтение файлов — базовая операция Pandas"
+    },
+    {
+      "id": 8,
+      "lesson_id": "lesson-pandas",
+      "lesson_title": "Pandas: Работа с датафреймами",
+      "question": "Что такое DataFrame?",
+      "expected_scope": "lesson",
+      "rationale": "DataFrame — центральное понятие урока"
+    },
+    {
+      "id": 9,
+      "lesson_id": "lesson-comparison",
+      "lesson_title": "Сравнение NumPy и Pandas",
+      "question": "В чём разница между массивом NumPy и DataFrame?",
+      "expected_scope": "lesson",
+      "rationale": "Сравнение структур — тема урока"
+    },
+    {
+      "id": 10,
+      "lesson_id": "lesson-missing",
+      "lesson_title": "Обработка пропущенных значений",
+      "question": "Как заполнить NaN значения в pandas?",
+      "expected_scope": "lesson",
+      "rationale": "Обработка пропусков — тема урока"
+    },
+    {
+      "id": 11,
+      "lesson_id": "lesson-filtering",
+      "lesson_title": "Фильтрация и выборка данных",
+      "question": "Как выбрать строки по условию в pandas?",
+      "expected_scope": "lesson",
+      "rationale": "Фильтрация — основная операция урока"
+    },
+    {
+      "id": 12,
+      "lesson_id": "lesson-groupby",
+      "lesson_title": "Группировка и агрегация данных",
+      "question": "Что делает groupby в pandas?",
+      "expected_scope": "lesson",
+      "rationale": "groupby — ключевая функция урока"
+    },
+    {
+      "id": 13,
+      "lesson_id": "lesson-matplotlib",
+      "lesson_title": "Введение в Matplotlib",
+      "question": "Как построить линейный график в matplotlib?",
+      "expected_scope": "lesson",
+      "rationale": "Построение графиков — тема урока"
+    },
+    {
+      "id": 14,
+      "lesson_id": "lesson-plot-types",
+      "lesson_title": "Построение различных типов графиков",
+      "question": "В чём разница между scatter и line plot?",
+      "expected_scope": "lesson",
+      "rationale": "Типы графиков — тема урока"
+    },
+    {
+      "id": 15,
+      "lesson_id": "lesson-plot-customize",
+      "lesson_title": "Настройка графиков",
+      "question": "Как добавить заголовок к графику?",
+      "expected_scope": "lesson",
+      "rationale": "Настройка графиков — тема урока"
+    },
+    {
+      "id": 16,
+      "lesson_id": "lesson-project",
+      "lesson_title": "Определение темы проекта",
+      "question": "Как выбрать тему для проекта по анализу данных?",
+      "expected_scope": "lesson",
+      "rationale": "Выбор темы — содержание урока"
+    },
+    {
+      "id": 17,
+      "lesson_id": "lesson-collect",
+      "lesson_title": "Сбор данных из открытых источников",
+      "question": "Где найти открытые датасеты?",
+      "expected_scope": "lesson",
+      "rationale": "Поиск данных — тема урока"
+    },
+    {
+      "id": 18,
+      "lesson_id": "lesson-install",
+      "lesson_title": "Установка Python и необходимых библиотек",
+      "question": "Что такое for?",
+      "expected_scope": "course",
+      "rationale": "КАВЕРЗНЫЙ: for — базовая конструкция Python, но не в уроке об установке"
+    },
+    {
+      "id": 19,
+      "lesson_id": "lesson-install",
+      "lesson_title": "Установка Python и необходимых библиотек",
+      "question": "Что делает print?",
+      "expected_scope": "course",
+      "rationale": "КАВЕРЗНЫЙ: print — базовая функция Python курса"
+    },
+    {
+      "id": 20,
+      "lesson_id": "lesson-install",
+      "lesson_title": "Установка Python и необходимых библиотек",
+      "question": "Зачем import?",
+      "expected_scope": "course",
+      "rationale": "КАВЕРЗНЫЙ: импорт — часть Python, изучается в курсе"
+    },
+    {
+      "id": 21,
+      "lesson_id": "lesson-jupyter",
+      "lesson_title": "Работа с Jupyter Notebook",
+      "question": "Что такое try-except?",
+      "expected_scope": "course",
+      "rationale": "КАВЕРЗНЫЙ: обработка исключений — часть Python курса"
+    },
+    {
+      "id": 22,
+      "lesson_id": "lesson-constructs",
+      "lesson_title": "Основные конструкции языка Python",
+      "question": "Что такое класс?",
+      "expected_scope": "course",
+      "rationale": "ООП — продвинутая тема Python курса"
+    },
+    {
+      "id": 23,
+      "lesson_id": "lesson-constructs",
+      "lesson_title": "Основные конструкции языка Python",
+      "question": "Что такое lambda?",
+      "expected_scope": "course",
+      "rationale": "Анонимные функции — часть Python"
+    },
+    {
+      "id": 24,
+      "lesson_id": "lesson-numpy",
+      "lesson_title": "NumPy: Основы работы с массивами",
+      "question": "Как работают срезы в Python?",
+      "expected_scope": "course",
+      "rationale": "Слайсинг — общая техника Python для массивов"
+    },
+    {
+      "id": 25,
+      "lesson_id": "lesson-pandas",
+      "lesson_title": "Pandas: Работа с датафреймами",
+      "question": "Что такое Series в pandas?",
+      "expected_scope": "course",
+      "rationale": "Series — структура Pandas, часть курса"
+    },
+    {
+      "id": 26,
+      "lesson_id": "lesson-pandas",
+      "lesson_title": "Pandas: Работа с датафреймами",
+      "question": "Как сохранить DataFrame в Excel?",
+      "expected_scope": "course",
+      "rationale": "Экспорт в Excel — функция Pandas курса"
+    },
+    {
+      "id": 27,
+      "lesson_id": "lesson-missing",
+      "lesson_title": "Обработка пропущенных значений",
+      "question": "Как работает метод dropna?",
+      "expected_scope": "course",
+      "rationale": "dropna — метод Pandas для пропусков"
+    },
+    {
+      "id": 28,
+      "lesson_id": "lesson-filtering",
+      "lesson_title": "Фильтрация и выборка данных",
+      "question": "Что такое iloc в pandas?",
+      "expected_scope": "course",
+      "rationale": "iloc — индексация Pandas"
+    },
+    {
+      "id": 29,
+      "lesson_id": "lesson-groupby",
+      "lesson_title": "Группировка и агрегация данных",
+      "question": "Как работает метод pivot_table?",
+      "expected_scope": "course",
+      "rationale": "pivot_table — продвинутая функция Pandas"
+    },
+    {
+      "id": 30,
+      "lesson_id": "lesson-matplotlib",
+      "lesson_title": "Введение в Matplotlib",
+      "question": "Что такое Seaborn?",
+      "expected_scope": "course",
+      "rationale": "Seaborn — библиотека визуализации Python"
+    },
+    {
+      "id": 31,
+      "lesson_id": "lesson-plot-types",
+      "lesson_title": "Построение различных типов графиков",
+      "question": "Как построить гистограмму в pandas?",
+      "expected_scope": "course",
+      "rationale": "Гистограммы — визуализация в Pandas"
+    },
+    {
+      "id": 32,
+      "lesson_id": "lesson-numpy",
+      "lesson_title": "NumPy: Основы работы с массивами",
+      "question": "Сравни NumPy с R",
+      "expected_scope": "course",
+      "rationale": "ПОГРАНИЧНЫЙ: сравнение инструментов анализа данных"
+    },
+    {
+      "id": 33,
+      "lesson_id": "lesson-pandas",
+      "lesson_title": "Pandas: Работа с датафреймами",
+      "question": "Как pandas сравнить с dplyr в R?",
+      "expected_scope": "course",
+      "rationale": "ПОГРАНИЧНЫЙ: сравнение библиотек анализа данных"
+    },
+    {
+      "id": 34,
+      "lesson_id": "lesson-constructs",
+      "lesson_title": "Основные конструкции языка Python",
+      "question": "Сравни Python с JavaScript",
+      "expected_scope": "course",
+      "rationale": "ПОГРАНИЧНЫЙ: сравнение языков может помочь понять Python"
+    },
+    {
+      "id": 35,
+      "lesson_id": "lesson-install",
+      "lesson_title": "Установка Python и необходимых библиотек",
+      "question": "Как сварить кашу?",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: кулинария"
+    },
+    {
+      "id": 36,
+      "lesson_id": "lesson-jupyter",
+      "lesson_title": "Работа с Jupyter Notebook",
+      "question": "Какая погода завтра?",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: прогноз погоды без контекста данных"
+    },
+    {
+      "id": 37,
+      "lesson_id": "lesson-numpy",
+      "lesson_title": "NumPy: Основы работы с массивами",
+      "question": "Кто выиграет выборы?",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: политика"
+    },
+    {
+      "id": 38,
+      "lesson_id": "lesson-pandas",
+      "lesson_title": "Pandas: Работа с датафреймами",
+      "question": "Рецепт шарлотки",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: кулинария"
+    },
+    {
+      "id": 39,
+      "lesson_id": "lesson-groupby",
+      "lesson_title": "Группировка и агрегация данных",
+      "question": "Как починить машину?",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: автомеханика"
+    },
+    {
+      "id": 40,
+      "lesson_id": "lesson-matplotlib",
+      "lesson_title": "Введение в Matplotlib",
+      "question": "Столица Франции",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: география"
+    },
+    {
+      "id": 41,
+      "lesson_id": "lesson-plot-types",
+      "lesson_title": "Построение различных типов графиков",
+      "question": "Лучшие фильмы 2024",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: кино"
+    },
+    {
+      "id": 42,
+      "lesson_id": "lesson-missing",
+      "lesson_title": "Обработка пропущенных значений",
+      "question": "Правила футбола",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: спорт"
+    },
+    {
+      "id": 43,
+      "lesson_id": "lesson-filtering",
+      "lesson_title": "Фильтрация и выборка данных",
+      "question": "История Римской империи",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: история"
+    },
+    {
+      "id": 44,
+      "lesson_id": "lesson-project",
+      "lesson_title": "Определение темы проекта",
+      "question": "Рецепт пиццы",
+      "expected_scope": "outside",
+      "rationale": "ЯВНО ПОСТОРОННИЙ: кулинария"
+    },
+    {
+      "id": 45,
+      "lesson_id": "lesson-constructs",
+      "lesson_title": "Основные конструкции языка Python",
+      "question": "Как в C++ объявить переменную?",
+      "expected_scope": "outside",
+      "rationale": "Другой язык без сравнения с Python"
+    },
+    {
+      "id": 46,
+      "lesson_id": "lesson-pandas",
+      "lesson_title": "Pandas: Работа с датафреймами",
+      "question": "Что такое SQL запрос?",
+      "expected_scope": "outside",
+      "rationale": "SQL — другая технология без контекста применения в Python"
+    },
+    {
+      "id": 47,
+      "lesson_id": "lesson-jupyter",
+      "lesson_title": "Работа с Jupyter Notebook",
+      "question": "Как настроить Docker?",
+      "expected_scope": "outside",
+      "rationale": "Docker — инфраструктура без связи с анализом данных"
+    },
+    {
+      "id": 48,
+      "lesson_id": "lesson-matplotlib",
+      "lesson_title": "Введение в Matplotlib",
+      "question": "Photoshop: как убрать фон?",
+      "expected_scope": "outside",
+      "rationale": "Графический редактор, не программирование"
+    },
+    {
+      "id": 49,
+      "lesson_id": "lesson-plot-customize",
+      "lesson_title": "Настройка графиков",
+      "question": "Excel: формула VLOOKUP",
+      "expected_scope": "outside",
+      "rationale": "Табличный процессор, не Python"
+    },
+    {
+      "id": 50,
+      "lesson_id": "lesson-install",
+      "lesson_title": "Установка Python и необходимых библиотек",
+      "question": "Квантовая физика для начинающих",
+      "expected_scope": "outside",
+      "rationale": "Наука без контекста анализа данных"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+================================================================================
+ОЦЕНКА ТОЧНОСТИ ПРОВЕРКИ РЕЛЕВАНТНОСТИ
+================================================================================
+
+Курс: Анализ данных с Python
+Вопросов: 50
+
+Маршрут LLM: direct
+Прогон вопросов через реальную проверку релевантности...
+--------------------------------------------------------------------------------
+✓  1. Как установить Python?                                       | exp=lesson  act=lesson 
+✓  2. Как установить pandas через pip?                             | exp=lesson  act=lesson 
+✗  3. Что такое переменная?                                        | exp=lesson  act=course 
+✓  4. Как работает цикл for?                                       | exp=lesson  act=lesson 
+✓  5. Как создать новую ячейку в Jupyter?                          | exp=lesson  act=lesson 
+✓  6. Как создать массив NumPy?                                    | exp=lesson  act=lesson 
+✓  7. Как прочитать CSV файл в pandas?                             | exp=lesson  act=lesson 
+✓  8. Что такое DataFrame?                                         | exp=lesson  act=lesson 
+✓  9. В чём разница между массивом NumPy и DataFrame?              | exp=lesson  act=lesson 
+✓ 10. Как заполнить NaN значения в pandas?                         | exp=lesson  act=lesson 
+✓ 11. Как выбрать строки по условию в pandas?                      | exp=lesson  act=lesson 
+✗ 12. Что делает groupby в pandas?                                 | exp=lesson  act=course 
+✓ 13. Как построить линейный график в matplotlib?                  | exp=lesson  act=lesson 
+✓ 14. В чём разница между scatter и line plot?                     | exp=lesson  act=lesson 
+✓ 15. Как добавить заголовок к графику?                            | exp=lesson  act=lesson 
+✓ 16. Как выбрать тему для проекта по анализу данных?              | exp=lesson  act=lesson 
+✗ 17. Где найти открытые датасеты?                                 | exp=lesson  act=course 
+✓ 18. Что такое for?                                               | exp=course  act=course 
+✓ 19. Что делает print?                                            | exp=course  act=course 
+✓ 20. Зачем import?                                                | exp=course  act=course 
+✓ 21. Что такое try-except?                                        | exp=course  act=course 
+✓ 22. Что такое класс?                                             | exp=course  act=course 
+✓ 23. Что такое lambda?                                            | exp=course  act=course 
+✓ 24. Как работают срезы в Python?                                 | exp=course  act=course 
+✗ 25. Что такое Series в pandas?                                   | exp=course  act=lesson 
+✓ 26. Как сохранить DataFrame в Excel?                             | exp=course  act=course 
+✗ 27. Как работает метод dropna?                                   | exp=course  act=lesson 
+✓ 28. Что такое iloc в pandas?                                     | exp=course  act=course 
+✓ 29. Как работает метод pivot_table?                              | exp=course  act=course 
+✓ 30. Что такое Seaborn?                                           | exp=course  act=course 
+✓ 31. Как построить гистограмму в pandas?                          | exp=course  act=course 
+✓ 32. Сравни NumPy с R                                             | exp=course  act=course 
+✓ 33. Как pandas сравнить с dplyr в R?                             | exp=course  act=course 
+✓ 34. Сравни Python с JavaScript                                   | exp=course  act=course 
+✓ 35. Как сварить кашу?                                            | exp=outside act=outside
+✓ 36. Какая погода завтра?                                         | exp=outside act=outside
+✓ 37. Кто выиграет выборы?                                         | exp=outside act=outside
+✓ 38. Рецепт шарлотки                                              | exp=outside act=outside
+✓ 39. Как починить машину?                                         | exp=outside act=outside
+✓ 40. Столица Франции                                              | exp=outside act=outside
+✓ 41. Лучшие фильмы 2024                                           | exp=outside act=outside
+✓ 42. Правила футбола                                              | exp=outside act=outside
+✓ 43. История Римской империи                                      | exp=outside act=outside
+✓ 44. Рецепт пиццы                                                 | exp=outside act=outside
+✓ 45. Как в C++ объявить переменную?                               | exp=outside act=outside
+✓ 46. Что такое SQL запрос?                                        | exp=outside act=outside
+✓ 47. Как настроить Docker?                                        | exp=outside act=outside
+✓ 48. Photoshop: как убрать фон?                                   | exp=outside act=outside
+✓ 49. Excel: формула VLOOKUP                                       | exp=outside act=outside
+✓ 50. Квантовая физика для начинающих                              | exp=outside act=outside
+
+================================================================================
+РЕЗУЛЬТАТЫ
+================================================================================
+
+Общая точность: 45/50 = 90.0%
+API запросов: 50
+
+МАТРИЦА ОШИБОК (строки=ожидаемый, столбцы=фактический):
+
+             |   lesson   course  outside |    ИТОГО
+--------------------------------------------------------
+lesson       |       14        3        0 |       17
+course       |        2       15        0 |       17
+outside      |        0        0       16 |       16
+
+ТОЧНОСТЬ ПО КЛАССАМ:
+  lesson  : 14/17 = 82.4%
+  course  : 15/17 = 88.2%
+  outside : 16/16 = 100.0%
+
+ЛОЖНЫЕ ОТКАЗЫ: нет
+
+ЛОЖНЫЕ ПРОПУСКИ: нет
+
+ПУТАНИЦА lesson↔course:
+--------------------------------------------------------------------------------
+ID  3 [lesson →course ]: Что такое переменная?
+    Урок: Основные конструкции языка Python
+    Reason: Переменные являются основным понятием языка Python, которое важно для анализа данных.
+    Обоснование: Базовая конструкция Python из урока
+
+ID 12 [lesson →course ]: Что делает groupby в pandas?
+    Урок: Группировка и агрегация данных
+    Reason: Это вопрос о функции groupby в библиотеке pandas, которая является частью курса.
+    Обоснование: groupby — ключевая функция урока
+
+ID 17 [lesson →course ]: Где найти открытые датасеты?
+    Урок: Сбор данных из открытых источников
+    Reason: Вы можете найти открытые датасеты на таких платформах, как Kaggle и data.gov.
+    Обоснование: Поиск данных — тема урока
+
+ID 25 [course →lesson ]: Что такое Series в pandas?
+    Урок: Pandas: Работа с датафреймами
+    Reason: Series — это одномерный массив, который может хранить данные различных типов и имеет метки для индексации.
+    Обоснование: Series — структура Pandas, часть курса
+
+ID 27 [course →lesson ]: Как работает метод dropna?
+    Урок: Обработка пропущенных значений
+    Reason: Метод dropna используется для удаления пропущенных значений, что является частью темы урока.
+    Обоснование: dropna — метод Pandas для пропусков
+
+================================================================================
+Всего API запросов: 50 (лимит: 150)
+================================================================================

@@ -32,7 +32,19 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     assert "близких конструкций" in lowered
     assert "в основном опирается" in lowered
     assert "в тексте или коде" in lowered
-    assert "предметной области этого курса" in lowered
+    # Проверки нового правила для scope=course и scope=outside:
+    # (1) Язык курса — часть предмета курса, не внешний инструмент
+    assert "язык, на котором ведётся курс" in lowered
+    assert "часть предмета курса" in lowered
+    assert "а не внешний инструмент" in lowered
+    # (2) outside только если нет связи и с предметом, и с языком, и с инструментами
+    assert "ставится только если" in lowered
+    assert "не связан ни с предметом курса" in lowered
+    assert "ни с языком программирования курса" in lowered
+    assert "библиотеками и инструментами" in lowered
+    # (3) При сомнении между course и outside выбирается course
+    assert "при сомнении между scope=course и scope=outside" in lowered
+    assert "выбирай scope=course" in lowered
     assert "библиотеки" in lowered
     assert "фреймворки" in lowered
     assert "понятия, операторы, синтаксис" not in lowered
@@ -42,8 +54,8 @@ def test_relevance_prompt_is_a_teacher_judgment() -> None:
     assert "название текущего урока" in lowered
     # Упоминание урока в reason больше не предписывает scope=course.
     assert "поставь scope=course" not in lowered
-    assert "это scope=course, не outside" not in lowered
-    assert "включая его библиотеки" in lowered
+    assert "это scope=course, не outside" in lowered
+    assert "его библиотек или инструментов" in lowered
     assert "не указано" in lowered
     assert "python и ai/ml" not in lowered
 
